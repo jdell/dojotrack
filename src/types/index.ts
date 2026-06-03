@@ -5,7 +5,19 @@
  * so they can be shared between client and server code. Timestamps are ISO strings.
  */
 
-export type Discipline = "bjj" | "karate" | "judo" | "taekwondo" | "custom";
+export type Discipline =
+  | "bjj"
+  | "karate"
+  | "judo"
+  | "taekwondo"
+  | "aikido"
+  | "kung_fu"
+  | "krav_maga"
+  | "hapkido"
+  | "capoeira"
+  | "american_kenpo"
+  | "tang_soo_do"
+  | "custom";
 
 /** 0 = Sunday … 6 = Saturday (matches JS `Date.getDay()`). */
 export type DayOfWeek = 0 | 1 | 2 | 3 | 4 | 5 | 6;

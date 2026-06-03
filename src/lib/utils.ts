@@ -27,6 +27,21 @@ export function formatDate(iso: string | null | undefined): string {
   });
 }
 
+/** Format a numeric amount as currency, e.g. 49.5 -> "$49.50". */
+export function formatMoney(
+  amount: number,
+  currency = "usd",
+): string {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: currency.toUpperCase(),
+    }).format(amount);
+  } catch {
+    return `${currency.toUpperCase()} ${amount.toFixed(2)}`;
+  }
+}
+
 /** "Gracie Barra Downtown" -> "gracie-barra-downtown". URL-safe slug. */
 export function slugify(input: string): string {
   return input

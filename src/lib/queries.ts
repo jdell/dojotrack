@@ -12,6 +12,7 @@
  */
 import { prisma } from "./prisma";
 import { isDbConfigured } from "./db";
+import { isStripeConfigured } from "./stripe";
 import { BELT_SYSTEMS, DISCIPLINES } from "./constants";
 import {
   dayOfDate,
@@ -21,14 +22,20 @@ import {
   weekIndex,
 } from "./schedule";
 import type { Discipline } from "@/types";
+import type { SparringParticipant } from "./sparring";
 import type {
+  BillingInterval,
   BookingStatus,
   CandidateResult,
   CheckinMethod,
   ClassLevel,
   ClassSession,
+  CompetitionStatus,
   DayOfWeek,
   ExamStatus,
+  Medal,
+  MembershipStatus,
+  PaymentStatus,
   RequirementType,
   TechniqueStatus,
 } from "@prisma/client";
@@ -724,6 +731,8 @@ export interface DashboardData {
   totalStudents: number;
   classesThisWeek: number;
   eligibleForPromotion: number;
+  monthlyRevenue: number;
+  currency: string;
   todayClasses: DashboardTodayClass[];
   upcomingExams: DashboardExam[];
 }
@@ -734,6 +743,8 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
     totalStudents: 0,
     classesThisWeek: 0,
     eligibleForPromotion: 0,
+    monthlyRevenue: 0,
+    currency: "usd",
     todayClasses: [],
     upcomingExams: [],
   };
@@ -742,6 +753,7 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
     const today = startOfDay(new Date());
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
 
     const [
       totalStudents,
@@ -749,6 +761,7 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
       schedules,
       upcomingExams,
       eligibleForPromotion,
+      monthRevenue,
     ] = await Promise.all([
       prisma.student.count({ where: { clubId, active: true } }),
       prisma.classSchedule.count({ where: { clubId, active: true } }),
@@ -768,6 +781,10 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
       }),
       getUpcomingExams(clubId),
       countEligibleForPromotion(clubId),
+      prisma.payment.aggregate({
+        where: { clubId, status: "PAID", paidAt: { gte: monthStart } },
+        _sum: { amount: true },
+      }),
     ]);
 
     const todayClasses: DashboardTodayClass[] = schedules.map((s) => {
@@ -788,6 +805,8 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
       totalStudents,
       classesThisWeek,
       eligibleForPromotion,
+      monthlyRevenue: Number(monthRevenue._sum.amount ?? 0),
+      currency: "usd",
       todayClasses,
       upcomingExams,
     };
@@ -1812,5 +1831,506 @@ export async function getUpcomingExams(
     }));
   } catch {
     return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Shared option lists (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface StudentOption {
+  id: string;
+  name: string;
+  beltName: string | null;
+  beltColor: string | null;
+}
+
+/** Active members of a club for entry/checkout/competition dropdowns. */
+export async function getStudentOptions(
+  clubId: string,
+): Promise<StudentOption[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const students = await prisma.student.findMany({
+      where: { clubId, active: true },
+      orderBy: { fullName: "asc" },
+      include: { beltRank: { select: { name: true, hexColor: true } } },
+    });
+    return students.map((s) => ({
+      id: s.id,
+      name: s.fullName,
+      beltName: s.beltRank?.name ?? null,
+      beltColor: s.beltRank?.hexColor ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payments (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PaymentPlanRow {
+  id: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  currency: string;
+  interval: BillingInterval;
+  active: boolean;
+  activeMembers: number;
+}
+
+export interface PaymentRow {
+  id: string;
+  studentName: string | null;
+  planName: string | null;
+  description: string | null;
+  amount: number;
+  currency: string;
+  status: PaymentStatus;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export interface MemberRow {
+  membershipId: string;
+  studentId: string;
+  studentName: string;
+  planName: string;
+  amount: number;
+  interval: BillingInterval;
+  status: MembershipStatus;
+  currentPeriodEnd: string | null;
+}
+
+export interface PaymentDashboard {
+  /** True when Stripe is wired up; gates the live checkout buttons. */
+  stripeConfigured: boolean;
+  currency: string;
+  monthlyRevenue: number;
+  totalCollected: number;
+  activeMembers: number;
+  pastDueCount: number;
+  plans: PaymentPlanRow[];
+  members: MemberRow[];
+  recentPayments: PaymentRow[];
+}
+
+const ACTIVE_MEMBER_STATES: MembershipStatus[] = ["ACTIVE", "TRIALING"];
+
+/** Plans, members, recent payments, and revenue rollups for /payments. */
+export async function getPaymentDashboard(
+  clubId: string,
+): Promise<PaymentDashboard> {
+  const empty: PaymentDashboard = {
+    stripeConfigured: isStripeConfigured(),
+    currency: "usd",
+    monthlyRevenue: 0,
+    totalCollected: 0,
+    activeMembers: 0,
+    pastDueCount: 0,
+    plans: [],
+    members: [],
+    recentPayments: [],
+  };
+  if (!isDbConfigured()) return empty;
+  try {
+    const now = new Date();
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [plans, totalAgg, monthAgg, payments, memberships] =
+      await Promise.all([
+        prisma.paymentPlan.findMany({
+          where: { clubId },
+          orderBy: [{ active: "desc" }, { createdAt: "asc" }],
+        }),
+        prisma.payment.aggregate({
+          where: { clubId, status: "PAID" },
+          _sum: { amount: true },
+        }),
+        prisma.payment.aggregate({
+          where: { clubId, status: "PAID", paidAt: { gte: monthStart } },
+          _sum: { amount: true },
+        }),
+        prisma.payment.findMany({
+          where: { clubId },
+          orderBy: { createdAt: "desc" },
+          take: 12,
+          include: {
+            student: { select: { fullName: true } },
+            plan: { select: { name: true } },
+          },
+        }),
+        prisma.membership.findMany({
+          where: {
+            clubId,
+            status: { in: ["ACTIVE", "TRIALING", "PAST_DUE"] },
+          },
+          orderBy: { createdAt: "desc" },
+          include: {
+            student: { select: { id: true, fullName: true } },
+            plan: {
+              select: { name: true, amount: true, interval: true },
+            },
+          },
+        }),
+      ]);
+
+    const currency = plans[0]?.currency ?? "usd";
+    // Active members per plan, derived from the memberships we already loaded.
+    const activeByPlan = new Map<string, number>();
+    for (const m of memberships) {
+      if (!ACTIVE_MEMBER_STATES.includes(m.status)) continue;
+      activeByPlan.set(m.planId, (activeByPlan.get(m.planId) ?? 0) + 1);
+    }
+    const members: MemberRow[] = memberships.map((m) => ({
+      membershipId: m.id,
+      studentId: m.studentId,
+      studentName: m.student.fullName,
+      planName: m.plan.name,
+      amount: Number(m.plan.amount),
+      interval: m.plan.interval,
+      status: m.status,
+      currentPeriodEnd: m.currentPeriodEnd
+        ? m.currentPeriodEnd.toISOString()
+        : null,
+    }));
+
+    return {
+      stripeConfigured: isStripeConfigured(),
+      currency,
+      monthlyRevenue: Number(monthAgg._sum.amount ?? 0),
+      totalCollected: Number(totalAgg._sum.amount ?? 0),
+      activeMembers: members.filter((m) =>
+        ACTIVE_MEMBER_STATES.includes(m.status),
+      ).length,
+      pastDueCount: members.filter((m) => m.status === "PAST_DUE").length,
+      plans: plans.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        amount: Number(p.amount),
+        currency: p.currency,
+        interval: p.interval,
+        active: p.active,
+        activeMembers: activeByPlan.get(p.id) ?? 0,
+      })),
+      members,
+      recentPayments: payments.map((p) => ({
+        id: p.id,
+        studentName: p.student?.fullName ?? null,
+        planName: p.plan?.name ?? null,
+        description: p.description,
+        amount: Number(p.amount),
+        currency: p.currency,
+        status: p.status,
+        paidAt: p.paidAt ? p.paidAt.toISOString() : null,
+        createdAt: p.createdAt.toISOString(),
+      })),
+    };
+  } catch {
+    return empty;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Competitions (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface CompetitionRow {
+  id: string;
+  name: string;
+  discipline: string | null;
+  date: string;
+  location: string | null;
+  status: CompetitionStatus;
+  entryCount: number;
+  medalCount: number;
+}
+
+/** A club's competitions split into upcoming and past buckets. */
+export async function getCompetitions(
+  clubId: string,
+): Promise<{ upcoming: CompetitionRow[]; past: CompetitionRow[] }> {
+  if (!isDbConfigured()) return { upcoming: [], past: [] };
+  try {
+    const competitions = await prisma.competition.findMany({
+      where: { clubId },
+      orderBy: { date: "desc" },
+      include: { entries: { select: { medal: true } } },
+    });
+    const today = startOfDay(new Date());
+    const upcoming: CompetitionRow[] = [];
+    const past: CompetitionRow[] = [];
+    for (const c of competitions) {
+      const row: CompetitionRow = {
+        id: c.id,
+        name: c.name,
+        discipline: c.discipline,
+        date: c.date.toISOString(),
+        location: c.location,
+        status: c.status,
+        entryCount: c.entries.length,
+        medalCount: c.entries.filter((e) => e.medal !== "NONE").length,
+      };
+      const isPast =
+        c.status === "COMPLETED" ||
+        c.status === "CANCELLED" ||
+        c.date < today;
+      (isPast ? past : upcoming).push(row);
+    }
+    upcoming.reverse();
+    return { upcoming, past };
+  } catch {
+    return { upcoming: [], past: [] };
+  }
+}
+
+export interface CompetitionEntryRow {
+  id: string;
+  studentId: string;
+  studentName: string;
+  beltName: string | null;
+  beltColor: string | null;
+  division: string | null;
+  weightClass: string | null;
+  placement: number | null;
+  medal: Medal;
+  wins: number;
+  losses: number;
+  notes: string | null;
+}
+
+export interface CompetitionDetail {
+  id: string;
+  name: string;
+  discipline: string | null;
+  date: string;
+  location: string | null;
+  description: string | null;
+  status: CompetitionStatus;
+  entries: CompetitionEntryRow[];
+  medalTally: { gold: number; silver: number; bronze: number };
+}
+
+/** Full competition detail: entries with student belt info and a medal tally. */
+export async function getCompetitionDetail(
+  id: string,
+): Promise<CompetitionDetail | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const competition = await prisma.competition.findUnique({
+      where: { id },
+      include: {
+        entries: {
+          orderBy: [{ placement: "asc" }, { student: { fullName: "asc" } }],
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                beltRank: { select: { name: true, hexColor: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!competition) return null;
+
+    const entries: CompetitionEntryRow[] = competition.entries.map((e) => ({
+      id: e.id,
+      studentId: e.studentId,
+      studentName: e.student.fullName,
+      beltName: e.student.beltRank?.name ?? null,
+      beltColor: e.student.beltRank?.hexColor ?? null,
+      division: e.division,
+      weightClass: e.weightClass,
+      placement: e.placement,
+      medal: e.medal,
+      wins: e.wins,
+      losses: e.losses,
+      notes: e.notes,
+    }));
+
+    return {
+      id: competition.id,
+      name: competition.name,
+      discipline: competition.discipline,
+      date: competition.date.toISOString(),
+      location: competition.location,
+      description: competition.description,
+      status: competition.status,
+      entries,
+      medalTally: {
+        gold: entries.filter((e) => e.medal === "GOLD").length,
+        silver: entries.filter((e) => e.medal === "SILVER").length,
+        bronze: entries.filter((e) => e.medal === "BRONZE").length,
+      },
+    };
+  } catch {
+    return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sparring (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SparringRosterStudent extends SparringParticipant {
+  beltName: string | null;
+  beltColor: string | null;
+}
+
+/**
+ * Active students as sparring participants, carrying belt order for the pairing
+ * algorithm plus belt name/colour for the picker UI. Weight isn't tracked yet,
+ * so pairing falls back to belt proximity alone.
+ */
+export async function getSparringRoster(
+  clubId: string,
+): Promise<SparringRosterStudent[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const students = await prisma.student.findMany({
+      where: { clubId, active: true },
+      orderBy: { fullName: "asc" },
+      include: { beltRank: { select: { name: true, hexColor: true, order: true } } },
+    });
+    return students.map((s) => ({
+      id: s.id,
+      name: s.fullName,
+      beltOrder: s.beltRank?.order ?? null,
+      weight: null,
+      beltName: s.beltRank?.name ?? null,
+      beltColor: s.beltRank?.hexColor ?? null,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export interface SparringSessionRow {
+  id: string;
+  name: string | null;
+  discipline: string | null;
+  date: string;
+  rounds: number;
+  pairCount: number;
+  participantCount: number;
+}
+
+/** A club's sparring sessions, newest first, with pair/participant counts. */
+export async function getSparringSessions(
+  clubId: string,
+): Promise<SparringSessionRow[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const sessions = await prisma.sparringSession.findMany({
+      where: { clubId },
+      orderBy: { date: "desc" },
+      include: { pairs: { select: { studentAId: true, studentBId: true } } },
+    });
+    return sessions.map((s) => {
+      const participants = new Set<string>();
+      for (const p of s.pairs) {
+        participants.add(p.studentAId);
+        if (p.studentBId) participants.add(p.studentBId);
+      }
+      return {
+        id: s.id,
+        name: s.name,
+        discipline: s.discipline,
+        date: s.date.toISOString(),
+        rounds: s.rounds,
+        pairCount: s.pairs.length,
+        participantCount: participants.size,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+export interface SparringPairRow {
+  id: string;
+  round: number;
+  mat: number | null;
+  studentAId: string;
+  studentAName: string;
+  studentABelt: string | null;
+  studentAColor: string | null;
+  studentBId: string | null;
+  studentBName: string | null;
+  studentBBelt: string | null;
+  studentBColor: string | null;
+}
+
+export interface SparringSessionDetail {
+  id: string;
+  name: string | null;
+  discipline: string | null;
+  date: string;
+  rounds: number;
+  notes: string | null;
+  pairs: SparringPairRow[];
+}
+
+/** Full sparring session detail: every pairing with both fighters' belt info. */
+export async function getSparringSessionDetail(
+  id: string,
+): Promise<SparringSessionDetail | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const session = await prisma.sparringSession.findUnique({
+      where: { id },
+      include: {
+        pairs: {
+          orderBy: [{ round: "asc" }, { mat: "asc" }],
+          include: {
+            studentA: {
+              select: {
+                id: true,
+                fullName: true,
+                beltRank: { select: { name: true, hexColor: true } },
+              },
+            },
+            studentB: {
+              select: {
+                id: true,
+                fullName: true,
+                beltRank: { select: { name: true, hexColor: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!session) return null;
+    return {
+      id: session.id,
+      name: session.name,
+      discipline: session.discipline,
+      date: session.date.toISOString(),
+      rounds: session.rounds,
+      notes: session.notes,
+      pairs: session.pairs.map((p) => ({
+        id: p.id,
+        round: p.round,
+        mat: p.mat,
+        studentAId: p.studentAId,
+        studentAName: p.studentA.fullName,
+        studentABelt: p.studentA.beltRank?.name ?? null,
+        studentAColor: p.studentA.beltRank?.hexColor ?? null,
+        studentBId: p.studentBId,
+        studentBName: p.studentB?.fullName ?? null,
+        studentBBelt: p.studentB?.beltRank?.name ?? null,
+        studentBColor: p.studentB?.beltRank?.hexColor ?? null,
+      })),
+    };
+  } catch {
+    return null;
   }
 }

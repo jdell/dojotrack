@@ -11,7 +11,7 @@ import {
 import { getCurrentClub, getDashboard } from "@/lib/queries";
 import { disciplineMeta } from "@/lib/constants";
 import { formatTime } from "@/lib/schedule";
-import { formatDate } from "@/lib/utils";
+import { formatDate, formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard — DojoTrack" };
 
@@ -25,6 +25,8 @@ export default async function DashboardPage() {
         totalStudents: 0,
         classesThisWeek: 0,
         eligibleForPromotion: 0,
+        monthlyRevenue: 0,
+        currency: "usd",
         todayClasses: [],
         upcomingExams: [],
       };
@@ -50,7 +52,7 @@ export default async function DashboardPage() {
     },
     {
       label: "Monthly revenue",
-      value: "—",
+      value: club ? formatMoney(data.monthlyRevenue, data.currency) : "—",
       hint: "Collected this month",
       icon: TrendingUp,
     },

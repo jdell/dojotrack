@@ -15,12 +15,10 @@ export const metadata: Metadata = { title: "Belts — DojoTrack" };
 
 export const dynamic = "force-dynamic";
 
-const SYSTEMS: BeltSystem[] = [
-  BELT_SYSTEMS.bjj,
-  BELT_SYSTEMS.karate,
-  BELT_SYSTEMS.judo,
-  BELT_SYSTEMS.taekwondo,
-];
+// Every built-in ladder (the empty "custom" template is excluded).
+const SYSTEMS: BeltSystem[] = Object.values(BELT_SYSTEMS).filter(
+  (s) => s.belts.length > 0,
+);
 
 export default async function BeltsPage() {
   const club = isDbConfigured() ? await getCurrentClub() : null;

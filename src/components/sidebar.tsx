@@ -8,8 +8,11 @@ import {
   Calendar,
   ChevronLeft,
   ChevronRight,
+  CreditCard,
   LayoutDashboard,
   Settings,
+  Swords,
+  Trophy,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -47,6 +50,24 @@ const NAV_ITEMS: NavItem[] = [
     href: "/belts",
     icon: Award,
     matches: (p) => p.startsWith("/belts"),
+  },
+  {
+    label: "Payments",
+    href: "/payments",
+    icon: CreditCard,
+    matches: (p) => p.startsWith("/payments"),
+  },
+  {
+    label: "Competitions",
+    href: "/competitions",
+    icon: Trophy,
+    matches: (p) => p.startsWith("/competitions"),
+  },
+  {
+    label: "Sparring",
+    href: "/sparring",
+    icon: Swords,
+    matches: (p) => p.startsWith("/sparring"),
   },
   {
     label: "Settings",

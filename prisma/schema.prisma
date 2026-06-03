@@ -91,6 +91,47 @@ enum CandidateResult {
   FAIL
 }
 
+/// How often a payment plan bills. ONE_TIME is a single charge (drop-in, gear).
+enum BillingInterval {
+  MONTHLY
+  QUARTERLY
+  ANNUAL
+  ONE_TIME
+}
+
+/// A student's billing state on a plan, mirrored from Stripe via webhook.
+enum MembershipStatus {
+  INCOMPLETE
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELLED
+}
+
+/// Lifecycle of a single payment / invoice.
+enum PaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+/// Lifecycle of a competition the club's students enter.
+enum CompetitionStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+/// A podium result for a competition entry (NONE = competed, didn't place).
+enum Medal {
+  NONE
+  GOLD
+  SILVER
+  BRONZE
+}
+
 /// A martial arts club / dojo — the top-level tenant.
 model Club {
   id           String   @id @default(uuid())
@@ -108,13 +149,18 @@ model Club {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  users          User[]
-  students       Student[]
-  families       Family[]
-  beltRanks      BeltRank[]
-  invitations    Invitation[]
-  classSchedules ClassSchedule[]
-  gradingExams   GradingExam[]
+  users            User[]
+  students         Student[]
+  families         Family[]
+  beltRanks        BeltRank[]
+  invitations      Invitation[]
+  classSchedules   ClassSchedule[]
+  gradingExams     GradingExam[]
+  paymentPlans     PaymentPlan[]
+  memberships      Membership[]
+  payments         Payment[]
+  competitions     Competition[]
+  sparringSessions SparringSession[]
 
   @@map("clubs")
 }
@@ -153,6 +199,8 @@ model Student {
   beltRankId       String?   @map("belt_rank_id")
   joinDate         DateTime  @default(now()) @map("join_date")
   dateOfBirth      DateTime? @map("date_of_birth")
+  /// Body weight in kilograms — used to pair fairly for sparring.
+  weight           Int?
   medicalNotes     String?   @map("medical_notes")
   emergencyContact String?   @map("emergency_contact")
   emergencyPhone   String?   @map("emergency_phone")
@@ -161,14 +209,19 @@ model Student {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  club          Club                  @relation(fields: [clubId], references: [id])
-  user          User?                 @relation(fields: [userId], references: [id])
-  beltRank      BeltRank?             @relation(fields: [beltRankId], references: [id])
-  family        Family?               @relation(fields: [familyId], references: [id])
-  bookings      Booking[]
-  attendances   Attendance[]
-  techniqueLogs StudentTechniqueLog[]
-  candidacies   GradingCandidate[]
+  club               Club                  @relation(fields: [clubId], references: [id])
+  user               User?                 @relation(fields: [userId], references: [id])
+  beltRank           BeltRank?             @relation(fields: [beltRankId], references: [id])
+  family             Family?               @relation(fields: [familyId], references: [id])
+  bookings           Booking[]
+  attendances        Attendance[]
+  techniqueLogs      StudentTechniqueLog[]
+  candidacies        GradingCandidate[]
+  memberships        Membership[]
+  payments           Payment[]
+  competitionEntries CompetitionEntry[]
+  sparringPairsA     SparringPair[]        @relation("SparringStudentA")
+  sparringPairsB     SparringPair[]        @relation("SparringStudentB")
 
   @@index([clubId])
   @@index([familyId])
@@ -392,4 +445,174 @@ model GradingCandidate {
   @@unique([examId, studentId])
   @@index([studentId])
   @@map("grading_candidates")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Payments (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A billable membership plan / product a club offers (e.g. "Adults Unlimited",
+/// "Drop-in"). Maps to a Stripe Product + Price, created lazily at checkout.
+model PaymentPlan {
+  id              String          @id @default(uuid())
+  clubId          String          @map("club_id")
+  name            String
+  description     String?
+  amount          Decimal         @db.Decimal(10, 2)
+  currency        String          @default("usd")
+  interval        BillingInterval @default(MONTHLY)
+  stripeProductId String?         @map("stripe_product_id")
+  stripePriceId   String?         @map("stripe_price_id")
+  active          Boolean         @default(true)
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  club        Club         @relation(fields: [clubId], references: [id])
+  memberships Membership[]
+  payments    Payment[]
+
+  @@index([clubId])
+  @@map("payment_plans")
+}
+
+/// A student's enrolment in a payment plan — their recurring billing state,
+/// mirrored from Stripe via webhook. One active subscription per row.
+model Membership {
+  id                   String           @id @default(uuid())
+  clubId               String           @map("club_id")
+  studentId            String           @map("student_id")
+  planId               String           @map("plan_id")
+  status               MembershipStatus @default(INCOMPLETE)
+  stripeCustomerId     String?          @map("stripe_customer_id")
+  stripeSubscriptionId String?          @unique @map("stripe_subscription_id")
+  currentPeriodEnd     DateTime?        @map("current_period_end")
+  cancelAtPeriodEnd    Boolean          @default(false) @map("cancel_at_period_end")
+  startedAt            DateTime         @default(now()) @map("started_at")
+  createdAt            DateTime         @default(now()) @map("created_at")
+  updatedAt            DateTime         @updatedAt @map("updated_at")
+
+  club     Club        @relation(fields: [clubId], references: [id])
+  student  Student     @relation(fields: [studentId], references: [id])
+  plan     PaymentPlan @relation(fields: [planId], references: [id])
+  payments Payment[]
+
+  @@index([clubId])
+  @@index([studentId])
+  @@map("memberships")
+}
+
+/// A single payment / invoice, recorded from a Stripe checkout or invoice
+/// webhook. The payment dashboard aggregates these for club revenue.
+model Payment {
+  id                    String        @id @default(uuid())
+  clubId                String        @map("club_id")
+  studentId             String?       @map("student_id")
+  membershipId          String?       @map("membership_id")
+  planId                String?       @map("plan_id")
+  amount                Decimal       @db.Decimal(10, 2)
+  currency              String        @default("usd")
+  status                PaymentStatus @default(PENDING)
+  description           String?
+  stripeCheckoutId      String?       @map("stripe_checkout_id")
+  stripePaymentIntentId String?       @unique @map("stripe_payment_intent_id")
+  stripeInvoiceId       String?       @map("stripe_invoice_id")
+  paidAt                DateTime?     @map("paid_at")
+  createdAt             DateTime      @default(now()) @map("created_at")
+
+  club       Club         @relation(fields: [clubId], references: [id])
+  student    Student?     @relation(fields: [studentId], references: [id])
+  membership Membership?  @relation(fields: [membershipId], references: [id])
+  plan       PaymentPlan? @relation(fields: [planId], references: [id])
+
+  @@index([clubId])
+  @@index([studentId])
+  @@map("payments")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Competitions (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A tournament / competition the club's students enter, internal or external.
+model Competition {
+  id          String            @id @default(uuid())
+  clubId      String            @map("club_id")
+  name        String
+  discipline  String?
+  date        DateTime
+  location    String?
+  description String?
+  status      CompetitionStatus @default(SCHEDULED)
+  createdAt   DateTime          @default(now()) @map("created_at")
+
+  club    Club               @relation(fields: [clubId], references: [id])
+  entries CompetitionEntry[]
+
+  @@index([clubId])
+  @@map("competitions")
+}
+
+/// A student's entry into a competition plus their recorded result. One row per
+/// (competition, student) so an entry can be upserted.
+model CompetitionEntry {
+  id            String   @id @default(uuid())
+  competitionId String   @map("competition_id")
+  studentId     String   @map("student_id")
+  division      String?
+  weightClass   String?  @map("weight_class")
+  placement     Int?
+  medal         Medal    @default(NONE)
+  wins          Int      @default(0)
+  losses        Int      @default(0)
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  competition Competition @relation(fields: [competitionId], references: [id], onDelete: Cascade)
+  student     Student     @relation(fields: [studentId], references: [id])
+
+  @@unique([competitionId, studentId])
+  @@index([studentId])
+  @@map("competition_entries")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Sparring (Sprint 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// A sparring/rolling session for which students are paired up by the pairing
+/// algorithm (see `src/lib/sparring.ts`).
+model SparringSession {
+  id         String   @id @default(uuid())
+  clubId     String   @map("club_id")
+  name       String?
+  discipline String?
+  date       DateTime
+  rounds     Int      @default(1)
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  club  Club           @relation(fields: [clubId], references: [id])
+  pairs SparringPair[]
+
+  @@index([clubId])
+  @@map("sparring_sessions")
+}
+
+/// One generated pairing within a sparring session. `studentBId` is null for a
+/// bye (odd participant count), in which case `studentA` sits the round out.
+model SparringPair {
+  id         String   @id @default(uuid())
+  sessionId  String   @map("session_id")
+  round      Int      @default(1)
+  mat        Int?
+  studentAId String   @map("student_a_id")
+  studentBId String?  @map("student_b_id")
+  notes      String?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  session  SparringSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  studentA Student         @relation("SparringStudentA", fields: [studentAId], references: [id])
+  studentB Student?        @relation("SparringStudentB", fields: [studentBId], references: [id])
+
+  @@index([sessionId])
+  @@map("sparring_pairs")
 }

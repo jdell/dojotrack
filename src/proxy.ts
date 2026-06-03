@@ -8,6 +8,9 @@ const PROTECTED_PREFIXES = [
   "/students",
   "/classes",
   "/belts",
+  "/payments",
+  "/competitions",
+  "/sparring",
   "/settings",
   "/checkin",
 ];
