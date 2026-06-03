@@ -152,6 +152,49 @@ async function main(): Promise<void> {
   }
   console.log(`✓ Belt ranks: ${BELT_RANKS.length}`);
 
+  // A belt requirement set for the BJJ Blue Belt — the bars a White Belt must
+  // clear to be promoted. Mixes the two auto-computed types (time at rank,
+  // classes attended) with instructor-graded techniques, so the belt-progress
+  // and grading screens have a real curriculum to score students against.
+  const blueBeltId = beltIdByKey.get("bjj-blue");
+  if (blueBeltId) {
+    await prisma.beltRequirement.createMany({
+      data: [
+        {
+          beltRankId: blueBeltId,
+          name: "Time at White Belt",
+          description: "At least one year training at White Belt.",
+          type: "TIME",
+          targetValue: 12,
+          order: 0,
+        },
+        {
+          beltRankId: blueBeltId,
+          name: "Classes attended",
+          description: "Build a solid base of mat time before grading.",
+          type: "CLASSES",
+          targetValue: 40,
+          order: 1,
+        },
+        {
+          beltRankId: blueBeltId,
+          name: "Guard retention & passing",
+          description: "Demonstrate core guard retention and passing.",
+          type: "TECHNIQUE",
+          order: 2,
+        },
+        {
+          beltRankId: blueBeltId,
+          name: "Escapes from mount & side control",
+          description: "Show competent escapes under pressure.",
+          type: "TECHNIQUE",
+          order: 3,
+        },
+      ],
+    });
+    console.log("✓ Belt requirement set: BJJ Blue Belt (4 requirements)");
+  }
+
   // Students.
   const studentIds: string[] = [];
   for (const s of STUDENTS) {
