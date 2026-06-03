@@ -9,6 +9,7 @@ const PROTECTED_PREFIXES = [
   "/classes",
   "/belts",
   "/settings",
+  "/checkin",
 ];
 
 export async function proxy(request: NextRequest) {

@@ -1,11 +1,25 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { CalendarPlus } from "lucide-react";
+import {
+  getClassSchedules,
+  getCurrentClub,
+  getCurrentStudent,
+} from "@/lib/queries";
+import { ClassesView } from "./classes-view";
 
 export const metadata: Metadata = { title: "Classes — DojoTrack" };
 
-const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+// Schedule + enrolment counts are per-request, DB-backed — never pre-rendered.
+export const dynamic = "force-dynamic";
 
-export default function ClassesPage() {
+export default async function ClassesPage() {
+  const club = await getCurrentClub();
+  const student = club ? await getCurrentStudent(club.id) : null;
+  const classes = club
+    ? await getClassSchedules(club.id, student?.id ?? null)
+    : [];
+
   return (
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -16,30 +30,16 @@ export default function ClassesPage() {
             Plan your weekly timetable and track attendance.
           </p>
         </div>
-        <button
-          type="button"
-          disabled
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white opacity-60"
-          title="Coming soon"
+        <Link
+          href="/classes/new"
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
         >
           <CalendarPlus size={16} />
           Add class
-        </button>
+        </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        {DAYS.map((day) => (
-          <div
-            key={day}
-            className="rounded-xl border border-dashed border-border bg-card p-4 text-center"
-          >
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {day}
-            </p>
-            <p className="mt-6 text-xs text-muted-foreground">No classes</p>
-          </div>
-        ))}
-      </div>
+      <ClassesView classes={classes} student={student} />
     </div>
   );
 }

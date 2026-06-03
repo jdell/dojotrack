@@ -157,3 +157,18 @@ export const DISCIPLINES: {
   { value: "taekwondo", label: "Taekwondo", emoji: "🥋" },
   { value: "custom", label: "Custom", emoji: "⚙️" },
 ];
+
+/** Display metadata for a stored discipline value, tolerating unknown values. */
+export function disciplineMeta(value: string): {
+  value: string;
+  label: string;
+  emoji: string;
+} {
+  return (
+    DISCIPLINES.find((d) => d.value === value) ?? {
+      value,
+      label: value,
+      emoji: "🥋",
+    }
+  );
+}

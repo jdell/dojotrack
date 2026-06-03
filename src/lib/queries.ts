@@ -13,7 +13,21 @@
 import { prisma } from "./prisma";
 import { isDbConfigured } from "./db";
 import { BELT_SYSTEMS, DISCIPLINES } from "./constants";
+import {
+  dayOfDate,
+  nextOccurrence,
+  nextOccurrences,
+  startOfDay,
+  weekIndex,
+} from "./schedule";
 import type { Discipline } from "@/types";
+import type {
+  BookingStatus,
+  CheckinMethod,
+  ClassLevel,
+  ClassSession,
+  DayOfWeek,
+} from "@prisma/client";
 
 export interface ClubSummary {
   id: string;
@@ -218,6 +232,542 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
 function toDisciplineTag(value: string) {
   const known = DISCIPLINES.find((d) => d.value === value);
   return known ?? { value, label: value, emoji: "🥋" };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Classes, sessions, bookings & attendance (Sprint 3)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Instructor/owner dropdown options for the add-class form. */
+export interface InstructorOption {
+  id: string;
+  name: string;
+}
+
+/** Instructors and owners of a club, for assigning to classes. */
+export async function getInstructorOptions(
+  clubId: string,
+): Promise<InstructorOption[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const users = await prisma.user.findMany({
+      where: { clubId, role: { in: ["OWNER", "INSTRUCTOR"] } },
+      orderBy: { fullName: "asc" },
+      select: { id: true, fullName: true },
+    });
+    return users.map((u) => ({ id: u.id, name: u.fullName ?? "Instructor" }));
+  } catch {
+    return [];
+  }
+}
+
+export interface CurrentStudent {
+  id: string;
+  fullName: string;
+}
+
+/**
+ * The "acting" student for the booking UI. Real auth → student mapping arrives
+ * in a later sprint; until then — mirroring `getCurrentClub` — we treat the
+ * club's oldest active member as the demo booker so the student-facing booking
+ * flow can be exercised end-to-end.
+ */
+export async function getCurrentStudent(
+  clubId: string,
+): Promise<CurrentStudent | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const student = await prisma.student.findFirst({
+      where: { clubId, active: true },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, fullName: true },
+    });
+    return student;
+  } catch {
+    return null;
+  }
+}
+
+/** A class as shown on the weekly schedule / list view. */
+export interface ClassCard {
+  id: string;
+  name: string;
+  discipline: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  level: ClassLevel;
+  maxStudents: number;
+  location: string | null;
+  instructorName: string | null;
+  enrolledCount: number;
+  isFull: boolean;
+  nextSessionId: string | null;
+  nextSessionDate: string | null;
+  /** The current (demo) student's booking status for the next session, if any. */
+  bookingStatus: BookingStatus | null;
+  /** 1-based waitlist position when the current student is waitlisted. */
+  waitlistPosition: number | null;
+}
+
+/**
+ * All active classes for a club, each enriched with the next session's
+ * enrolment count and — when `currentStudentId` is given — that student's
+ * booking status, so the schedule can show "Booked"/waitlist state.
+ */
+export async function getClassSchedules(
+  clubId: string,
+  currentStudentId?: string | null,
+): Promise<ClassCard[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const schedules = await prisma.classSchedule.findMany({
+      where: { clubId, active: true },
+      orderBy: [{ startTime: "asc" }, { name: "asc" }],
+      include: {
+        instructor: { select: { fullName: true } },
+        sessions: {
+          where: { date: { gte: startOfDay(new Date()) }, cancelled: false },
+          orderBy: { date: "asc" },
+          take: 1,
+          include: {
+            bookings: {
+              where: { status: { in: ["BOOKED", "WAITLISTED"] } },
+              orderBy: { bookedAt: "asc" },
+              select: { studentId: true, status: true },
+            },
+          },
+        },
+      },
+    });
+    return schedules.map((s) => {
+      const next = s.sessions[0];
+      const bookings = next?.bookings ?? [];
+      const booked = bookings.filter((b) => b.status === "BOOKED");
+      const waitlist = bookings.filter((b) => b.status === "WAITLISTED");
+      const mine = currentStudentId
+        ? bookings.find((b) => b.studentId === currentStudentId)
+        : undefined;
+      const waitlistPosition =
+        mine?.status === "WAITLISTED"
+          ? waitlist.findIndex((b) => b.studentId === currentStudentId) + 1
+          : null;
+      return {
+        id: s.id,
+        name: s.name,
+        discipline: s.discipline,
+        dayOfWeek: s.dayOfWeek,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        level: s.level,
+        maxStudents: s.maxStudents,
+        location: s.location,
+        instructorName: s.instructor?.fullName ?? null,
+        enrolledCount: booked.length,
+        isFull: booked.length >= s.maxStudents,
+        nextSessionId: next?.id ?? null,
+        nextSessionDate: next ? next.date.toISOString() : null,
+        bookingStatus: mine?.status ?? null,
+        waitlistPosition,
+      };
+    });
+  } catch {
+    return [];
+  }
+}
+
+/** A single enrolled/attended student within a session. */
+export interface SessionBookingRow {
+  /** Booking id, or null for a drop-in (attended without booking). */
+  bookingId: string | null;
+  studentId: string;
+  studentName: string;
+  /** null for a drop-in. */
+  status: BookingStatus | null;
+  checkedIn: boolean;
+  checkedInAt: string | null;
+  method: CheckinMethod | null;
+}
+
+export interface SessionDetail {
+  id: string;
+  date: string;
+  cancelled: boolean;
+  cancelReason: string | null;
+  enrolledCount: number;
+  checkedInCount: number;
+  bookings: SessionBookingRow[];
+}
+
+export interface ClassDetail {
+  id: string;
+  name: string;
+  discipline: string;
+  dayOfWeek: DayOfWeek;
+  startTime: string;
+  endTime: string;
+  level: ClassLevel;
+  maxStudents: number;
+  location: string | null;
+  instructorName: string | null;
+  sessions: SessionDetail[];
+  stats: { totalSessions: number; avgFillRate: number; totalCheckins: number };
+}
+
+/** How many upcoming occurrences the detail page surfaces and materialises. */
+const UPCOMING_SESSION_COUNT = 4;
+
+/**
+ * Find-or-create the dated occurrence of a schedule. Idempotent thanks to the
+ * `(classScheduleId, date)` unique constraint, so repeated calls with the same
+ * deterministic date return the existing row.
+ */
+export async function ensureSession(
+  classScheduleId: string,
+  date: Date,
+): Promise<ClassSession> {
+  return prisma.classSession.upsert({
+    where: { classScheduleId_date: { classScheduleId, date } },
+    update: {},
+    create: { classScheduleId, date },
+  });
+}
+
+/** Find-or-create the next upcoming occurrence of a schedule by id. */
+export async function ensureNextSession(
+  classScheduleId: string,
+): Promise<ClassSession | null> {
+  const schedule = await prisma.classSchedule.findUnique({
+    where: { id: classScheduleId },
+    select: { id: true, dayOfWeek: true, startTime: true },
+  });
+  if (!schedule) return null;
+  return ensureSession(
+    schedule.id,
+    nextOccurrence(schedule.dayOfWeek, schedule.startTime),
+  );
+}
+
+/**
+ * Full detail for one class: its upcoming sessions (materialised so they can be
+ * booked/checked-in against), each session's enrolled students with check-in
+ * status, plus attendance stats across the sessions held so far.
+ */
+export async function getClassDetail(id: string): Promise<ClassDetail | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const schedule = await prisma.classSchedule.findUnique({
+      where: { id },
+      include: { instructor: { select: { fullName: true } } },
+    });
+    if (!schedule) return null;
+
+    // Materialise upcoming occurrences so they carry stable ids.
+    const dates = nextOccurrences(
+      schedule.dayOfWeek,
+      schedule.startTime,
+      UPCOMING_SESSION_COUNT,
+    );
+    await Promise.all(dates.map((d) => ensureSession(schedule.id, d)));
+
+    const sessions = await prisma.classSession.findMany({
+      where: { classScheduleId: id, date: { gte: startOfDay(new Date()) } },
+      orderBy: { date: "asc" },
+      take: UPCOMING_SESSION_COUNT,
+      include: {
+        bookings: {
+          where: { status: { in: ["BOOKED", "WAITLISTED"] } },
+          orderBy: { bookedAt: "asc" },
+          include: { student: { select: { id: true, fullName: true } } },
+        },
+        attendances: {
+          include: { student: { select: { id: true, fullName: true } } },
+        },
+      },
+    });
+
+    const sessionDetails: SessionDetail[] = sessions.map((sess) => {
+      const attendanceByStudent = new Map(
+        sess.attendances.map((a) => [a.studentId, a]),
+      );
+      const rows: SessionBookingRow[] = sess.bookings.map((b) => {
+        const att = attendanceByStudent.get(b.studentId);
+        return {
+          bookingId: b.id,
+          studentId: b.studentId,
+          studentName: b.student.fullName,
+          status: b.status,
+          checkedIn: Boolean(att),
+          checkedInAt: att ? att.checkedInAt.toISOString() : null,
+          method: att?.method ?? null,
+        };
+      });
+      // Drop-ins: checked in without a booking on record.
+      const bookedIds = new Set(sess.bookings.map((b) => b.studentId));
+      for (const a of sess.attendances) {
+        if (bookedIds.has(a.studentId)) continue;
+        rows.push({
+          bookingId: null,
+          studentId: a.studentId,
+          studentName: a.student.fullName,
+          status: null,
+          checkedIn: true,
+          checkedInAt: a.checkedInAt.toISOString(),
+          method: a.method,
+        });
+      }
+      return {
+        id: sess.id,
+        date: sess.date.toISOString(),
+        cancelled: sess.cancelled,
+        cancelReason: sess.cancelReason,
+        enrolledCount: sess.bookings.filter((b) => b.status === "BOOKED").length,
+        checkedInCount: sess.attendances.length,
+        bookings: rows,
+      };
+    });
+
+    // Stats over sessions that have already happened.
+    const heldSessions = await prisma.classSession.findMany({
+      where: { classScheduleId: id, date: { lt: new Date() } },
+      select: { _count: { select: { attendances: true } } },
+    });
+    const totalSessions = heldSessions.length;
+    const totalCheckins = heldSessions.reduce(
+      (sum, s) => sum + s._count.attendances,
+      0,
+    );
+    const avgFillRate =
+      totalSessions > 0 && schedule.maxStudents > 0
+        ? totalCheckins / (totalSessions * schedule.maxStudents)
+        : 0;
+
+    return {
+      id: schedule.id,
+      name: schedule.name,
+      discipline: schedule.discipline,
+      dayOfWeek: schedule.dayOfWeek,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      level: schedule.level,
+      maxStudents: schedule.maxStudents,
+      location: schedule.location,
+      instructorName: schedule.instructor?.fullName ?? null,
+      sessions: sessionDetails,
+      stats: { totalSessions, avgFillRate, totalCheckins },
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** A class session as presented on the public self-check-in page. */
+export interface CheckinSession {
+  id: string;
+  date: string;
+  cancelled: boolean;
+  className: string;
+  discipline: string;
+  clubName: string;
+  students: { id: string; fullName: string; alreadyCheckedIn: boolean }[];
+}
+
+/** Load a session for the public /checkin/[sessionId] page. */
+export async function getSessionForCheckin(
+  sessionId: string,
+): Promise<CheckinSession | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const session = await prisma.classSession.findUnique({
+      where: { id: sessionId },
+      include: {
+        attendances: { select: { studentId: true } },
+        classSchedule: {
+          select: {
+            name: true,
+            discipline: true,
+            clubId: true,
+            club: { select: { name: true } },
+          },
+        },
+      },
+    });
+    if (!session) return null;
+    const checkedIn = new Set(session.attendances.map((a) => a.studentId));
+    const students = await prisma.student.findMany({
+      where: { clubId: session.classSchedule.clubId, active: true },
+      orderBy: { fullName: "asc" },
+      select: { id: true, fullName: true },
+    });
+    return {
+      id: session.id,
+      date: session.date.toISOString(),
+      cancelled: session.cancelled,
+      className: session.classSchedule.name,
+      discipline: session.classSchedule.discipline,
+      clubName: session.classSchedule.club.name,
+      students: students.map((s) => ({
+        id: s.id,
+        fullName: s.fullName,
+        alreadyCheckedIn: checkedIn.has(s.id),
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface AttendanceHistoryItem {
+  id: string;
+  date: string;
+  className: string;
+  discipline: string;
+  method: CheckinMethod;
+}
+
+export interface StudentProfile {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  beltName: string | null;
+  beltColor: string | null;
+  joinDate: string;
+  active: boolean;
+  totalClasses: number;
+  /** Consecutive weeks (ending this or last week) with at least one check-in. */
+  streakWeeks: number;
+  history: AttendanceHistoryItem[];
+}
+
+/** A student's attendance profile: history, streak, and totals. */
+export async function getStudentProfile(
+  id: string,
+): Promise<StudentProfile | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id },
+      include: { beltRank: { select: { name: true, hexColor: true } } },
+    });
+    if (!student) return null;
+
+    const attendances = await prisma.attendance.findMany({
+      where: { studentId: id },
+      orderBy: { checkedInAt: "desc" },
+      include: {
+        classSession: {
+          include: {
+            classSchedule: { select: { name: true, discipline: true } },
+          },
+        },
+      },
+    });
+
+    const history: AttendanceHistoryItem[] = attendances.map((a) => ({
+      id: a.id,
+      date: a.checkedInAt.toISOString(),
+      className: a.classSession.classSchedule.name,
+      discipline: a.classSession.classSchedule.discipline,
+      method: a.method,
+    }));
+
+    // Current streak: walk back from this (or last) week while every week has
+    // at least one check-in.
+    const weeks = new Set(attendances.map((a) => weekIndex(a.checkedInAt)));
+    const current = weekIndex(new Date());
+    let streakWeeks = 0;
+    let w = weeks.has(current) ? current : current - 1;
+    while (weeks.has(w)) {
+      streakWeeks++;
+      w--;
+    }
+
+    return {
+      id: student.id,
+      fullName: student.fullName,
+      email: student.email,
+      phone: student.phone,
+      beltName: student.beltRank?.name ?? null,
+      beltColor: student.beltRank?.hexColor ?? null,
+      joinDate: student.joinDate.toISOString(),
+      active: student.active,
+      totalClasses: attendances.length,
+      streakWeeks,
+      history,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface DashboardTodayClass {
+  id: string;
+  name: string;
+  discipline: string;
+  startTime: string;
+  endTime: string;
+  maxStudents: number;
+  enrolledCount: number;
+  checkedInCount: number;
+}
+
+export interface DashboardData {
+  totalStudents: number;
+  classesThisWeek: number;
+  todayClasses: DashboardTodayClass[];
+}
+
+/** Headline metrics + today's classes with live check-in counts. */
+export async function getDashboard(clubId: string): Promise<DashboardData> {
+  const empty: DashboardData = {
+    totalStudents: 0,
+    classesThisWeek: 0,
+    todayClasses: [],
+  };
+  if (!isDbConfigured()) return empty;
+  try {
+    const today = startOfDay(new Date());
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const [totalStudents, classesThisWeek, schedules] = await Promise.all([
+      prisma.student.count({ where: { clubId, active: true } }),
+      prisma.classSchedule.count({ where: { clubId, active: true } }),
+      prisma.classSchedule.findMany({
+        where: { clubId, active: true, dayOfWeek: dayOfDate(new Date()) },
+        orderBy: { startTime: "asc" },
+        include: {
+          sessions: {
+            where: { date: { gte: today, lt: tomorrow } },
+            take: 1,
+            include: {
+              _count: { select: { attendances: true } },
+              bookings: { where: { status: "BOOKED" }, select: { id: true } },
+            },
+          },
+        },
+      }),
+    ]);
+
+    const todayClasses: DashboardTodayClass[] = schedules.map((s) => {
+      const sess = s.sessions[0];
+      return {
+        id: s.id,
+        name: s.name,
+        discipline: s.discipline,
+        startTime: s.startTime,
+        endTime: s.endTime,
+        maxStudents: s.maxStudents,
+        enrolledCount: sess?.bookings.length ?? 0,
+        checkedInCount: sess?._count.attendances ?? 0,
+      };
+    });
+
+    return { totalStudents, classesThisWeek, todayClasses };
+  } catch {
+    return empty;
+  }
 }
 
 export type InviteStatus =

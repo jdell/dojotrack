@@ -10,6 +10,11 @@ export function inviteLink(token: string): string {
   return `${baseUrl()}/join/${token}`;
 }
 
+/** The self-check-in URL a student scans for a class session. */
+export function checkinLink(sessionId: string): string {
+  return `${baseUrl()}/checkin/${sessionId}`;
+}
+
 /** Pre-filled WhatsApp share text + click-to-share URL for an invite. */
 export function whatsappShare(clubName: string, token: string) {
   const link = inviteLink(token);

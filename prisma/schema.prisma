@@ -26,6 +26,38 @@ enum InvitationStatus {
   EXPIRED
 }
 
+/// Day a recurring class meets. Mapped to JS `Date.getDay()` in code.
+enum DayOfWeek {
+  MON
+  TUE
+  WED
+  THU
+  FRI
+  SAT
+  SUN
+}
+
+/// Skill level a class targets.
+enum ClassLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+/// State of a student's spot in a class session.
+enum BookingStatus {
+  BOOKED
+  CANCELLED
+  WAITLISTED
+}
+
+/// How a student's attendance was recorded.
+enum CheckinMethod {
+  QR_SCAN
+  MANUAL
+}
+
 /// A martial arts club / dojo — the top-level tenant.
 model Club {
   id           String   @id @default(uuid())
@@ -43,11 +75,12 @@ model Club {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  users       User[]
-  students    Student[]
-  families    Family[]
-  beltRanks   BeltRank[]
-  invitations Invitation[]
+  users           User[]
+  students        Student[]
+  families        Family[]
+  beltRanks       BeltRank[]
+  invitations     Invitation[]
+  classSchedules  ClassSchedule[]
 
   @@map("clubs")
 }
@@ -64,8 +97,10 @@ model User {
   clubId    String?  @map("club_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  club     Club?     @relation(fields: [clubId], references: [id])
-  students Student[]
+  club               Club?           @relation(fields: [clubId], references: [id])
+  students           Student[]
+  instructingClasses ClassSchedule[] @relation("ClassInstructor")
+  substituteSessions ClassSession[]  @relation("SessionSubstitute")
 
   @@index([clubId])
   @@map("users")
@@ -91,10 +126,12 @@ model Student {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  club     Club      @relation(fields: [clubId], references: [id])
-  user     User?     @relation(fields: [userId], references: [id])
-  beltRank BeltRank? @relation(fields: [beltRankId], references: [id])
-  family   Family?   @relation(fields: [familyId], references: [id])
+  club        Club         @relation(fields: [clubId], references: [id])
+  user        User?        @relation(fields: [userId], references: [id])
+  beltRank    BeltRank?    @relation(fields: [beltRankId], references: [id])
+  family      Family?      @relation(fields: [familyId], references: [id])
+  bookings    Booking[]
+  attendances Attendance[]
 
   @@index([clubId])
   @@index([familyId])
@@ -148,4 +185,85 @@ model Invitation {
 
   @@index([clubId])
   @@map("invitations")
+}
+
+/// A recurring weekly class on a club's timetable. Concrete dated occurrences
+/// are materialised as `ClassSession` rows lazily, when first needed.
+model ClassSchedule {
+  id           String     @id @default(uuid())
+  clubId       String     @map("club_id")
+  name         String
+  discipline   String
+  dayOfWeek    DayOfWeek  @map("day_of_week")
+  startTime    String     @map("start_time")
+  endTime      String     @map("end_time")
+  instructorId String?    @map("instructor_id")
+  maxStudents  Int        @map("max_students")
+  location     String?
+  level        ClassLevel @default(ALL_LEVELS)
+  active       Boolean    @default(true)
+  createdAt    DateTime   @default(now()) @map("created_at")
+
+  club       Club           @relation(fields: [clubId], references: [id])
+  instructor User?          @relation("ClassInstructor", fields: [instructorId], references: [id])
+  sessions   ClassSession[]
+
+  @@index([clubId])
+  @@map("class_schedules")
+}
+
+/// A single dated occurrence of a recurring `ClassSchedule`. Unique per
+/// (schedule, date) so it can be found-or-created idempotently.
+model ClassSession {
+  id                     String   @id @default(uuid())
+  classScheduleId        String   @map("class_schedule_id")
+  date                   DateTime
+  cancelled              Boolean  @default(false)
+  cancelReason           String?  @map("cancel_reason")
+  substituteInstructorId String?  @map("substitute_instructor_id")
+  createdAt              DateTime @default(now()) @map("created_at")
+
+  classSchedule        ClassSchedule @relation(fields: [classScheduleId], references: [id], onDelete: Cascade)
+  substituteInstructor User?         @relation("SessionSubstitute", fields: [substituteInstructorId], references: [id])
+  bookings             Booking[]
+  attendances          Attendance[]
+
+  @@unique([classScheduleId, date])
+  @@index([date])
+  @@map("class_sessions")
+}
+
+/// A student's reservation for a class session. One row per (session, student);
+/// cancelling flips the status rather than deleting, preserving history.
+model Booking {
+  id             String        @id @default(uuid())
+  classSessionId String        @map("class_session_id")
+  studentId      String        @map("student_id")
+  status         BookingStatus @default(BOOKED)
+  bookedAt       DateTime      @default(now()) @map("booked_at")
+  cancelledAt    DateTime?     @map("cancelled_at")
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id])
+
+  @@unique([classSessionId, studentId])
+  @@index([studentId])
+  @@map("bookings")
+}
+
+/// A check-in record: a student physically attended a class session.
+model Attendance {
+  id             String        @id @default(uuid())
+  classSessionId String        @map("class_session_id")
+  studentId      String        @map("student_id")
+  checkedInAt    DateTime      @default(now()) @map("checked_in_at")
+  method         CheckinMethod @default(MANUAL)
+  notes          String?
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id])
+
+  @@unique([classSessionId, studentId])
+  @@index([studentId])
+  @@map("attendances")
 }

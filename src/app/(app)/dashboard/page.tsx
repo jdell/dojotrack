@@ -1,36 +1,47 @@
 import type { Metadata } from "next";
-import { Award, CalendarDays, TrendingUp, Users } from "lucide-react";
+import Link from "next/link";
+import { Award, CalendarDays, Clock, TrendingUp, Users } from "lucide-react";
+import { getCurrentClub, getDashboard } from "@/lib/queries";
+import { disciplineMeta } from "@/lib/constants";
+import { formatTime } from "@/lib/schedule";
 
 export const metadata: Metadata = { title: "Dashboard — DojoTrack" };
 
-const METRICS = [
-  {
-    label: "Total students",
-    value: "—",
-    hint: "Active members",
-    icon: Users,
-  },
-  {
-    label: "Classes this week",
-    value: "—",
-    hint: "On the schedule",
-    icon: CalendarDays,
-  },
-  {
-    label: "Belt promotions",
-    value: "—",
-    hint: "Last 30 days",
-    icon: Award,
-  },
-  {
-    label: "Monthly revenue",
-    value: "—",
-    hint: "Collected this month",
-    icon: TrendingUp,
-  },
-];
+export const dynamic = "force-dynamic";
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const club = await getCurrentClub();
+  const data = club
+    ? await getDashboard(club.id)
+    : { totalStudents: 0, classesThisWeek: 0, todayClasses: [] };
+
+  const metrics = [
+    {
+      label: "Total students",
+      value: club ? String(data.totalStudents) : "—",
+      hint: "Active members",
+      icon: Users,
+    },
+    {
+      label: "Classes this week",
+      value: club ? String(data.classesThisWeek) : "—",
+      hint: "On the schedule",
+      icon: CalendarDays,
+    },
+    {
+      label: "Belt promotions",
+      value: "—",
+      hint: "Last 30 days",
+      icon: Award,
+    },
+    {
+      label: "Monthly revenue",
+      value: "—",
+      hint: "Collected this month",
+      icon: TrendingUp,
+    },
+  ];
+
   return (
     <div className="mx-auto max-w-6xl space-y-8">
       <div>
@@ -43,7 +54,7 @@ export default function DashboardPage() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {METRICS.map(({ label, value, hint, icon: Icon }) => (
+        {metrics.map(({ label, value, hint, icon: Icon }) => (
           <div
             key={label}
             className="rounded-xl border border-border bg-card p-5 shadow-sm"
@@ -64,13 +75,81 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <section className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-        <div className="mx-auto mb-3 text-4xl">📋</div>
-        <h2 className="text-lg font-bold text-brand-navy">No activity yet</h2>
-        <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Recent check-ins, promotions, and payments will appear here once your
-          club is up and running.
-        </p>
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-brand-navy">
+            Today&apos;s classes
+          </h2>
+          <Link
+            href="/classes"
+            className="text-sm font-medium text-brand-teal hover:underline"
+          >
+            View schedule
+          </Link>
+        </div>
+
+        {data.todayClasses.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+            <div className="mx-auto mb-3 text-4xl">🗓️</div>
+            <h3 className="text-lg font-bold text-brand-navy">
+              No classes scheduled today
+            </h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+              Today&apos;s timetable is clear. Check-in counts will appear here
+              on class days.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+            <table className="w-full text-left text-sm">
+              <thead>
+                <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
+                  <th className="px-4 py-3 font-semibold">Class</th>
+                  <th className="px-4 py-3 font-semibold">Time</th>
+                  <th className="px-4 py-3 font-semibold">Booked</th>
+                  <th className="px-4 py-3 font-semibold">Checked in</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.todayClasses.map((c) => {
+                  const discipline = disciplineMeta(c.discipline);
+                  return (
+                    <tr
+                      key={c.id}
+                      className="border-b border-border last:border-0 hover:bg-muted/20"
+                    >
+                      <td className="px-4 py-3">
+                        <Link
+                          href={`/classes/${c.id}`}
+                          className="font-medium text-brand-navy hover:text-brand-teal"
+                        >
+                          {c.name}
+                        </Link>
+                        <span className="ml-2 text-xs text-muted-foreground">
+                          {discipline.emoji} {discipline.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5">
+                          <Clock size={13} className="text-brand-teal" />
+                          {formatTime(c.startTime)} – {formatTime(c.endTime)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-muted-foreground">
+                        {c.enrolledCount}/{c.maxStudents}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center rounded-full bg-brand-teal/10 px-2.5 py-0.5 text-xs font-semibold text-brand-teal">
+                          {c.checkedInCount} in
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </section>
     </div>
   );

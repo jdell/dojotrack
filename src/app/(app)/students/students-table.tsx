@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { Search, Users } from "lucide-react";
 import type { StudentRow } from "@/lib/queries";
 import { BeltBadge } from "@/components/belt-badge";
@@ -116,7 +117,12 @@ function RosterTable({
               className="border-b border-border last:border-0 hover:bg-muted/20"
             >
               <td className="px-4 py-3">
-                <div className="font-medium text-brand-navy">{s.fullName}</div>
+                <Link
+                  href={`/students/${s.id}`}
+                  className="font-medium text-brand-navy hover:text-brand-teal"
+                >
+                  {s.fullName}
+                </Link>
                 {s.email && (
                   <div className="text-xs text-muted-foreground">{s.email}</div>
                 )}
