@@ -58,6 +58,39 @@ enum CheckinMethod {
   MANUAL
 }
 
+/// What kind of bar a `BeltRequirement` sets for the next rank. TIME and
+/// CLASSES are auto-computed from data; TECHNIQUE/COMPETITION/CUSTOM are graded
+/// manually by an instructor (tracked via `StudentTechniqueLog`).
+enum RequirementType {
+  TIME
+  CLASSES
+  TECHNIQUE
+  COMPETITION
+  CUSTOM
+}
+
+/// An instructor's assessment of a student against a manual requirement.
+enum TechniqueStatus {
+  NOT_ASSESSED
+  IN_PROGRESS
+  PASSED
+}
+
+/// Lifecycle of a grading exam.
+enum ExamStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+/// A candidate's outcome at a grading exam.
+enum CandidateResult {
+  PENDING
+  PASS
+  FAIL
+}
+
 /// A martial arts club / dojo — the top-level tenant.
 model Club {
   id           String   @id @default(uuid())
@@ -75,12 +108,13 @@ model Club {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
-  users           User[]
-  students        Student[]
-  families        Family[]
-  beltRanks       BeltRank[]
-  invitations     Invitation[]
-  classSchedules  ClassSchedule[]
+  users          User[]
+  students       Student[]
+  families       Family[]
+  beltRanks      BeltRank[]
+  invitations    Invitation[]
+  classSchedules ClassSchedule[]
+  gradingExams   GradingExam[]
 
   @@map("clubs")
 }
@@ -97,10 +131,11 @@ model User {
   clubId    String?  @map("club_id")
   createdAt DateTime @default(now()) @map("created_at")
 
-  club               Club?           @relation(fields: [clubId], references: [id])
+  club               Club?                 @relation(fields: [clubId], references: [id])
   students           Student[]
-  instructingClasses ClassSchedule[] @relation("ClassInstructor")
-  substituteSessions ClassSession[]  @relation("SessionSubstitute")
+  instructingClasses ClassSchedule[]       @relation("ClassInstructor")
+  substituteSessions ClassSession[]        @relation("SessionSubstitute")
+  assessedTechniques StudentTechniqueLog[] @relation("TechniqueAssessor")
 
   @@index([clubId])
   @@map("users")
@@ -126,12 +161,14 @@ model Student {
   createdAt        DateTime  @default(now()) @map("created_at")
   updatedAt        DateTime  @updatedAt @map("updated_at")
 
-  club        Club         @relation(fields: [clubId], references: [id])
-  user        User?        @relation(fields: [userId], references: [id])
-  beltRank    BeltRank?    @relation(fields: [beltRankId], references: [id])
-  family      Family?      @relation(fields: [familyId], references: [id])
-  bookings    Booking[]
-  attendances Attendance[]
+  club          Club                  @relation(fields: [clubId], references: [id])
+  user          User?                 @relation(fields: [userId], references: [id])
+  beltRank      BeltRank?             @relation(fields: [beltRankId], references: [id])
+  family        Family?               @relation(fields: [familyId], references: [id])
+  bookings      Booking[]
+  attendances   Attendance[]
+  techniqueLogs StudentTechniqueLog[]
+  candidacies   GradingCandidate[]
 
   @@index([clubId])
   @@index([familyId])
@@ -164,8 +201,11 @@ model BeltRank {
   minClasses Int?     @map("min_classes")
   createdAt  DateTime @default(now()) @map("created_at")
 
-  club     Club      @relation(fields: [clubId], references: [id])
-  students Student[]
+  club         Club               @relation(fields: [clubId], references: [id])
+  students     Student[]
+  requirements BeltRequirement[]
+  examTargets  GradingExam[]      @relation("ExamTargetBelt")
+  awardedTo    GradingCandidate[] @relation("CandidateNewBelt")
 
   @@index([clubId])
   @@map("belt_ranks")
@@ -266,4 +306,90 @@ model Attendance {
   @@unique([classSessionId, studentId])
   @@index([studentId])
   @@map("attendances")
+}
+
+/// One bar a student must clear to earn a given belt rank. TIME/CLASSES carry a
+/// numeric `targetValue` (months / class count) and are met automatically;
+/// TECHNIQUE/COMPETITION/CUSTOM are graded by an instructor via
+/// `StudentTechniqueLog`. Belongs to the rank being *earned*.
+model BeltRequirement {
+  id          String          @id @default(uuid())
+  beltRankId  String          @map("belt_rank_id")
+  name        String
+  description String?
+  type        RequirementType @default(TECHNIQUE)
+  targetValue Int?            @map("target_value")
+  order       Int             @default(0)
+  createdAt   DateTime        @default(now()) @map("created_at")
+
+  beltRank BeltRank              @relation(fields: [beltRankId], references: [id], onDelete: Cascade)
+  logs     StudentTechniqueLog[]
+
+  @@index([beltRankId])
+  @@map("belt_requirements")
+}
+
+/// An instructor's running assessment of one student against one manual
+/// requirement. One row per (student, requirement) so it can be upserted.
+model StudentTechniqueLog {
+  id                String          @id @default(uuid())
+  studentId         String          @map("student_id")
+  beltRequirementId String          @map("belt_requirement_id")
+  status            TechniqueStatus @default(NOT_ASSESSED)
+  assessedById      String?         @map("assessed_by_id")
+  assessedAt        DateTime?       @map("assessed_at")
+  notes             String?
+  createdAt         DateTime        @default(now()) @map("created_at")
+
+  student         Student         @relation(fields: [studentId], references: [id])
+  beltRequirement BeltRequirement @relation(fields: [beltRequirementId], references: [id], onDelete: Cascade)
+  assessedBy      User?           @relation("TechniqueAssessor", fields: [assessedById], references: [id])
+
+  @@unique([studentId, beltRequirementId])
+  @@index([studentId])
+  @@index([beltRequirementId])
+  @@map("student_technique_logs")
+}
+
+/// A scheduled grading where candidates test for `targetBeltRank`.
+model GradingExam {
+  id               String     @id @default(uuid())
+  clubId           String     @map("club_id")
+  targetBeltRankId String     @map("target_belt_rank_id")
+  date             DateTime
+  location         String?
+  fee              Decimal?   @db.Decimal(10, 2)
+  notes            String?
+  status           ExamStatus @default(SCHEDULED)
+  createdAt        DateTime   @default(now()) @map("created_at")
+
+  club           Club               @relation(fields: [clubId], references: [id])
+  targetBeltRank BeltRank           @relation("ExamTargetBelt", fields: [targetBeltRankId], references: [id])
+  candidates     GradingCandidate[]
+
+  @@index([clubId])
+  @@map("grading_exams")
+}
+
+/// A student entered into a grading exam, plus their result. On a PASS the
+/// student's belt is promoted and `newBeltRankId` records what they were
+/// awarded (this doubles as the club's belt-promotion history).
+model GradingCandidate {
+  id              String          @id @default(uuid())
+  examId          String          @map("exam_id")
+  studentId       String          @map("student_id")
+  result          CandidateResult @default(PENDING)
+  techniquesScore Int?            @map("techniques_score")
+  sparringPassed  Boolean?        @map("sparring_passed")
+  notes           String?
+  newBeltRankId   String?         @map("new_belt_rank_id")
+  createdAt       DateTime        @default(now()) @map("created_at")
+
+  exam        GradingExam @relation(fields: [examId], references: [id], onDelete: Cascade)
+  student     Student     @relation(fields: [studentId], references: [id])
+  newBeltRank BeltRank?   @relation("CandidateNewBelt", fields: [newBeltRankId], references: [id])
+
+  @@unique([examId, studentId])
+  @@index([studentId])
+  @@map("grading_candidates")
 }

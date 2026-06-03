@@ -23,10 +23,14 @@ import {
 import type { Discipline } from "@/types";
 import type {
   BookingStatus,
+  CandidateResult,
   CheckinMethod,
   ClassLevel,
   ClassSession,
   DayOfWeek,
+  ExamStatus,
+  RequirementType,
+  TechniqueStatus,
 } from "@prisma/client";
 
 export interface ClubSummary {
@@ -163,13 +167,17 @@ export async function getBeltOptions(
   return fallbackBeltOptions(club);
 }
 
-/** Belt options from the built-in constants for a club's discipline. */
-function fallbackBeltOptions(club: ClubSummary | null): BeltOption[] {
+/** The built-in belt system a club maps to (by belt system id, else discipline). */
+function clubBeltSystem(club: ClubSummary | null) {
   const key = (club?.beltSystemId ??
     club?.disciplines?.[0] ??
     "bjj") as Discipline;
-  const system = BELT_SYSTEMS[key] ?? BELT_SYSTEMS.bjj;
-  return system.belts.map((b) => ({
+  return BELT_SYSTEMS[key] ?? BELT_SYSTEMS.bjj;
+}
+
+/** Belt options from the built-in constants for a club's discipline. */
+function fallbackBeltOptions(club: ClubSummary | null): BeltOption[] {
+  return clubBeltSystem(club).belts.map((b) => ({
     id: b.id,
     name: b.name,
     color: b.color,
@@ -715,7 +723,9 @@ export interface DashboardTodayClass {
 export interface DashboardData {
   totalStudents: number;
   classesThisWeek: number;
+  eligibleForPromotion: number;
   todayClasses: DashboardTodayClass[];
+  upcomingExams: DashboardExam[];
 }
 
 /** Headline metrics + today's classes with live check-in counts. */
@@ -723,7 +733,9 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
   const empty: DashboardData = {
     totalStudents: 0,
     classesThisWeek: 0,
+    eligibleForPromotion: 0,
     todayClasses: [],
+    upcomingExams: [],
   };
   if (!isDbConfigured()) return empty;
   try {
@@ -731,7 +743,13 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    const [totalStudents, classesThisWeek, schedules] = await Promise.all([
+    const [
+      totalStudents,
+      classesThisWeek,
+      schedules,
+      upcomingExams,
+      eligibleForPromotion,
+    ] = await Promise.all([
       prisma.student.count({ where: { clubId, active: true } }),
       prisma.classSchedule.count({ where: { clubId, active: true } }),
       prisma.classSchedule.findMany({
@@ -748,6 +766,8 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
           },
         },
       }),
+      getUpcomingExams(clubId),
+      countEligibleForPromotion(clubId),
     ]);
 
     const todayClasses: DashboardTodayClass[] = schedules.map((s) => {
@@ -764,7 +784,13 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
       };
     });
 
-    return { totalStudents, classesThisWeek, todayClasses };
+    return {
+      totalStudents,
+      classesThisWeek,
+      eligibleForPromotion,
+      todayClasses,
+      upcomingExams,
+    };
   } catch {
     return empty;
   }
@@ -817,5 +843,974 @@ export async function getInvitationByToken(
     return { status: "valid", ...base };
   } catch {
     return { status: "unavailable", ...empty };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Belt progression: requirements, technique assessment & grading (Sprint 4)
+// ─────────────────────────────────────────────────────────────────────────────
+
+/** Whole months between two dates (floored, never negative). */
+function monthsBetween(from: Date, to: Date): number {
+  let months =
+    (to.getFullYear() - from.getFullYear()) * 12 +
+    (to.getMonth() - from.getMonth());
+  if (to.getDate() < from.getDate()) months -= 1;
+  return Math.max(0, months);
+}
+
+/** A single belt requirement, serialised for the client. */
+export interface RequirementDTO {
+  id: string;
+  beltRankId: string;
+  name: string;
+  description: string | null;
+  type: RequirementType;
+  targetValue: number | null;
+  order: number;
+}
+
+/** Whether a requirement type is auto-computed (vs instructor-assessed). */
+export function isAutoType(type: RequirementType): boolean {
+  return type === "TIME" || type === "CLASSES";
+}
+
+export type ProgressState = "met" | "in_progress" | "not_met";
+
+/** One requirement evaluated against a student's record. */
+export interface RequirementProgress {
+  requirement: RequirementDTO;
+  state: ProgressState;
+  /** Numeric progress for TIME/CLASSES (e.g. 12), else null. */
+  current: number | null;
+  /** Short human label, e.g. "12 / 18 months" or "In progress". */
+  detail: string;
+  /** Manual assessment status for TECHNIQUE/COMPETITION/CUSTOM, else null. */
+  logStatus: TechniqueStatus | null;
+}
+
+interface ScoreContext {
+  monthsAtBelt: number;
+  totalClasses: number;
+  logStatusByReqId: Map<string, TechniqueStatus>;
+}
+
+/** Pure scoring: evaluate a rank's requirements against a student's context. */
+function scoreRequirements(
+  requirements: RequirementDTO[],
+  ctx: ScoreContext,
+): { requirements: RequirementProgress[]; metCount: number; totalCount: number } {
+  const scored = requirements.map((req): RequirementProgress => {
+    if (req.type === "TIME") {
+      const target = req.targetValue ?? 0;
+      const met = ctx.monthsAtBelt >= target;
+      return {
+        requirement: req,
+        state: met ? "met" : "not_met",
+        current: ctx.monthsAtBelt,
+        detail: `${ctx.monthsAtBelt} / ${target} months`,
+        logStatus: null,
+      };
+    }
+    if (req.type === "CLASSES") {
+      const target = req.targetValue ?? 0;
+      const met = ctx.totalClasses >= target;
+      return {
+        requirement: req,
+        state: met ? "met" : "not_met",
+        current: ctx.totalClasses,
+        detail: `${ctx.totalClasses} / ${target} classes`,
+        logStatus: null,
+      };
+    }
+    // Manual: TECHNIQUE / COMPETITION / CUSTOM.
+    const logStatus = ctx.logStatusByReqId.get(req.id) ?? "NOT_ASSESSED";
+    const state: ProgressState =
+      logStatus === "PASSED"
+        ? "met"
+        : logStatus === "IN_PROGRESS"
+          ? "in_progress"
+          : "not_met";
+    const detail =
+      logStatus === "PASSED"
+        ? "Passed"
+        : logStatus === "IN_PROGRESS"
+          ? "In progress"
+          : "Not assessed";
+    return { requirement: req, state, current: null, detail, logStatus };
+  });
+  const metCount = scored.filter((s) => s.state === "met").length;
+  return { requirements: scored, metCount, totalCount: scored.length };
+}
+
+interface StudentProgressInput {
+  studentId: string;
+  currentBeltRankId: string | null;
+  joinDate: Date;
+}
+
+/**
+ * Evaluate one student against a target rank's requirements, pulling the data
+ * (attendance count, technique logs, promotion history) needed to do so.
+ * `sinceDate` is when the student reached their *current* belt — the last exam
+ * that awarded it, or their join date if none.
+ */
+async function evaluateStudent(
+  student: StudentProgressInput,
+  targetRequirements: RequirementDTO[],
+): Promise<{
+  requirements: RequirementProgress[];
+  metCount: number;
+  totalCount: number;
+  monthsAtBelt: number;
+  totalClasses: number;
+  sinceDate: Date;
+}> {
+  const reqIds = targetRequirements.map((r) => r.id);
+  const [totalClasses, logs, lastPromotion] = await Promise.all([
+    prisma.attendance.count({ where: { studentId: student.studentId } }),
+    reqIds.length > 0
+      ? prisma.studentTechniqueLog.findMany({
+          where: {
+            studentId: student.studentId,
+            beltRequirementId: { in: reqIds },
+          },
+          select: { beltRequirementId: true, status: true },
+        })
+      : Promise.resolve([]),
+    student.currentBeltRankId
+      ? prisma.gradingCandidate.findFirst({
+          where: {
+            studentId: student.studentId,
+            result: "PASS",
+            newBeltRankId: student.currentBeltRankId,
+          },
+          orderBy: { exam: { date: "desc" } },
+          select: { exam: { select: { date: true } } },
+        })
+      : Promise.resolve(null),
+  ]);
+
+  const sinceDate = lastPromotion?.exam.date ?? student.joinDate;
+  const logStatusByReqId = new Map(
+    logs.map((l) => [l.beltRequirementId, l.status] as const),
+  );
+  const ctx: ScoreContext = {
+    monthsAtBelt: monthsBetween(sinceDate, new Date()),
+    totalClasses,
+    logStatusByReqId,
+  };
+  const { requirements, metCount, totalCount } = scoreRequirements(
+    targetRequirements,
+    ctx,
+  );
+  return {
+    requirements,
+    metCount,
+    totalCount,
+    monthsAtBelt: ctx.monthsAtBelt,
+    totalClasses,
+    sinceDate,
+  };
+}
+
+/** A student is ready when a next rank exists, has requirements, and all met. */
+function isEligible(metCount: number, totalCount: number): boolean {
+  return totalCount > 0 && metCount === totalCount;
+}
+
+/**
+ * Seed a club's belt ranks from its built-in belt system the first time they're
+ * needed, mirroring Sprint 3's lazy `ClassSession` materialisation. No-op when
+ * ranks already exist, the DB is unconfigured, or the system has no belts.
+ */
+export async function ensureBeltRanks(club: ClubSummary): Promise<void> {
+  if (!isDbConfigured()) return;
+  try {
+    const count = await prisma.beltRank.count({ where: { clubId: club.id } });
+    if (count > 0) return;
+    const system = clubBeltSystem(club);
+    if (system.belts.length === 0) return;
+    await prisma.beltRank.createMany({
+      data: system.belts.map((b) => ({
+        clubId: club.id,
+        name: b.name,
+        // The built-ins only carry a hex; store it for both fields.
+        color: b.color,
+        hexColor: b.color,
+        order: b.order,
+      })),
+      skipDuplicates: true,
+    });
+  } catch {
+    // Ignore — seeding is best-effort.
+  }
+}
+
+export interface CurrentInstructor {
+  id: string;
+  name: string;
+}
+
+/**
+ * The "acting" instructor for assessment/grading. Real auth → user mapping
+ * arrives later; mirroring `getCurrentStudent`, we use the club's first
+ * owner/instructor so assessments are attributable end-to-end.
+ */
+export async function getCurrentInstructor(
+  clubId: string,
+): Promise<CurrentInstructor | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const user = await prisma.user.findFirst({
+      where: { clubId, role: { in: ["OWNER", "INSTRUCTOR"] } },
+      orderBy: { createdAt: "asc" },
+      select: { id: true, fullName: true },
+    });
+    if (!user) return null;
+    return { id: user.id, name: user.fullName ?? "Instructor" };
+  } catch {
+    return null;
+  }
+}
+
+export interface BeltRankWithRequirements {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+  studentCount: number;
+  requirements: RequirementDTO[];
+}
+
+function toRequirementDTO(r: {
+  id: string;
+  beltRankId: string;
+  name: string;
+  description: string | null;
+  type: RequirementType;
+  targetValue: number | null;
+  order: number;
+}): RequirementDTO {
+  return {
+    id: r.id,
+    beltRankId: r.beltRankId,
+    name: r.name,
+    description: r.description,
+    type: r.type,
+    targetValue: r.targetValue,
+    order: r.order,
+  };
+}
+
+/** Every belt rank for a club with its requirements and member count. */
+export async function getBeltRanksWithRequirements(
+  clubId: string,
+): Promise<BeltRankWithRequirements[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const ranks = await prisma.beltRank.findMany({
+      where: { clubId },
+      orderBy: { order: "asc" },
+      include: {
+        requirements: { orderBy: { order: "asc" } },
+        _count: { select: { students: true } },
+      },
+    });
+    return ranks.map((rank) => ({
+      id: rank.id,
+      name: rank.name,
+      color: rank.hexColor,
+      order: rank.order,
+      studentCount: rank._count.students,
+      requirements: rank.requirements.map(toRequirementDTO),
+    }));
+  } catch {
+    return [];
+  }
+}
+
+export interface RankCandidateRow {
+  studentId: string;
+  studentName: string;
+  beltColor: string | null;
+  metCount: number;
+  totalCount: number;
+  eligible: boolean;
+  requirements: RequirementProgress[];
+}
+
+export interface RankDetail {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+  requirements: RequirementDTO[];
+  prevRankName: string | null;
+  candidates: RankCandidateRow[];
+}
+
+/**
+ * One belt rank in full: its requirements, plus every active student currently
+ * at the rank below scored against those requirements (the eligible-candidate
+ * pool, and the grid the bulk technique assessor writes to).
+ */
+export async function getRankDetail(rankId: string): Promise<RankDetail | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const rank = await prisma.beltRank.findUnique({
+      where: { id: rankId },
+      include: { requirements: { orderBy: { order: "asc" } } },
+    });
+    if (!rank) return null;
+
+    const prevRank =
+      rank.order > 0
+        ? await prisma.beltRank.findFirst({
+            where: { clubId: rank.clubId, order: rank.order - 1 },
+            select: { id: true, name: true },
+          })
+        : null;
+
+    const requirements = rank.requirements.map(toRequirementDTO);
+
+    const students = prevRank
+      ? await prisma.student.findMany({
+          where: { clubId: rank.clubId, beltRankId: prevRank.id, active: true },
+          orderBy: { fullName: "asc" },
+          include: { beltRank: { select: { hexColor: true } } },
+        })
+      : [];
+
+    const candidates: RankCandidateRow[] = await Promise.all(
+      students.map(async (s) => {
+        const ev = await evaluateStudent(
+          {
+            studentId: s.id,
+            currentBeltRankId: s.beltRankId,
+            joinDate: s.joinDate,
+          },
+          requirements,
+        );
+        return {
+          studentId: s.id,
+          studentName: s.fullName,
+          beltColor: s.beltRank?.hexColor ?? null,
+          metCount: ev.metCount,
+          totalCount: ev.totalCount,
+          eligible: isEligible(ev.metCount, ev.totalCount),
+          requirements: ev.requirements,
+        };
+      }),
+    );
+
+    return {
+      id: rank.id,
+      name: rank.name,
+      color: rank.hexColor,
+      order: rank.order,
+      requirements,
+      prevRankName: prevRank?.name ?? null,
+      candidates,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface BeltRef {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+}
+
+export interface BeltHistoryEntry {
+  beltName: string;
+  color: string;
+  date: string;
+  via: "enrollment" | "promotion";
+  examId: string | null;
+}
+
+export interface BeltProgress {
+  studentId: string;
+  studentName: string;
+  currentBelt: BeltRef | null;
+  nextBelt: BeltRef | null;
+  monthsAtCurrentBelt: number;
+  totalClasses: number;
+  sinceDate: string;
+  requirements: RequirementProgress[];
+  metCount: number;
+  totalCount: number;
+  eligible: boolean;
+  history: BeltHistoryEntry[];
+}
+
+/**
+ * A student's full progression: current/next belt, auto-computed time & class
+ * totals, every next-belt requirement with its status, eligibility, and a belt
+ * history timeline assembled from their passed gradings.
+ */
+export async function getBeltProgress(
+  studentId: string,
+): Promise<BeltProgress | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const student = await prisma.student.findUnique({
+      where: { id: studentId },
+      include: { beltRank: true },
+    });
+    if (!student) return null;
+
+    const ranks = await prisma.beltRank.findMany({
+      where: { clubId: student.clubId },
+      orderBy: { order: "asc" },
+      include: { requirements: { orderBy: { order: "asc" } } },
+    });
+    const ranksById = new Map(ranks.map((r) => [r.id, r] as const));
+
+    const currentRank = student.beltRankId
+      ? ranksById.get(student.beltRankId)
+      : undefined;
+    const currentOrder = currentRank?.order ?? -1;
+    const nextRank = ranks.find((r) => r.order === currentOrder + 1) ?? null;
+    const nextRequirements = nextRank
+      ? nextRank.requirements.map(toRequirementDTO)
+      : [];
+
+    const ev = await evaluateStudent(
+      {
+        studentId: student.id,
+        currentBeltRankId: student.beltRankId,
+        joinDate: student.joinDate,
+      },
+      nextRequirements,
+    );
+
+    // Belt history from passed gradings, oldest first.
+    const passes = await prisma.gradingCandidate.findMany({
+      where: { studentId: student.id, result: "PASS" },
+      orderBy: { exam: { date: "asc" } },
+      include: {
+        exam: { select: { id: true, date: true } },
+        newBeltRank: { select: { name: true, hexColor: true, order: true } },
+      },
+    });
+
+    const history: BeltHistoryEntry[] = [];
+    // Origin: the belt held at enrolment — inferred as one rank below the first
+    // promotion, or the current belt if there were never any promotions.
+    const enrolBelt =
+      passes.length > 0 && passes[0].newBeltRank
+        ? (ranks.find((r) => r.order === passes[0].newBeltRank!.order - 1) ??
+          null)
+        : (currentRank ?? null);
+    if (enrolBelt) {
+      history.push({
+        beltName: enrolBelt.name,
+        color: enrolBelt.hexColor,
+        date: student.joinDate.toISOString(),
+        via: "enrollment",
+        examId: null,
+      });
+    }
+    for (const p of passes) {
+      if (!p.newBeltRank) continue;
+      history.push({
+        beltName: p.newBeltRank.name,
+        color: p.newBeltRank.hexColor,
+        date: p.exam.date.toISOString(),
+        via: "promotion",
+        examId: p.exam.id,
+      });
+    }
+
+    const toRef = (r: {
+      id: string;
+      name: string;
+      hexColor: string;
+      order: number;
+    }): BeltRef => ({
+      id: r.id,
+      name: r.name,
+      color: r.hexColor,
+      order: r.order,
+    });
+
+    return {
+      studentId: student.id,
+      studentName: student.fullName,
+      currentBelt: currentRank ? toRef(currentRank) : null,
+      nextBelt: nextRank ? toRef(nextRank) : null,
+      monthsAtCurrentBelt: ev.monthsAtBelt,
+      totalClasses: ev.totalClasses,
+      sinceDate: ev.sinceDate.toISOString(),
+      requirements: ev.requirements,
+      metCount: ev.metCount,
+      totalCount: ev.totalCount,
+      eligible: nextRank ? isEligible(ev.metCount, ev.totalCount) : false,
+      history,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface SuggestedCandidate {
+  studentId: string;
+  studentName: string;
+  beltName: string | null;
+  metCount: number;
+  totalCount: number;
+  eligible: boolean;
+}
+
+export interface ExamTargetOption {
+  id: string;
+  name: string;
+  color: string;
+  order: number;
+}
+
+export interface NewExamData {
+  targets: ExamTargetOption[];
+  targetRank: ExamTargetOption | null;
+  prevRankName: string | null;
+  suggestions: SuggestedCandidate[];
+}
+
+/**
+ * Data for the create-exam form: every promotable rank (anything above the
+ * lowest), and — once a target is chosen — the students at the rank below it
+ * scored for promotion so the most-ready can be pre-selected.
+ */
+export async function getNewExamData(
+  clubId: string,
+  targetRankId?: string | null,
+): Promise<NewExamData> {
+  const empty: NewExamData = {
+    targets: [],
+    targetRank: null,
+    prevRankName: null,
+    suggestions: [],
+  };
+  if (!isDbConfigured()) return empty;
+  try {
+    const ranks = await prisma.beltRank.findMany({
+      where: { clubId },
+      orderBy: { order: "asc" },
+      include: { requirements: { orderBy: { order: "asc" } } },
+    });
+    const targets: ExamTargetOption[] = ranks
+      .filter((r) => r.order > 0)
+      .map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.hexColor,
+        order: r.order,
+      }));
+
+    const target =
+      (targetRankId && ranks.find((r) => r.id === targetRankId)) ||
+      (targets.length > 0
+        ? ranks.find((r) => r.id === targets[0].id)
+        : undefined) ||
+      null;
+    if (!target) return { ...empty, targets };
+
+    const prevRank = ranks.find((r) => r.order === target.order - 1) ?? null;
+    const requirements = target.requirements.map(toRequirementDTO);
+
+    const students = prevRank
+      ? await prisma.student.findMany({
+          where: { clubId, beltRankId: prevRank.id, active: true },
+          orderBy: { fullName: "asc" },
+          select: { id: true, fullName: true, beltRankId: true, joinDate: true },
+        })
+      : [];
+
+    const suggestions: SuggestedCandidate[] = await Promise.all(
+      students.map(async (s) => {
+        const ev = await evaluateStudent(
+          {
+            studentId: s.id,
+            currentBeltRankId: s.beltRankId,
+            joinDate: s.joinDate,
+          },
+          requirements,
+        );
+        return {
+          studentId: s.id,
+          studentName: s.fullName,
+          beltName: prevRank?.name ?? null,
+          metCount: ev.metCount,
+          totalCount: ev.totalCount,
+          eligible: isEligible(ev.metCount, ev.totalCount),
+        };
+      }),
+    );
+    // Most-ready first.
+    suggestions.sort((a, b) => b.metCount - a.metCount);
+
+    return {
+      targets,
+      targetRank: {
+        id: target.id,
+        name: target.name,
+        color: target.hexColor,
+        order: target.order,
+      },
+      prevRankName: prevRank?.name ?? null,
+      suggestions,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+export interface ExamRow {
+  id: string;
+  date: string;
+  targetBeltName: string;
+  targetBeltColor: string;
+  location: string | null;
+  status: ExamStatus;
+  candidateCount: number;
+  passCount: number;
+}
+
+/** A club's grading exams split into upcoming and past buckets. */
+export async function getExams(
+  clubId: string,
+): Promise<{ upcoming: ExamRow[]; past: ExamRow[] }> {
+  if (!isDbConfigured()) return { upcoming: [], past: [] };
+  try {
+    const exams = await prisma.gradingExam.findMany({
+      where: { clubId },
+      orderBy: { date: "desc" },
+      include: {
+        targetBeltRank: { select: { name: true, hexColor: true } },
+        candidates: { select: { result: true } },
+      },
+    });
+    const today = startOfDay(new Date());
+    const upcoming: ExamRow[] = [];
+    const past: ExamRow[] = [];
+    for (const e of exams) {
+      const row: ExamRow = {
+        id: e.id,
+        date: e.date.toISOString(),
+        targetBeltName: e.targetBeltRank.name,
+        targetBeltColor: e.targetBeltRank.hexColor,
+        location: e.location,
+        status: e.status,
+        candidateCount: e.candidates.length,
+        passCount: e.candidates.filter((c) => c.result === "PASS").length,
+      };
+      const isPast =
+        e.status === "COMPLETED" ||
+        e.status === "CANCELLED" ||
+        e.date < today;
+      (isPast ? past : upcoming).push(row);
+    }
+    // Upcoming should read soonest-first; past most-recent-first.
+    upcoming.reverse();
+    return { upcoming, past };
+  } catch {
+    return { upcoming: [], past: [] };
+  }
+}
+
+export interface ExamCandidateRow {
+  id: string;
+  studentId: string;
+  studentName: string;
+  currentBeltName: string | null;
+  currentBeltColor: string | null;
+  result: CandidateResult;
+  techniquesScore: number | null;
+  sparringPassed: boolean | null;
+  notes: string | null;
+  metCount: number;
+  totalCount: number;
+  eligible: boolean;
+}
+
+export interface ExamDetail {
+  id: string;
+  date: string;
+  location: string | null;
+  fee: number | null;
+  notes: string | null;
+  status: ExamStatus;
+  clubName: string;
+  targetBeltId: string;
+  targetBeltName: string;
+  targetBeltColor: string;
+  targetBeltOrder: number;
+  candidates: ExamCandidateRow[];
+}
+
+/** Full grading-exam detail: candidates with their scores and readiness. */
+export async function getExamDetail(examId: string): Promise<ExamDetail | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const exam = await prisma.gradingExam.findUnique({
+      where: { id: examId },
+      include: {
+        club: { select: { name: true } },
+        targetBeltRank: {
+          include: { requirements: { orderBy: { order: "asc" } } },
+        },
+        candidates: {
+          orderBy: { student: { fullName: "asc" } },
+          include: {
+            student: {
+              select: {
+                id: true,
+                fullName: true,
+                beltRankId: true,
+                joinDate: true,
+                beltRank: { select: { name: true, hexColor: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+    if (!exam) return null;
+
+    const requirements = exam.targetBeltRank.requirements.map(toRequirementDTO);
+
+    const candidates: ExamCandidateRow[] = await Promise.all(
+      exam.candidates.map(async (c) => {
+        const ev = await evaluateStudent(
+          {
+            studentId: c.student.id,
+            currentBeltRankId: c.student.beltRankId,
+            joinDate: c.student.joinDate,
+          },
+          requirements,
+        );
+        return {
+          id: c.id,
+          studentId: c.studentId,
+          studentName: c.student.fullName,
+          currentBeltName: c.student.beltRank?.name ?? null,
+          currentBeltColor: c.student.beltRank?.hexColor ?? null,
+          result: c.result,
+          techniquesScore: c.techniquesScore,
+          sparringPassed: c.sparringPassed,
+          notes: c.notes,
+          metCount: ev.metCount,
+          totalCount: ev.totalCount,
+          eligible: isEligible(ev.metCount, ev.totalCount),
+        };
+      }),
+    );
+
+    return {
+      id: exam.id,
+      date: exam.date.toISOString(),
+      location: exam.location,
+      fee: exam.fee == null ? null : Number(exam.fee),
+      notes: exam.notes,
+      status: exam.status,
+      clubName: exam.club.name,
+      targetBeltId: exam.targetBeltRank.id,
+      targetBeltName: exam.targetBeltRank.name,
+      targetBeltColor: exam.targetBeltRank.hexColor,
+      targetBeltOrder: exam.targetBeltRank.order,
+      candidates,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export interface CertificateData {
+  candidateId: string;
+  studentName: string;
+  beltName: string;
+  beltColor: string;
+  clubName: string;
+  date: string;
+  instructorName: string;
+  location: string | null;
+  passed: boolean;
+}
+
+/** Data for a printable belt certificate (only meaningful once passed). */
+export async function getCertificateData(
+  candidateId: string,
+): Promise<CertificateData | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const candidate = await prisma.gradingCandidate.findUnique({
+      where: { id: candidateId },
+      include: {
+        student: { select: { fullName: true } },
+        newBeltRank: { select: { name: true, hexColor: true } },
+        exam: {
+          include: {
+            club: { select: { id: true, name: true } },
+            targetBeltRank: { select: { name: true, hexColor: true } },
+          },
+        },
+      },
+    });
+    if (!candidate) return null;
+
+    const instructor = await getCurrentInstructor(candidate.exam.club.id);
+    const belt = candidate.newBeltRank ?? candidate.exam.targetBeltRank;
+
+    return {
+      candidateId: candidate.id,
+      studentName: candidate.student.fullName,
+      beltName: belt.name,
+      beltColor: belt.hexColor,
+      clubName: candidate.exam.club.name,
+      date: candidate.exam.date.toISOString(),
+      instructorName: instructor?.name ?? "Instructor",
+      location: candidate.exam.location,
+      passed: candidate.result === "PASS",
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Count active students who are ready for their next belt (a next rank exists,
+ * has requirements, and they're all met). Batched to avoid per-student queries.
+ */
+export async function countEligibleForPromotion(
+  clubId: string,
+): Promise<number> {
+  if (!isDbConfigured()) return 0;
+  try {
+    const ranks = await prisma.beltRank.findMany({
+      where: { clubId },
+      orderBy: { order: "asc" },
+      include: { requirements: { orderBy: { order: "asc" } } },
+    });
+    const nextOf = new Map<number, (typeof ranks)[number]>();
+    for (const r of ranks) nextOf.set(r.order - 1, r);
+
+    const students = await prisma.student.findMany({
+      where: { clubId, active: true, beltRankId: { not: null } },
+      select: { id: true, beltRankId: true, joinDate: true },
+    });
+    if (students.length === 0) return 0;
+
+    const orderById = new Map(ranks.map((r) => [r.id, r.order] as const));
+
+    // Batch the inputs the scorer needs across all students.
+    const [attendanceGroups, logs, passes] = await Promise.all([
+      prisma.attendance.groupBy({
+        by: ["studentId"],
+        where: { student: { clubId } },
+        _count: { _all: true },
+      }),
+      prisma.studentTechniqueLog.findMany({
+        where: { student: { clubId } },
+        select: { studentId: true, beltRequirementId: true, status: true },
+      }),
+      prisma.gradingCandidate.findMany({
+        where: { result: "PASS", student: { clubId } },
+        orderBy: { exam: { date: "asc" } },
+        select: {
+          studentId: true,
+          newBeltRankId: true,
+          exam: { select: { date: true } },
+        },
+      }),
+    ]);
+
+    const classesByStudent = new Map(
+      attendanceGroups.map((g) => [g.studentId, g._count._all] as const),
+    );
+    const logsByStudent = new Map<string, Map<string, TechniqueStatus>>();
+    for (const l of logs) {
+      let m = logsByStudent.get(l.studentId);
+      if (!m) {
+        m = new Map();
+        logsByStudent.set(l.studentId, m);
+      }
+      m.set(l.beltRequirementId, l.status);
+    }
+    // Last promotion date per (student, awarded rank).
+    const promoDate = new Map<string, Date>();
+    for (const p of passes) {
+      if (!p.newBeltRankId) continue;
+      promoDate.set(`${p.studentId}:${p.newBeltRankId}`, p.exam.date);
+    }
+
+    let count = 0;
+    for (const s of students) {
+      const currentOrder = s.beltRankId
+        ? (orderById.get(s.beltRankId) ?? -1)
+        : -1;
+      const next = nextOf.get(currentOrder);
+      if (!next || next.requirements.length === 0) continue;
+      const since =
+        (s.beltRankId && promoDate.get(`${s.id}:${s.beltRankId}`)) ||
+        s.joinDate;
+      const ctx: ScoreContext = {
+        monthsAtBelt: monthsBetween(since, new Date()),
+        totalClasses: classesByStudent.get(s.id) ?? 0,
+        logStatusByReqId: logsByStudent.get(s.id) ?? new Map(),
+      };
+      const { metCount, totalCount } = scoreRequirements(
+        next.requirements.map(toRequirementDTO),
+        ctx,
+      );
+      if (isEligible(metCount, totalCount)) count++;
+    }
+    return count;
+  } catch {
+    return 0;
+  }
+}
+
+export interface DashboardExam {
+  id: string;
+  date: string;
+  targetBeltName: string;
+  targetBeltColor: string;
+  candidateCount: number;
+}
+
+/** Upcoming scheduled gradings for the dashboard card. */
+export async function getUpcomingExams(
+  clubId: string,
+  take = 4,
+): Promise<DashboardExam[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const exams = await prisma.gradingExam.findMany({
+      where: {
+        clubId,
+        status: { in: ["SCHEDULED", "IN_PROGRESS"] },
+        date: { gte: startOfDay(new Date()) },
+      },
+      orderBy: { date: "asc" },
+      take,
+      include: {
+        targetBeltRank: { select: { name: true, hexColor: true } },
+        _count: { select: { candidates: true } },
+      },
+    });
+    return exams.map((e) => ({
+      id: e.id,
+      date: e.date.toISOString(),
+      targetBeltName: e.targetBeltRank.name,
+      targetBeltColor: e.targetBeltRank.hexColor,
+      candidateCount: e._count.candidates,
+    }));
+  } catch {
+    return [];
   }
 }

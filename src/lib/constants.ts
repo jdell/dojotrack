@@ -172,3 +172,37 @@ export function disciplineMeta(value: string): {
     }
   );
 }
+
+/**
+ * The kinds of bar a belt requirement can set. TIME and CLASSES are computed
+ * automatically from a student's record; the rest are graded by an instructor.
+ * Matches the Prisma `RequirementType` enum.
+ */
+export const REQUIREMENT_TYPES: {
+  value: "TIME" | "CLASSES" | "TECHNIQUE" | "COMPETITION" | "CUSTOM";
+  label: string;
+  /** Hint for the value entered against this type (null = no numeric target). */
+  unit: string | null;
+  /** True when progress is auto-derived rather than instructor-assessed. */
+  auto: boolean;
+  emoji: string;
+}[] = [
+  { value: "TIME", label: "Time at rank", unit: "months", auto: true, emoji: "⏳" },
+  { value: "CLASSES", label: "Classes attended", unit: "classes", auto: true, emoji: "📅" },
+  { value: "TECHNIQUE", label: "Technique", unit: null, auto: false, emoji: "🥋" },
+  { value: "COMPETITION", label: "Competition", unit: "events", auto: false, emoji: "🏆" },
+  { value: "CUSTOM", label: "Custom", unit: null, auto: false, emoji: "✦" },
+];
+
+/** Display metadata for a stored requirement type, tolerating unknown values. */
+export function requirementTypeMeta(value: string) {
+  return (
+    REQUIREMENT_TYPES.find((t) => t.value === value) ?? {
+      value,
+      label: value,
+      unit: null,
+      auto: false,
+      emoji: "✦",
+    }
+  );
+}

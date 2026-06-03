@@ -1,7 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, CalendarDays, Flame, QrCode, Trophy } from "lucide-react";
+import {
+  ArrowLeft,
+  Award,
+  CalendarDays,
+  Flame,
+  QrCode,
+  Trophy,
+} from "lucide-react";
 import { getStudentProfile } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
@@ -50,6 +57,13 @@ export default async function StudentProfilePage({
               )}
             </div>
           </div>
+          <Link
+            href={`/students/${id}/belt`}
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+          >
+            <Award size={16} />
+            Belt progress
+          </Link>
         </div>
       </div>
 

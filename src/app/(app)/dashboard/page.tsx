@@ -1,9 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Award, CalendarDays, Clock, TrendingUp, Users } from "lucide-react";
+import {
+  Award,
+  CalendarDays,
+  Clock,
+  GraduationCap,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { getCurrentClub, getDashboard } from "@/lib/queries";
 import { disciplineMeta } from "@/lib/constants";
 import { formatTime } from "@/lib/schedule";
+import { formatDate } from "@/lib/utils";
 
 export const metadata: Metadata = { title: "Dashboard — DojoTrack" };
 
@@ -13,7 +21,13 @@ export default async function DashboardPage() {
   const club = await getCurrentClub();
   const data = club
     ? await getDashboard(club.id)
-    : { totalStudents: 0, classesThisWeek: 0, todayClasses: [] };
+    : {
+        totalStudents: 0,
+        classesThisWeek: 0,
+        eligibleForPromotion: 0,
+        todayClasses: [],
+        upcomingExams: [],
+      };
 
   const metrics = [
     {
@@ -29,9 +43,9 @@ export default async function DashboardPage() {
       icon: CalendarDays,
     },
     {
-      label: "Belt promotions",
-      value: "—",
-      hint: "Last 30 days",
+      label: "Eligible for promotion",
+      value: club ? String(data.eligibleForPromotion) : "—",
+      hint: "Ready to grade",
       icon: Award,
     },
     {
@@ -149,6 +163,66 @@ export default async function DashboardPage() {
               </tbody>
             </table>
           </div>
+        )}
+      </section>
+
+      <section className="space-y-3">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-bold text-brand-navy">Upcoming exams</h2>
+          <Link
+            href="/belts/exams"
+            className="text-sm font-medium text-brand-teal hover:underline"
+          >
+            All exams
+          </Link>
+        </div>
+
+        {data.upcomingExams.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+            <div className="mx-auto mb-3 text-4xl">🥋</div>
+            <h3 className="text-lg font-bold text-brand-navy">
+              No gradings scheduled
+            </h3>
+            <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+              Schedule a grading exam to test candidates and award belts.
+            </p>
+            <Link
+              href="/belts/exams/new"
+              className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+            >
+              <GraduationCap size={16} />
+              Schedule exam
+            </Link>
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {data.upcomingExams.map((exam) => (
+              <li key={exam.id}>
+                <Link
+                  href={`/belts/exams/${exam.id}`}
+                  className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-brand-teal/40"
+                >
+                  <span
+                    className="h-9 w-2 shrink-0 rounded-full border border-black/10"
+                    style={{ backgroundColor: exam.targetBeltColor }}
+                    aria-hidden
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-semibold text-brand-navy">
+                      {exam.targetBeltName}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatDate(exam.date)}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">
+                    {exam.candidateCount}{" "}
+                    {exam.candidateCount === 1 ? "candidate" : "candidates"}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
     </div>
