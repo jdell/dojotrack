@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub, getExams } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
+import { sendBeltExamScheduled } from "@/lib/notify";
+import { formatDate } from "@/lib/utils";
 
 /** GET /api/exams — the current club's grading exams (upcoming + past). */
 export async function GET() {
@@ -84,7 +86,7 @@ export async function POST(request: Request) {
   try {
     const target = await prisma.beltRank.findFirst({
       where: { id: body.targetBeltRankId, clubId: club.id },
-      select: { id: true },
+      select: { id: true, name: true },
     });
     if (!target) {
       return NextResponse.json(
@@ -98,7 +100,7 @@ export async function POST(request: Request) {
     const validStudents = requested.length
       ? await prisma.student.findMany({
           where: { id: { in: requested }, clubId: club.id },
-          select: { id: true },
+          select: { id: true, fullName: true, phone: true },
         })
       : [];
 
@@ -115,6 +117,21 @@ export async function POST(request: Request) {
         },
       },
     });
+
+    // Let entered candidates know their grading is on the calendar.
+    await Promise.all(
+      validStudents.map((s) =>
+        sendBeltExamScheduled(
+          { name: s.fullName, phone: s.phone },
+          {
+            beltName: target.name,
+            date: formatDate(date.toISOString()),
+            location: body.location?.trim() || null,
+          },
+        ),
+      ),
+    );
+
     return NextResponse.json({ exam }, { status: 201 });
   } catch (err) {
     console.error("POST /api/exams failed", err);

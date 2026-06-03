@@ -5,6 +5,7 @@ import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
 import { notifyStudents } from "@/lib/notify";
+import { sendExamResultEmail } from "@/lib/email";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -64,7 +65,11 @@ export async function POST(request: Request, { params }: RouteContext) {
     include: {
       targetBeltRank: { select: { id: true, name: true } },
       candidates: {
-        include: { student: { select: { id: true, fullName: true, phone: true } } },
+        include: {
+          student: {
+            select: { id: true, fullName: true, phone: true, email: true },
+          },
+        },
       },
     },
   });
@@ -97,8 +102,12 @@ export async function POST(request: Request, { params }: RouteContext) {
   }
 
   try {
-    const promoted: { id: string; fullName: string; phone: string | null }[] =
-      [];
+    const promoted: {
+      id: string;
+      fullName: string;
+      phone: string | null;
+      email: string | null;
+    }[] = [];
 
     await prisma.$transaction(async (tx) => {
       for (const entry of entries) {
@@ -150,9 +159,24 @@ export async function POST(request: Request, { params }: RouteContext) {
 
     if (promoted.length > 0) {
       const message = `Congratulations! You passed your grading and have been promoted to ${exam.targetBeltRank.name} at ${club.name}.`;
-      notifyStudents(
+      await notifyStudents(
         promoted.map((s) => ({ name: s.fullName, phone: s.phone })),
         message,
+      );
+      // Email the result to candidates who have an address on file.
+      await Promise.all(
+        promoted
+          .filter((s) => s.email)
+          .map((s) =>
+            sendExamResultEmail({
+              to: s.email!,
+              clubName: club.name,
+              studentName: s.fullName,
+              beltName: exam.targetBeltRank.name,
+              passed: true,
+              examDate: exam.date.toISOString(),
+            }),
+          ),
       );
     }
 

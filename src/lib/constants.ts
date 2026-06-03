@@ -338,6 +338,31 @@ export const DISCIPLINES: {
   { value: "custom", label: "Custom", emoji: "⚙️" },
 ];
 
+/**
+ * A curated set of IANA timezones for the club settings dropdown. Not
+ * exhaustive — covers the regions DojoTrack is most likely to serve. Stored on
+ * `Club.timezone` and used to time class reminders.
+ */
+export const TIMEZONES = [
+  "UTC",
+  "America/Los_Angeles",
+  "America/Denver",
+  "America/Chicago",
+  "America/New_York",
+  "America/Sao_Paulo",
+  "Europe/London",
+  "Europe/Paris",
+  "Europe/Madrid",
+  "Europe/Berlin",
+  "Africa/Johannesburg",
+  "Asia/Dubai",
+  "Asia/Kolkata",
+  "Asia/Singapore",
+  "Asia/Tokyo",
+  "Australia/Sydney",
+  "Pacific/Auckland",
+] as const;
+
 /** Display metadata for a stored discipline value, tolerating unknown values. */
 export function disciplineMeta(value: string): {
   value: string;

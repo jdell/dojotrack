@@ -88,6 +88,11 @@ export interface PublicClub {
   country: string | null;
   phone: string | null;
   email: string | null;
+  logoUrl: string | null;
+  websiteUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  youtubeUrl: string | null;
   instructors: { id: string; name: string; role: string }[];
 }
 
@@ -133,6 +138,53 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     name: user.fullName ?? "Instructor",
     role: user.role,
     clubId: user.clubId,
+  };
+}
+
+/** The full, editable profile for the current club's settings page. */
+export interface ClubSettings {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  email: string | null;
+  phone: string | null;
+  address: string | null;
+  city: string | null;
+  country: string | null;
+  websiteUrl: string | null;
+  instagramUrl: string | null;
+  facebookUrl: string | null;
+  youtubeUrl: string | null;
+  timezone: string | null;
+  description: string | null;
+  beltSystemId: string | null;
+  disciplines: string[];
+}
+
+/** Load the authenticated club's editable settings, or null when none. */
+export async function getClubSettings(): Promise<ClubSettings | null> {
+  const ctx = await getAuthContext();
+  if (!ctx) return null;
+  const c = ctx.club;
+  return {
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    logoUrl: c.logoUrl,
+    email: c.email,
+    phone: c.phone,
+    address: c.address,
+    city: c.city,
+    country: c.country,
+    websiteUrl: c.websiteUrl,
+    instagramUrl: c.instagramUrl,
+    facebookUrl: c.facebookUrl,
+    youtubeUrl: c.youtubeUrl,
+    timezone: c.timezone,
+    description: c.description,
+    beltSystemId: c.beltSystemId,
+    disciplines: c.disciplines,
   };
 }
 
@@ -255,6 +307,11 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
       country: club.country,
       phone: club.phone,
       email: club.email,
+      logoUrl: club.logoUrl,
+      websiteUrl: club.websiteUrl,
+      instagramUrl: club.instagramUrl,
+      facebookUrl: club.facebookUrl,
+      youtubeUrl: club.youtubeUrl,
       instructors: club.users.map((u) => ({
         id: u.id,
         name: u.fullName ?? "Instructor",

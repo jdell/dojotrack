@@ -1,84 +1,56 @@
 import type { Metadata } from "next";
-import { DISCIPLINES } from "@/lib/constants";
+import Link from "next/link";
+import { getClubSettings } from "@/lib/queries";
+import { isDbConfigured } from "@/lib/db";
+import { BRAND } from "@/lib/constants";
+import { SettingsForm } from "./settings-form";
 
 export const metadata: Metadata = { title: "Settings — DojoTrack" };
 
-export default function SettingsPage() {
+export const dynamic = "force-dynamic";
+
+/** Public host shown next to the slug — derived from the brand URL. */
+function publicHost(): string {
+  try {
+    return new URL(BRAND.url).host;
+  } catch {
+    return "dojotrack.app";
+  }
+}
+
+export default async function SettingsPage() {
+  const settings = isDbConfigured() ? await getClubSettings() : null;
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
         <p className="eyebrow">Configuration</p>
         <h1 className="text-2xl font-bold text-brand-navy">Club settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Your club&apos;s profile and preferences. Editing arrives in a later
-          sprint.
+          Your club&apos;s public profile, contact details, and preferences.
         </p>
       </div>
 
-      <form className="space-y-5 rounded-xl border border-border bg-card p-6 shadow-sm">
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-brand-navy">
-            Club name
-          </label>
-          <input
-            type="text"
-            disabled
-            placeholder="Your Dojo"
-            className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground"
-          />
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-brand-navy">
-            Public page URL
-          </label>
-          <div className="flex items-center rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground">
-            <span className="text-muted-foreground/70">
-              dojotrack.app/club/
-            </span>
-            <span>your-dojo</span>
-          </div>
-        </div>
-
-        <div>
-          <label className="mb-1.5 block text-sm font-medium text-brand-navy">
-            Address
-          </label>
-          <input
-            type="text"
-            disabled
-            placeholder="123 Main St, Anytown"
-            className="w-full rounded-lg border border-border bg-muted/40 px-3 py-2.5 text-sm text-muted-foreground"
-          />
-        </div>
-
-        <div>
-          <span className="mb-1.5 block text-sm font-medium text-brand-navy">
-            Disciplines
-          </span>
-          <div className="flex flex-wrap gap-2">
-            {DISCIPLINES.map((d) => (
-              <span
-                key={d.value}
-                className="rounded-full border border-border bg-muted/40 px-3 py-1 text-xs font-medium text-muted-foreground"
-              >
-                {d.emoji} {d.label}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="pt-2">
-          <button
-            type="button"
-            disabled
-            className="rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white opacity-60"
-            title="Coming soon"
+      {settings ? (
+        <SettingsForm settings={settings} publicHost={publicHost()} />
+      ) : (
+        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+          <div className="mx-auto mb-3 text-4xl">🥋</div>
+          <h2 className="text-lg font-bold text-brand-navy">
+            No club to configure yet
+          </h2>
+          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+            Settings appear once you&apos;re signed in to a club. Register a club
+            to get started.
+          </p>
+          <Link
+            href="/register"
+            className="mt-6 inline-flex rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
-            Save changes
-          </button>
+            Register a club
+          </Link>
         </div>
-      </form>
+      )}
     </div>
   );
 }

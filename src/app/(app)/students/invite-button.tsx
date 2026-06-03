@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Copy, LinkIcon, Loader2 } from "lucide-react";
+import { Check, Copy, LinkIcon, Loader2, Mail } from "lucide-react";
 
 interface InviteButtonProps {
   /** Optional label for the unit being invited, e.g. a student's name. */
@@ -14,12 +14,15 @@ interface GeneratedInvite {
   link: string;
   whatsappUrl: string;
   whatsappText: string;
+  emailed: boolean;
+  email: string | null;
 }
 
 /**
  * Generates a single-use invitation link via the API, then surfaces it with
- * copy-to-clipboard and a pre-filled WhatsApp share link. Used on the roster
- * to invite a new student without manually entering their details.
+ * copy-to-clipboard and a pre-filled WhatsApp share link. Optionally takes an
+ * email address — when given, the API emails the invite directly (see
+ * src/lib/email.ts) in addition to returning the shareable link.
  */
 export function InviteButton({
   unitLabel,
@@ -28,17 +31,22 @@ export function InviteButton({
 }: InviteButtonProps) {
   const [loading, setLoading] = useState(false);
   const [invite, setInvite] = useState<GeneratedInvite | null>(null);
+  const [email, setEmail] = useState("");
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState("");
 
   async function generate() {
     setLoading(true);
     setError("");
+    const trimmedEmail = email.trim();
     try {
       const res = await fetch("/api/invitations", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ unitLabel }),
+        body: JSON.stringify({
+          unitLabel,
+          email: trimmedEmail || undefined,
+        }),
       });
       const data = await res.json();
       if (!res.ok)
@@ -47,6 +55,8 @@ export function InviteButton({
         link: data.link,
         whatsappUrl: data.whatsappUrl,
         whatsappText: data.whatsappText,
+        emailed: Boolean(data.emailed),
+        email: trimmedEmail || null,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not create invite.");
@@ -74,21 +84,40 @@ export function InviteButton({
   return (
     <div className={className}>
       {!invite ? (
-        <button
-          type="button"
-          onClick={generate}
-          disabled={loading}
-          className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${base}`}
-        >
-          {loading ? (
-            <Loader2 size={16} className="animate-spin" />
-          ) : (
-            <LinkIcon size={16} />
-          )}
-          Invite via link
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-2.5 py-1.5">
+            <Mail size={14} className="text-muted-foreground" />
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="email to send to (optional)"
+              className="w-52 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+          <button
+            type="button"
+            onClick={generate}
+            disabled={loading}
+            className={`inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors disabled:opacity-60 ${base}`}
+          >
+            {loading ? (
+              <Loader2 size={16} className="animate-spin" />
+            ) : email.trim() ? (
+              <Mail size={16} />
+            ) : (
+              <LinkIcon size={16} />
+            )}
+            {email.trim() ? "Send invite" : "Invite via link"}
+          </button>
+        </div>
       ) : (
         <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
+          {invite.emailed && invite.email && (
+            <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-brand-teal">
+              <Check size={14} /> Invite emailed to {invite.email}
+            </p>
+          )}
           <p className="mb-2 text-xs font-medium text-muted-foreground">
             Share this link to invite a student:
           </p>
@@ -122,7 +151,10 @@ export function InviteButton({
           </div>
           <button
             type="button"
-            onClick={() => setInvite(null)}
+            onClick={() => {
+              setInvite(null);
+              setEmail("");
+            }}
             className="mt-2 text-xs text-muted-foreground hover:text-brand-navy"
           >
             Generate another

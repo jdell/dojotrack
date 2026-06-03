@@ -77,7 +77,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       const message =
         `${session.classSchedule.name} on ${when} has been cancelled.` +
         (reason ? ` Reason: ${reason}` : "");
-      notifyStudents(
+      await notifyStudents(
         session.bookings.map((b) => ({
           name: b.student.fullName,
           phone: b.student.phone,

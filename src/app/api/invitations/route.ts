@@ -3,7 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
-import { whatsappShare } from "@/lib/invite";
+import { inviteLink, whatsappShare } from "@/lib/invite";
+import { sendInvitationEmail } from "@/lib/email";
 
 /** Invitations stay valid for two weeks. */
 const INVITE_TTL_DAYS = 14;
@@ -60,9 +61,13 @@ export async function POST(request: Request) {
   }
 
   let unitLabel: string | null = null;
+  let email: string | null = null;
+  let recipientName: string | null = null;
   try {
     const body = await request.json().catch(() => ({}));
     unitLabel = body?.unitLabel?.trim() || null;
+    email = body?.email?.trim() || null;
+    recipientName = body?.recipientName?.trim() || body?.name?.trim() || null;
   } catch {
     // Body is optional — ignore parse errors.
   }
@@ -70,10 +75,24 @@ export async function POST(request: Request) {
   try {
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
     const invitation = await prisma.invitation.create({
-      data: { clubId: club.id, unitLabel, expiresAt },
+      data: { clubId: club.id, unitLabel, email, recipientName, expiresAt },
     });
+
+    // When an email was supplied, actually deliver the invite (logged in dev
+    // when Resend isn't configured — see src/lib/email.ts).
+    let emailed = false;
+    if (email) {
+      await sendInvitationEmail({
+        to: email,
+        clubName: club.name,
+        inviteLink: inviteLink(invitation.token),
+        recipientName,
+      });
+      emailed = true;
+    }
+
     return NextResponse.json(
-      { invitation, ...whatsappShare(club.name, invitation.token) },
+      { invitation, emailed, ...whatsappShare(club.name, invitation.token) },
       { status: 201 },
     );
   } catch (err) {

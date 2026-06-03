@@ -35,6 +35,7 @@ export async function generateMetadata({
     club?.description ??
     `${name} — class schedules, disciplines, and a free trial booking on DojoTrack.`;
   const url = `${baseUrl()}/club/${slug}`;
+  const ogImage = `${baseUrl()}/api/og/${slug}`;
 
   return {
     title: `${name} — DojoTrack`,
@@ -46,12 +47,62 @@ export async function generateMetadata({
       url,
       type: "website",
       siteName: "DojoTrack",
+      images: [{ url: ogImage, width: 1200, height: 630, alt: name }],
     },
     twitter: {
-      card: "summary",
+      card: "summary_large_image",
       title: name,
       description,
+      images: [ogImage],
     },
+  };
+}
+
+/**
+ * Build Organization + SportsActivityLocation JSON-LD for a club so search
+ * engines can surface its name, location, disciplines, and social profiles.
+ */
+function clubJsonLd(club: PublicClub, url: string) {
+  const sameAs = [
+    club.websiteUrl,
+    club.instagramUrl,
+    club.facebookUrl,
+    club.youtubeUrl,
+  ].filter((v): v is string => Boolean(v));
+
+  const address =
+    club.address || club.city || club.country
+      ? {
+          "@type": "PostalAddress",
+          streetAddress: club.address ?? undefined,
+          addressLocality: club.city ?? undefined,
+          addressCountry: club.country ?? undefined,
+        }
+      : undefined;
+
+  const shared = {
+    name: club.name,
+    url,
+    description: club.description ?? undefined,
+    image: club.logoUrl ?? `${baseUrl()}/api/og/${club.slug}`,
+    logo: club.logoUrl ?? undefined,
+    telephone: club.phone ?? undefined,
+    email: club.email ?? undefined,
+    address,
+    ...(sameAs.length ? { sameAs } : {}),
+  };
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", "@id": `${url}#organization`, ...shared },
+      {
+        "@type": "SportsActivityLocation",
+        "@id": `${url}#location`,
+        ...shared,
+        sport: club.disciplines.map((d) => d.label),
+      },
+    ],
   };
 }
 
@@ -68,9 +119,15 @@ export default async function ClubPublicPage({
   }
 
   const location = locationLine(club);
+  const jsonLd = clubJsonLd(club, `${baseUrl()}/club/${slug}`);
 
   return (
     <div className="min-h-screen bg-slate-50">
+      {/* Structured data for search engines (Organization + SportsActivityLocation). */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Header */}
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-8">

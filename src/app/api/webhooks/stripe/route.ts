@@ -4,6 +4,7 @@ import type { MembershipStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getStripe, isStripeConfigured, stripeWebhookSecret } from "@/lib/stripe";
+import { sendPaymentReceiptEmail } from "@/lib/email";
 
 // Stripe needs the raw, unparsed body to verify the signature.
 export const dynamic = "force-dynamic";
@@ -139,12 +140,51 @@ async function recordInvoice(
     },
   });
 
-  if (!paid) {
+  if (paid) {
+    await emailReceipt({
+      clubId: membership.clubId,
+      studentId: membership.studentId,
+      amount,
+      currency: invoice.currency ?? "usd",
+      description: invoice.description ?? "Subscription payment",
+    });
+  } else {
     await prisma.membership.update({
       where: { id: membership.id },
       data: { status: "PAST_DUE" },
     });
   }
+}
+
+/** Email a paid receipt to the student, when they have an address on file. */
+async function emailReceipt(args: {
+  clubId: string;
+  studentId: string | null;
+  amount: number;
+  currency: string;
+  description: string | null;
+}): Promise<void> {
+  if (!args.studentId) return;
+  const [student, club] = await Promise.all([
+    prisma.student.findUnique({
+      where: { id: args.studentId },
+      select: { fullName: true, email: true },
+    }),
+    prisma.club.findUnique({
+      where: { id: args.clubId },
+      select: { name: true },
+    }),
+  ]);
+  if (!student?.email || !club) return;
+  await sendPaymentReceiptEmail({
+    to: student.email,
+    clubName: club.name,
+    studentName: student.fullName,
+    amount: args.amount,
+    currency: args.currency,
+    description: args.description,
+    paidAt: new Date().toISOString(),
+  });
 }
 
 /** POST /api/webhooks/stripe — verify and process Stripe events. */
@@ -197,6 +237,26 @@ export async function POST(request: Request) {
                 : {}),
             },
           });
+          // Email a receipt for the one-time charge we just confirmed.
+          const payment = await prisma.payment.findFirst({
+            where: { stripeCheckoutId: session.id },
+            select: {
+              clubId: true,
+              studentId: true,
+              amount: true,
+              currency: true,
+              description: true,
+            },
+          });
+          if (payment) {
+            await emailReceipt({
+              clubId: payment.clubId,
+              studentId: payment.studentId,
+              amount: Number(payment.amount),
+              currency: payment.currency,
+              description: payment.description,
+            });
+          }
         } else if (session.subscription) {
           const subId =
             typeof session.subscription === "string"
