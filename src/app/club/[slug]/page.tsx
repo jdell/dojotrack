@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { MapPin } from "lucide-react";
+import { CalendarDays, MapPin, Users } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { getClubBySlug, type PublicClub } from "@/lib/queries";
+import { baseUrl } from "@/lib/invite";
+import { initials } from "@/lib/utils";
+
+export const dynamic = "force-dynamic";
 
 /** Turn a slug like "gracie-barra-downtown" into "Gracie Barra Downtown". */
 function humanize(slug: string): string {
@@ -12,16 +17,41 @@ function humanize(slug: string): string {
     .join(" ");
 }
 
+/** Join the address parts a club has filled in, skipping blanks. */
+function locationLine(club: PublicClub): string | null {
+  const parts = [club.address, club.city, club.country].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const name = humanize(slug);
+  const club = await getClubBySlug(slug);
+  const name = (club?.name ?? humanize(slug)) || "Club";
+  const description =
+    club?.description ??
+    `${name} — class schedules, disciplines, and a free trial booking on DojoTrack.`;
+  const url = `${baseUrl()}/club/${slug}`;
+
   return {
     title: `${name} — DojoTrack`,
-    description: `${name} on DojoTrack.`,
+    description,
+    alternates: { canonical: url },
+    openGraph: {
+      title: name,
+      description,
+      url,
+      type: "website",
+      siteName: "DojoTrack",
+    },
+    twitter: {
+      card: "summary",
+      title: name,
+      description,
+    },
   };
 }
 
@@ -31,11 +61,128 @@ export default async function ClubPublicPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const name = humanize(slug) || "Club";
+  const club = await getClubBySlug(slug);
+
+  if (!club) {
+    return <ClubComingSoon name={humanize(slug) || "Club"} />;
+  }
+
+  const location = locationLine(club);
 
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
+      <header className="border-b border-slate-200 bg-white">
+        <div className="mx-auto max-w-4xl px-4 py-8">
+          <div className="flex items-center gap-4">
+            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
+              {initials(club.name) || club.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-2xl font-bold text-brand-navy">
+                {club.name}
+              </h1>
+              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
+                <MapPin size={14} /> {location ?? "Location coming soon"}
+              </p>
+            </div>
+          </div>
+
+          {club.disciplines.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-2">
+              {club.disciplines.map((d) => (
+                <span
+                  key={d.value}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-brand-navy"
+                >
+                  {d.emoji} {d.label}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
+      </header>
+
+      {/* Body */}
+      <div className="mx-auto max-w-4xl space-y-6 px-4 py-10">
+        {/* Trial CTA */}
+        <section className="flex flex-col items-start justify-between gap-4 rounded-2xl bg-brand-navy p-6 text-white sm:flex-row sm:items-center">
+          <div>
+            <h2 className="text-lg font-bold">Try a class on us</h2>
+            <p className="mt-1 text-sm text-white/70">
+              New to {club.name}? Your first session is free.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-semibold text-brand-navy transition-opacity hover:opacity-90"
+          >
+            Book a free trial class
+          </button>
+        </section>
+
+        {club.description && (
+          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="text-base font-bold text-brand-navy">About</h2>
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+              {club.description}
+            </p>
+          </section>
+        )}
+
+        <div className="grid gap-6 sm:grid-cols-2">
+          {/* Schedule placeholder */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
+              <CalendarDays size={16} className="text-brand-teal" /> Schedule
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Class times are being finalised. Check back soon or book a trial
+              to find a slot that works for you.
+            </p>
+          </section>
+
+          {/* Instructors */}
+          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
+              <Users size={16} className="text-brand-teal" /> Instructors
+            </h2>
+            {club.instructors.length > 0 ? (
+              <ul className="mt-3 space-y-2">
+                {club.instructors.map((i) => (
+                  <li key={i.id} className="flex items-center gap-3">
+                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-teal/10 text-xs font-semibold text-brand-teal">
+                      {initials(i.name)}
+                    </span>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-brand-navy">
+                        {i.name}
+                      </p>
+                      <p className="text-xs capitalize text-slate-400">
+                        {i.role.toLowerCase()}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-slate-500">
+                The teaching team will be listed here soon.
+              </p>
+            )}
+          </section>
+        </div>
+      </div>
+
+      <ClubFooter />
+    </div>
+  );
+}
+
+/** Placeholder shown when a club hasn't set up its public profile yet. */
+function ClubComingSoon({ name }: { name: string }) {
+  return (
+    <div className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="flex items-center gap-4">
@@ -52,7 +199,6 @@ export default async function ClubPublicPage({
         </div>
       </header>
 
-      {/* Body */}
       <div className="mx-auto max-w-4xl px-4 py-10">
         <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
           <div className="mb-3 text-4xl">🥋</div>
@@ -73,15 +219,20 @@ export default async function ClubPublicPage({
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-200 py-6">
-        <div className="mx-auto flex max-w-4xl items-center justify-between px-4">
-          <Link href="/" className="flex items-center">
-            <Logo size={24} />
-          </Link>
-          <p className="text-xs text-slate-400">Powered by DojoTrack</p>
-        </div>
-      </footer>
+      <ClubFooter />
     </div>
+  );
+}
+
+function ClubFooter() {
+  return (
+    <footer className="border-t border-slate-200 py-6">
+      <div className="mx-auto flex max-w-4xl items-center justify-between px-4">
+        <Link href="/" className="flex items-center">
+          <Logo size={24} />
+        </Link>
+        <p className="text-xs text-slate-400">Powered by DojoTrack</p>
+      </div>
+    </footer>
   );
 }

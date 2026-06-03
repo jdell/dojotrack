@@ -1,0 +1,254 @@
+"use client";
+
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Loader2 } from "lucide-react";
+import type { BeltOption, FamilyOption } from "@/lib/queries";
+
+interface StudentFormProps {
+  beltOptions: BeltOption[];
+  families: FamilyOption[];
+}
+
+const NEW_FAMILY = "__new__";
+
+const inputClass =
+  "w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
+const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+
+/**
+ * Create-student form. Submits to POST /api/students, including either an
+ * existing family id or a new family name to create alongside the student.
+ */
+export function StudentForm({ beltOptions, families }: StudentFormProps) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [familyChoice, setFamilyChoice] = useState("");
+  const [form, setForm] = useState({
+    fullName: "",
+    phone: "",
+    email: "",
+    dateOfBirth: "",
+    beltRankId: "",
+    medicalNotes: "",
+    emergencyContact: "",
+    emergencyPhone: "",
+    newFamilyName: "",
+  });
+
+  function update<K extends keyof typeof form>(key: K, value: string) {
+    setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const payload = {
+        fullName: form.fullName,
+        phone: form.phone || null,
+        email: form.email || null,
+        dateOfBirth: form.dateOfBirth || null,
+        beltRankId: form.beltRankId || null,
+        medicalNotes: form.medicalNotes || null,
+        emergencyContact: form.emergencyContact || null,
+        emergencyPhone: form.emergencyPhone || null,
+        familyId:
+          familyChoice && familyChoice !== NEW_FAMILY ? familyChoice : null,
+        newFamilyName:
+          familyChoice === NEW_FAMILY
+            ? form.newFamilyName.trim() || null
+            : null,
+      };
+      const res = await fetch("/api/students", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Could not add the student.");
+      router.push("/students");
+      router.refresh();
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not add the student.",
+      );
+      setLoading(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-6 rounded-xl border border-border bg-card p-6 shadow-sm"
+    >
+      {error && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {/* Identity */}
+      <fieldset className="space-y-4">
+        <legend className="text-sm font-semibold text-brand-navy">
+          Member details
+        </legend>
+        <div>
+          <label className={labelClass}>Full name</label>
+          <input
+            type="text"
+            required
+            placeholder="Alex Johnson"
+            value={form.fullName}
+            onChange={(e) => update("fullName", e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass}>Phone</label>
+            <input
+              type="tel"
+              autoComplete="tel"
+              placeholder="+1 555 123 4567"
+              value={form.phone}
+              onChange={(e) => update("phone", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Email</label>
+            <input
+              type="email"
+              autoComplete="email"
+              placeholder="alex@example.com"
+              value={form.email}
+              onChange={(e) => update("email", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass}>Date of birth</label>
+            <input
+              type="date"
+              value={form.dateOfBirth}
+              onChange={(e) => update("dateOfBirth", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Belt rank</label>
+            <select
+              value={form.beltRankId}
+              onChange={(e) => update("beltRankId", e.target.value)}
+              className={`${inputClass} bg-white`}
+            >
+              <option value="">No belt yet</option>
+              {beltOptions.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      </fieldset>
+
+      {/* Family */}
+      <fieldset className="space-y-4">
+        <legend className="text-sm font-semibold text-brand-navy">
+          Family
+        </legend>
+        <div>
+          <label className={labelClass}>Add to family</label>
+          <select
+            value={familyChoice}
+            onChange={(e) => setFamilyChoice(e.target.value)}
+            className={`${inputClass} bg-white`}
+          >
+            <option value="">No family</option>
+            {families.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+            <option value={NEW_FAMILY}>+ Create new family…</option>
+          </select>
+        </div>
+        {familyChoice === NEW_FAMILY && (
+          <div>
+            <label className={labelClass}>New family name</label>
+            <input
+              type="text"
+              placeholder="The Johnsons"
+              value={form.newFamilyName}
+              onChange={(e) => update("newFamilyName", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        )}
+      </fieldset>
+
+      {/* Emergency + medical */}
+      <fieldset className="space-y-4">
+        <legend className="text-sm font-semibold text-brand-navy">
+          Safety
+        </legend>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label className={labelClass}>Emergency contact</label>
+            <input
+              type="text"
+              placeholder="Parent / guardian name"
+              value={form.emergencyContact}
+              onChange={(e) => update("emergencyContact", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <div>
+            <label className={labelClass}>Emergency phone</label>
+            <input
+              type="tel"
+              placeholder="+1 555 987 6543"
+              value={form.emergencyPhone}
+              onChange={(e) => update("emergencyPhone", e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div>
+          <label className={labelClass}>Medical notes</label>
+          <textarea
+            rows={3}
+            placeholder="Allergies, injuries, or conditions instructors should know about."
+            value={form.medicalNotes}
+            onChange={(e) => update("medicalNotes", e.target.value)}
+            className={`${inputClass} resize-y`}
+          />
+        </div>
+      </fieldset>
+
+      <div className="flex items-center gap-3 pt-2">
+        <button
+          type="submit"
+          disabled={loading || !form.fullName.trim()}
+          className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
+        >
+          {loading && <Loader2 size={16} className="animate-spin" />}
+          {loading ? "Saving…" : "Add student"}
+        </button>
+        <Link
+          href="/students"
+          className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
+        >
+          Cancel
+        </Link>
+      </div>
+    </form>
+  );
+}

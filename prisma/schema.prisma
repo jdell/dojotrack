@@ -1,0 +1,151 @@
+// DojoTrack database schema.
+//
+// PostgreSQL on Supabase. Follows the mensajeras reference convention:
+// a driver adapter (`@prisma/adapter-pg`) supplies the runtime connection, so
+// the datasource carries no `url` here — `prisma.config.ts` provides DIRECT_URL
+// for migrate/generate. Columns and tables map to snake_case for Postgres.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  INSTRUCTOR
+  STUDENT
+  PARENT
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+/// A martial arts club / dojo — the top-level tenant.
+model Club {
+  id           String   @id @default(uuid())
+  name         String
+  slug         String   @unique
+  address      String?
+  city         String?
+  country      String?
+  phone        String?
+  email        String?
+  description  String?
+  logoUrl      String?  @map("logo_url")
+  disciplines  String[]
+  beltSystemId String?  @map("belt_system_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  students    Student[]
+  families    Family[]
+  beltRanks   BeltRank[]
+  invitations Invitation[]
+
+  @@map("clubs")
+}
+
+/// An authenticated account (Supabase-backed). Owners/instructors run a club;
+/// students/parents are linked to their `Student` records.
+model User {
+  id        String   @id @default(uuid())
+  authId    String   @unique @map("auth_id")
+  fullName  String?  @map("full_name")
+  phone     String?
+  email     String?
+  role      Role     @default(STUDENT)
+  clubId    String?  @map("club_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  club     Club?     @relation(fields: [clubId], references: [id])
+  students Student[]
+
+  @@index([clubId])
+  @@map("users")
+}
+
+/// An enrolled member of a club. May be linked to a `User` account (adult
+/// members) or stand alone (children managed under a family).
+model Student {
+  id               String    @id @default(uuid())
+  clubId           String    @map("club_id")
+  userId           String?   @map("user_id")
+  fullName         String    @map("full_name")
+  phone            String?
+  email            String?
+  beltRankId       String?   @map("belt_rank_id")
+  joinDate         DateTime  @default(now()) @map("join_date")
+  dateOfBirth      DateTime? @map("date_of_birth")
+  medicalNotes     String?   @map("medical_notes")
+  emergencyContact String?   @map("emergency_contact")
+  emergencyPhone   String?   @map("emergency_phone")
+  familyId         String?   @map("family_id")
+  active           Boolean   @default(true)
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  user     User?     @relation(fields: [userId], references: [id])
+  beltRank BeltRank? @relation(fields: [beltRankId], references: [id])
+  family   Family?   @relation(fields: [familyId], references: [id])
+
+  @@index([clubId])
+  @@index([familyId])
+  @@map("students")
+}
+
+/// Groups related members (siblings, parent + child) for shared billing.
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  clubId    String   @map("club_id")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  students Student[]
+
+  @@index([clubId])
+  @@map("families")
+}
+
+/// A single rank within a club's belt system.
+model BeltRank {
+  id         String   @id @default(uuid())
+  clubId     String   @map("club_id")
+  name       String
+  color      String
+  hexColor   String   @map("hex_color")
+  order      Int
+  minMonths  Int?     @map("min_months")
+  minClasses Int?     @map("min_classes")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  club     Club      @relation(fields: [clubId], references: [id])
+  students Student[]
+
+  @@index([clubId])
+  @@map("belt_ranks")
+}
+
+/// A shareable, single-use link that invites someone to join a club.
+model Invitation {
+  id        String           @id @default(uuid())
+  clubId    String           @map("club_id")
+  token     String           @unique @default(uuid())
+  unitLabel String?          @map("unit_label")
+  status    InvitationStatus @default(PENDING)
+  createdAt DateTime         @default(now()) @map("created_at")
+  expiresAt DateTime?        @map("expires_at")
+
+  club Club @relation(fields: [clubId], references: [id])
+
+  @@index([clubId])
+  @@map("invitations")
+}
