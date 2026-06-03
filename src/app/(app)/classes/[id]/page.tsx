@@ -34,16 +34,16 @@ export default async function ClassDetailPage({
 
   if (!isDbConfigured()) return <NotConfigured />;
 
-  const detail = await getClassDetail(id);
+  const club = await getCurrentClub();
+  if (!club) notFound();
+
+  const detail = await getClassDetail(id, club.id);
   if (!detail) notFound();
 
-  const club = await getCurrentClub();
-  const students = club
-    ? (await getStudents(club.id)).map((s) => ({
-        id: s.id,
-        fullName: s.fullName,
-      }))
-    : [];
+  const students = (await getStudents(club.id)).map((s) => ({
+    id: s.id,
+    fullName: s.fullName,
+  }));
 
   const discipline = disciplineMeta(detail.discipline);
   const timeLabel = `${formatTime(detail.startTime)} – ${formatTime(detail.endTime)}`;

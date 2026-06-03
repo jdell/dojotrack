@@ -3,6 +3,7 @@ import type { ExamStatus, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub, getExamDetail } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -16,7 +17,9 @@ const STATUSES: ExamStatus[] = [
 /** GET /api/exams/[id] — full exam detail with candidates. */
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const detail = await getExamDetail(id);
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const detail = await getExamDetail(id, auth.club.id);
   if (!detail) {
     return NextResponse.json({ error: "Exam not found." }, { status: 404 });
   }
@@ -41,6 +44,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

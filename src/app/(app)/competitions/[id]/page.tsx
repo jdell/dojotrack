@@ -25,11 +25,13 @@ export default async function CompetitionDetailPage({
   const { id } = await params;
   if (!isDbConfigured()) notFound();
 
-  const competition = await getCompetitionDetail(id);
+  const club = await getCurrentClub();
+  if (!club) notFound();
+
+  const competition = await getCompetitionDetail(id, club.id);
   if (!competition) notFound();
 
-  const club = await getCurrentClub();
-  const students = club ? await getStudentOptions(club.id) : [];
+  const students = await getStudentOptions(club.id);
   const enteredIds = new Set(competition.entries.map((e) => e.studentId));
   const availableStudents = students.filter((s) => !enteredIds.has(s.id));
 

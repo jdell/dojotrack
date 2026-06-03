@@ -67,6 +67,25 @@ export default function RegisterPage() {
         type: "sms",
       });
       if (error) throw error;
+
+      // The Supabase user now exists — provision the club + owner rows.
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          clubName: form.clubName,
+          ownerName: form.instructorName,
+          phone: form.phone,
+          martialArt: form.discipline,
+        }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(
+          data.error ?? "Could not finish setting up your club.",
+        );
+      }
+
       router.push("/dashboard");
       router.refresh();
     } catch (err) {

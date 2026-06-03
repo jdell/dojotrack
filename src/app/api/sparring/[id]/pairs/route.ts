@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 import { regenerateSparringPairs } from "@/lib/sparring-service";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -24,6 +25,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

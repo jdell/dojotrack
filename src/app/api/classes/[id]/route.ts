@@ -3,6 +3,7 @@ import type { ClassLevel, DayOfWeek, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getClassDetail, getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
@@ -18,7 +19,9 @@ const TIME_RE = /^\d{1,2}:\d{2}$/;
 /** GET /api/classes/[id] — class detail with upcoming sessions and stats. */
 export async function GET(_request: Request, { params }: RouteContext) {
   const { id } = await params;
-  const detail = await getClassDetail(id);
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const detail = await getClassDetail(id, auth.club.id);
   if (!detail) {
     return NextResponse.json({ error: "Class not found." }, { status: 404 });
   }
@@ -47,6 +50,8 @@ export async function PUT(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
@@ -157,6 +162,8 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

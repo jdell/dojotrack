@@ -13,6 +13,7 @@
 import { prisma } from "./prisma";
 import { isDbConfigured } from "./db";
 import { isStripeConfigured } from "./stripe";
+import { getAuthContext } from "./auth-context";
 import { BELT_SYSTEMS, DISCIPLINES } from "./constants";
 import {
   dayOfDate,
@@ -37,6 +38,7 @@ import type {
   MembershipStatus,
   PaymentStatus,
   RequirementType,
+  Role,
   TechniqueStatus,
 } from "@prisma/client";
 
@@ -90,27 +92,48 @@ export interface PublicClub {
 }
 
 /**
- * The club the signed-in user manages. Auth → club mapping arrives in a later
- * sprint; for now DojoTrack is effectively single-tenant, so we return the
- * first (oldest) club. Returns null when unconfigured or empty.
+ * The club the signed-in user manages, resolved from the authenticated request
+ * (Supabase session → `User.club`, see `auth-context.ts`). Every club-scoped
+ * query below keys off the `id` returned here, so this is the single point that
+ * enforces tenant isolation. Returns null when there's no session / no club, or
+ * when the database or Supabase aren't configured.
  */
 export async function getCurrentClub(): Promise<ClubSummary | null> {
-  if (!isDbConfigured()) return null;
-  try {
-    const club = await prisma.club.findFirst({
-      orderBy: { createdAt: "asc" },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        beltSystemId: true,
-        disciplines: true,
-      },
-    });
-    return club;
-  } catch {
-    return null;
-  }
+  const ctx = await getAuthContext();
+  if (!ctx) return null;
+  const { club } = ctx;
+  return {
+    id: club.id,
+    name: club.name,
+    slug: club.slug,
+    beltSystemId: club.beltSystemId,
+    disciplines: club.disciplines,
+  };
+}
+
+/** The signed-in user's DojoTrack account, or null when not authenticated. */
+export interface CurrentUser {
+  id: string;
+  name: string;
+  role: Role;
+  clubId: string | null;
+}
+
+/**
+ * The signed-in user's DojoTrack account (owner / instructor / student),
+ * resolved from the authenticated request. Returns null when there's no
+ * session or the user isn't linked to a club.
+ */
+export async function getCurrentUser(): Promise<CurrentUser | null> {
+  const ctx = await getAuthContext();
+  if (!ctx) return null;
+  const { user } = ctx;
+  return {
+    id: user.id,
+    name: user.fullName ?? "Instructor",
+    role: user.role,
+    clubId: user.clubId,
+  };
 }
 
 /** Roster rows for a club, newest members first. */
@@ -282,16 +305,24 @@ export interface CurrentStudent {
 }
 
 /**
- * The "acting" student for the booking UI. Real auth → student mapping arrives
- * in a later sprint; until then — mirroring `getCurrentClub` — we treat the
- * club's oldest active member as the demo booker so the student-facing booking
- * flow can be exercised end-to-end.
+ * The "acting" student for the booking UI. Prefers the `Student` linked to the
+ * signed-in user (`Student.userId`) when there is one; otherwise falls back to
+ * the club's oldest active member so the booking flow stays usable for an
+ * instructor/owner viewing the schedule. Always scoped to `clubId`.
  */
 export async function getCurrentStudent(
   clubId: string,
 ): Promise<CurrentStudent | null> {
   if (!isDbConfigured()) return null;
   try {
+    const ctx = await getAuthContext();
+    if (ctx && ctx.club.id === clubId) {
+      const linked = await prisma.student.findFirst({
+        where: { clubId, active: true, userId: ctx.user.id },
+        select: { id: true, fullName: true },
+      });
+      if (linked) return linked;
+    }
     const student = await prisma.student.findFirst({
       where: { clubId, active: true },
       orderBy: { createdAt: "asc" },
@@ -468,11 +499,14 @@ export async function ensureNextSession(
  * booked/checked-in against), each session's enrolled students with check-in
  * status, plus attendance stats across the sessions held so far.
  */
-export async function getClassDetail(id: string): Promise<ClassDetail | null> {
+export async function getClassDetail(
+  id: string,
+  clubId: string,
+): Promise<ClassDetail | null> {
   if (!isDbConfigured()) return null;
   try {
-    const schedule = await prisma.classSchedule.findUnique({
-      where: { id },
+    const schedule = await prisma.classSchedule.findFirst({
+      where: { id, clubId },
       include: { instructor: { select: { fullName: true } } },
     });
     if (!schedule) return null;
@@ -1072,15 +1106,24 @@ export interface CurrentInstructor {
 }
 
 /**
- * The "acting" instructor for assessment/grading. Real auth → user mapping
- * arrives later; mirroring `getCurrentStudent`, we use the club's first
- * owner/instructor so assessments are attributable end-to-end.
+ * The "acting" instructor for assessment/grading. Prefers the signed-in user
+ * when they are an owner/instructor of this club so assessments are attributed
+ * to whoever actually performed them; otherwise falls back to the club's first
+ * owner/instructor. Always scoped to `clubId`.
  */
 export async function getCurrentInstructor(
   clubId: string,
 ): Promise<CurrentInstructor | null> {
   if (!isDbConfigured()) return null;
   try {
+    const ctx = await getAuthContext();
+    if (
+      ctx &&
+      ctx.club.id === clubId &&
+      (ctx.user.role === "OWNER" || ctx.user.role === "INSTRUCTOR")
+    ) {
+      return { id: ctx.user.id, name: ctx.user.fullName ?? "Instructor" };
+    }
     const user = await prisma.user.findFirst({
       where: { clubId, role: { in: ["OWNER", "INSTRUCTOR"] } },
       orderBy: { createdAt: "asc" },
@@ -1274,11 +1317,12 @@ export interface BeltProgress {
  */
 export async function getBeltProgress(
   studentId: string,
+  clubId: string,
 ): Promise<BeltProgress | null> {
   if (!isDbConfigured()) return null;
   try {
-    const student = await prisma.student.findUnique({
-      where: { id: studentId },
+    const student = await prisma.student.findFirst({
+      where: { id: studentId, clubId },
       include: { beltRank: true },
     });
     if (!student) return null;
@@ -1573,11 +1617,14 @@ export interface ExamDetail {
 }
 
 /** Full grading-exam detail: candidates with their scores and readiness. */
-export async function getExamDetail(examId: string): Promise<ExamDetail | null> {
+export async function getExamDetail(
+  examId: string,
+  clubId: string,
+): Promise<ExamDetail | null> {
   if (!isDbConfigured()) return null;
   try {
-    const exam = await prisma.gradingExam.findUnique({
-      where: { id: examId },
+    const exam = await prisma.gradingExam.findFirst({
+      where: { id: examId, clubId },
       include: {
         club: { select: { name: true } },
         targetBeltRank: {
@@ -2118,11 +2165,12 @@ export interface CompetitionDetail {
 /** Full competition detail: entries with student belt info and a medal tally. */
 export async function getCompetitionDetail(
   id: string,
+  clubId: string,
 ): Promise<CompetitionDetail | null> {
   if (!isDbConfigured()) return null;
   try {
-    const competition = await prisma.competition.findUnique({
-      where: { id },
+    const competition = await prisma.competition.findFirst({
+      where: { id, clubId },
       include: {
         entries: {
           orderBy: [{ placement: "asc" }, { student: { fullName: "asc" } }],
@@ -2281,11 +2329,12 @@ export interface SparringSessionDetail {
 /** Full sparring session detail: every pairing with both fighters' belt info. */
 export async function getSparringSessionDetail(
   id: string,
+  clubId: string,
 ): Promise<SparringSessionDetail | null> {
   if (!isDbConfigured()) return null;
   try {
-    const session = await prisma.sparringSession.findUnique({
-      where: { id },
+    const session = await prisma.sparringSession.findFirst({
+      where: { id, clubId },
       include: {
         pairs: {
           orderBy: [{ round: "asc" }, { mat: "asc" }],

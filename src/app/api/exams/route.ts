@@ -2,12 +2,15 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub, getExams } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 /** GET /api/exams — the current club's grading exams (upcoming + past). */
 export async function GET() {
   if (!isDbConfigured()) {
     return NextResponse.json({ upcoming: [], past: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ upcoming: [], past: [] });
@@ -36,6 +39,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, MapPin, Receipt } from "lucide-react";
-import { getExamDetail } from "@/lib/queries";
+import { getCurrentClub, getExamDetail } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { ExamStatusBadge } from "../page";
@@ -21,7 +21,10 @@ export default async function ExamDetailPage({
 
   if (!isDbConfigured()) return <NotConfigured />;
 
-  const exam = await getExamDetail(id);
+  const club = await getCurrentClub();
+  if (!club) notFound();
+
+  const exam = await getExamDetail(id, club.id);
   if (!exam) notFound();
 
   return (

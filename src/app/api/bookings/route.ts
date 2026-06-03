@@ -3,6 +3,7 @@ import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { ensureNextSession, getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 interface BookBody {
   /** Book a specific materialised session… */
@@ -24,6 +25,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
@@ -152,6 +155,8 @@ export async function DELETE(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

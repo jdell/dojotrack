@@ -3,6 +3,7 @@ import type { ClassLevel, DayOfWeek } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 const DAYS: DayOfWeek[] = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"];
 const LEVELS: ClassLevel[] = [
@@ -18,6 +19,8 @@ export async function GET() {
   if (!isDbConfigured()) {
     return NextResponse.json({ classes: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ classes: [] });
@@ -58,6 +61,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json(

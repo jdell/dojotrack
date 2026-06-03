@@ -8,7 +8,7 @@ import {
   Clock,
   Trophy,
 } from "lucide-react";
-import { getBeltProgress } from "@/lib/queries";
+import { getBeltProgress, getCurrentClub } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
 import { BeltBadge } from "@/components/belt-badge";
@@ -27,7 +27,10 @@ export default async function StudentBeltPage({
 
   if (!isDbConfigured()) return <NotConfigured studentId={id} />;
 
-  const progress = await getBeltProgress(id);
+  const club = await getCurrentClub();
+  if (!club) notFound();
+
+  const progress = await getBeltProgress(id, club.id);
   if (!progress) notFound();
 
   return (

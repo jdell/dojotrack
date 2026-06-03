@@ -3,6 +3,7 @@ import type { BillingInterval } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 const INTERVALS: BillingInterval[] = [
   "MONTHLY",
@@ -14,6 +15,8 @@ const INTERVALS: BillingInterval[] = [
 /** GET /api/payment-plans — list the current club's plans. */
 export async function GET() {
   if (!isDbConfigured()) return NextResponse.json({ plans: [] });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) return NextResponse.json({ plans: [] });
   try {
@@ -47,6 +50,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json(

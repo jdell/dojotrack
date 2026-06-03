@@ -3,6 +3,7 @@ import type { TechniqueStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub, getCurrentInstructor } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 const STATUSES: TechniqueStatus[] = ["NOT_ASSESSED", "IN_PROGRESS", "PASSED"];
 
@@ -11,6 +12,8 @@ export async function GET(request: Request) {
   if (!isDbConfigured()) {
     return NextResponse.json({ logs: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ logs: [] });
@@ -63,6 +66,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

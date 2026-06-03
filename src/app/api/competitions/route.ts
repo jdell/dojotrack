@@ -3,6 +3,7 @@ import type { CompetitionStatus } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 const STATUSES: CompetitionStatus[] = [
   "SCHEDULED",
@@ -14,6 +15,8 @@ const STATUSES: CompetitionStatus[] = [
 /** GET /api/competitions — list the current club's competitions. */
 export async function GET() {
   if (!isDbConfigured()) return NextResponse.json({ competitions: [] });
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) return NextResponse.json({ competitions: [] });
   try {
@@ -48,6 +51,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json(

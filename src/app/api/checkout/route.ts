@@ -4,6 +4,7 @@ import type { BillingInterval, PaymentPlan } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 import { appUrl, getStripe, isStripeConfigured } from "@/lib/stripe";
 
 /** Stripe recurring config for a plan interval (undefined = one-time charge). */
@@ -81,6 +82,8 @@ export async function POST(request: Request) {
     );
   }
   const stripe = getStripe()!;
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

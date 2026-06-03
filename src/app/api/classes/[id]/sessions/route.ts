@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { ensureSession } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 import { nextOccurrences, startOfDay } from "@/lib/schedule";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -18,9 +19,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
   if (!isDbConfigured()) {
     return NextResponse.json({ sessions: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
 
-  const schedule = await prisma.classSchedule.findUnique({
-    where: { id },
+  const schedule = await prisma.classSchedule.findFirst({
+    where: { id, clubId: auth.club.id },
     select: { id: true, dayOfWeek: true, startTime: true, maxStudents: true },
   });
   if (!schedule) {

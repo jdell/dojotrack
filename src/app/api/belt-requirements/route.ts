@@ -3,6 +3,7 @@ import type { RequirementType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 const TYPES: RequirementType[] = [
   "TIME",
@@ -17,6 +18,8 @@ export async function GET(request: Request) {
   if (!isDbConfigured()) {
     return NextResponse.json({ requirements: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ requirements: [] });
@@ -67,6 +70,8 @@ export async function POST(request: Request) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });

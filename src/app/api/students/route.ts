@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 /**
  * GET /api/students — list the current club's students (newest first).
@@ -10,6 +11,8 @@ export async function GET() {
   if (!isDbConfigured()) {
     return NextResponse.json({ students: [] });
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ students: [] });
@@ -60,6 +63,8 @@ export async function POST(request: Request) {
     );
   }
 
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json(

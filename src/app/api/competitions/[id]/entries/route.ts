@@ -3,12 +3,13 @@ import type { Medal, Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
+import { requireAuth } from "@/lib/auth-context";
 
 type RouteContext = { params: Promise<{ id: string }> };
 
 const MEDALS: Medal[] = ["NONE", "GOLD", "SILVER", "BRONZE"];
 
-/** Place a competition for the current club, or null if it isn't theirs. */
+/** Resolve a competition owned by the current club, or null if it isn't theirs. */
 async function findClubCompetition(id: string): Promise<string | null> {
   const club = await getCurrentClub();
   if (!club) return null;
@@ -34,6 +35,8 @@ export async function POST(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
@@ -122,6 +125,8 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const competitionId = await findClubCompetition(id);
   if (!competitionId) {
     return NextResponse.json(
@@ -198,6 +203,8 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       { status: 503 },
     );
   }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
   const competitionId = await findClubCompetition(id);
   if (!competitionId) {
     return NextResponse.json(

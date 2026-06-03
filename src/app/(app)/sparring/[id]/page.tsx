@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, Users } from "lucide-react";
-import { getSparringSessionDetail } from "@/lib/queries";
+import { getCurrentClub, getSparringSessionDetail } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
@@ -20,7 +20,10 @@ export default async function SparringDetailPage({
   const { id } = await params;
   if (!isDbConfigured()) notFound();
 
-  const session = await getSparringSessionDetail(id);
+  const club = await getCurrentClub();
+  if (!club) notFound();
+
+  const session = await getSparringSessionDetail(id, club.id);
   if (!session) notFound();
 
   const discipline = session.discipline
