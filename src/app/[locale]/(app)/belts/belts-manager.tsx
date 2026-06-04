@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import {
@@ -76,6 +77,8 @@ function RankRow({
   open: boolean;
   onToggle: () => void;
 }) {
+  const t = useTranslations("Belts");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [reqs, setReqs] = useState<RequirementDTO[]>(rank.requirements);
   const [adding, setAdding] = useState(false);
@@ -99,12 +102,12 @@ function RankRow({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not add requirement.");
+      if (!res.ok) throw new Error(data.error ?? t("errAdd"));
       setReqs((prev) => [...prev, data.requirement as RequirementDTO]);
       setAdding(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add.");
+      setError(err instanceof Error ? err.message : t("errAdd"));
     } finally {
       setBusy(false);
     }
@@ -125,14 +128,14 @@ function RankRow({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save.");
+      if (!res.ok) throw new Error(data.error ?? t("errSave"));
       setReqs((prev) =>
         prev.map((r) => (r.id === id ? (data.requirement as RequirementDTO) : r)),
       );
       setEditingId(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(err instanceof Error ? err.message : t("errSave"));
     } finally {
       setBusy(false);
     }
@@ -146,11 +149,11 @@ function RankRow({
         method: "DELETE",
       });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? "Could not delete.");
+      if (!res.ok) throw new Error(data.error ?? t("errDelete"));
       setReqs((prev) => prev.filter((r) => r.id !== id));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not delete.");
+      setError(err instanceof Error ? err.message : t("errDelete"));
     } finally {
       setBusy(false);
     }
@@ -182,7 +185,7 @@ function RankRow({
       setReqs(next);
       router.refresh();
     } catch {
-      setError("Could not reorder.");
+      setError(t("errReorder"));
     } finally {
       setBusy(false);
     }
@@ -210,9 +213,8 @@ function RankRow({
             {rank.name}
           </span>
           <span className="text-xs text-muted-foreground">
-            {rank.studentCount}{" "}
-            {rank.studentCount === 1 ? "student" : "students"} ·{" "}
-            {reqs.length} {reqs.length === 1 ? "requirement" : "requirements"}
+            {t("studentCount", { count: rank.studentCount })} ·{" "}
+            {t("requirementCount", { count: reqs.length })}
           </span>
         </span>
         <Link
@@ -220,7 +222,7 @@ function RankRow({
           onClick={(e) => e.stopPropagation()}
           className="inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/10"
         >
-          Candidates
+          {t("candidates")}
           <ArrowUpRight size={13} />
         </Link>
       </button>
@@ -229,7 +231,7 @@ function RankRow({
         <div className="border-t border-border px-4 py-3">
           {reqs.length === 0 && !adding ? (
             <p className="rounded-lg bg-muted/30 px-3 py-4 text-center text-sm text-muted-foreground">
-              No requirements yet for {rank.name}.
+              {t("noRequirementsForRank", { rank: rank.name })}
             </p>
           ) : (
             <ul className="space-y-2">
@@ -245,7 +247,7 @@ function RankRow({
                         description: req.description ?? "",
                       }}
                       busy={busy}
-                      submitLabel="Save"
+                      submitLabel={tc("save")}
                       onSubmit={(v) => save(req.id, v)}
                       onCancel={() => setEditingId(null)}
                     />
@@ -264,39 +266,41 @@ function RankRow({
                         {req.targetValue != null && (
                           <span className="ml-1.5 text-xs font-normal text-muted-foreground">
                             {req.targetValue}{" "}
-                            {requirementTypeMeta(req.type).unit ?? ""}
+                            {requirementTypeMeta(req.type).unit
+                              ? t(`reqUnit.${req.type}`)
+                              : ""}
                           </span>
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {requirementTypeMeta(req.type).label}
+                        {t(`reqType.${req.type}`)}
                         {req.description ? ` · ${req.description}` : ""}
                       </p>
                     </div>
                     <div className="flex shrink-0 items-center gap-0.5">
                       <IconButton
-                        label="Move up"
+                        label={t("moveUp")}
                         disabled={busy || i === 0}
                         onClick={() => move(i, -1)}
                       >
                         <ArrowUp size={14} />
                       </IconButton>
                       <IconButton
-                        label="Move down"
+                        label={t("moveDown")}
                         disabled={busy || i === reqs.length - 1}
                         onClick={() => move(i, 1)}
                       >
                         <ArrowDown size={14} />
                       </IconButton>
                       <IconButton
-                        label="Edit requirement"
+                        label={t("editRequirement")}
                         disabled={busy}
                         onClick={() => setEditingId(req.id)}
                       >
                         <Pencil size={14} />
                       </IconButton>
                       <IconButton
-                        label="Delete requirement"
+                        label={t("deleteRequirement")}
                         disabled={busy}
                         danger
                         onClick={() => remove(req.id)}
@@ -315,7 +319,7 @@ function RankRow({
               <RequirementForm
                 initial={EMPTY_FORM}
                 busy={busy}
-                submitLabel="Add"
+                submitLabel={tc("add")}
                 onSubmit={add}
                 onCancel={() => setAdding(false)}
               />
@@ -327,7 +331,7 @@ function RankRow({
               className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/5"
             >
               <Plus size={14} />
-              Add requirement
+              {t("addRequirement")}
             </button>
           )}
 
@@ -380,6 +384,8 @@ function RequirementForm({
   onSubmit: (values: FormValues) => void;
   onCancel: () => void;
 }) {
+  const t = useTranslations("Belts");
+  const tc = useTranslations("Common");
   const [values, setValues] = useState<FormValues>(initial);
   const meta = requirementTypeMeta(values.type);
 
@@ -397,27 +403,27 @@ function RequirementForm({
     >
       <div className="grid gap-3 sm:grid-cols-[1fr_10rem]">
         <div>
-          <label className={labelClass}>Requirement</label>
+          <label className={labelClass}>{t("requirementLabel")}</label>
           <input
             type="text"
             required
             autoFocus
-            placeholder="e.g. Demonstrate scissor sweep"
+            placeholder={t("requirementPlaceholder")}
             value={values.name}
             onChange={(e) => set("name", e.target.value)}
             className={inputClass}
           />
         </div>
         <div>
-          <label className={labelClass}>Type</label>
+          <label className={labelClass}>{t("typeLabel")}</label>
           <select
             value={values.type}
             onChange={(e) => set("type", e.target.value as ReqType)}
             className={`${inputClass} bg-white`}
           >
-            {REQUIREMENT_TYPES.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.emoji} {t.label}
+            {REQUIREMENT_TYPES.map((rt) => (
+              <option key={rt.value} value={rt.value}>
+                {rt.emoji} {t(`reqType.${rt.value}`)}
               </option>
             ))}
           </select>
@@ -427,13 +433,13 @@ function RequirementForm({
         {meta.unit && (
           <div>
             <label className={labelClass}>
-              Target ({meta.unit})
+              {t("targetLabel", { unit: t(`reqUnit.${values.type}`) })}
             </label>
             <input
               type="number"
               min={0}
               required={meta.auto}
-              placeholder="e.g. 18"
+              placeholder={t("targetPlaceholder")}
               value={values.targetValue}
               onChange={(e) => set("targetValue", e.target.value)}
               className={inputClass}
@@ -441,10 +447,10 @@ function RequirementForm({
           </div>
         )}
         <div className={meta.unit ? "" : "sm:col-span-2"}>
-          <label className={labelClass}>Notes (optional)</label>
+          <label className={labelClass}>{t("notesLabel")}</label>
           <input
             type="text"
-            placeholder="Anything candidates should know"
+            placeholder={t("notesPlaceholder")}
             value={values.description}
             onChange={(e) => set("description", e.target.value)}
             className={inputClass}
@@ -466,7 +472,7 @@ function RequirementForm({
           className="inline-flex items-center gap-1 text-xs font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <X size={13} />
-          Cancel
+          {tc("cancel")}
         </button>
       </div>
     </form>

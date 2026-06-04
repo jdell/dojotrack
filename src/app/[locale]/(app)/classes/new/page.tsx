@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCurrentClub, getInstructorOptions } from "@/lib/queries";
 import { DISCIPLINES, disciplineMeta } from "@/lib/constants";
 import { ClassForm } from "../class-form";
 
-export const metadata: Metadata = { title: "Add class — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Classes" });
+  return { title: `${t("addClass")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function NewClassPage() {
+  const t = await getTranslations("Classes");
   const club = await getCurrentClub();
   const instructors = club ? await getInstructorOptions(club.id) : [];
 
@@ -31,14 +41,11 @@ export default async function NewClassPage() {
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to schedule
+          {t("backToSchedule")}
         </Link>
-        <p className="eyebrow">New class</p>
-        <h1 className="text-2xl font-bold text-brand-navy">Add a class</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Set up a recurring weekly class. Sessions repeat every week on the day
-          you choose.
-        </p>
+        <p className="eyebrow">{t("newClass")}</p>
+        <h1 className="text-2xl font-bold text-brand-navy">{t("addAClass")}</h1>
+        <p className="mt-1 text-sm text-muted-foreground">{t("newClassBody")}</p>
       </div>
 
       <ClassForm disciplines={disciplines} instructors={instructors} />

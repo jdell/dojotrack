@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -14,14 +15,22 @@ import {
 import { getClassDetail, getCurrentClub, getStudents } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
-import { DAY_LABELS, formatTime } from "@/lib/schedule";
+import { formatTime } from "@/lib/schedule";
 import { checkinLink } from "@/lib/invite";
 import { qrDataUrl } from "@/lib/qr";
 import { LevelBadge } from "@/components/level-badge";
 import { SessionManager } from "./session-manager";
 import { ClassActions } from "./class-actions";
 
-export const metadata: Metadata = { title: "Class — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string; locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Classes" });
+  return { title: `${t("classTitle")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -31,6 +40,7 @@ export default async function ClassDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Classes");
 
   if (!isDbConfigured()) return <NotConfigured />;
 
@@ -61,11 +71,11 @@ export default async function ClassDetailPage({
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to schedule
+          {t("backToSchedule")}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="eyebrow">{DAY_LABELS[detail.dayOfWeek]}s</p>
+            <p className="eyebrow">{t(`dayPlural.${detail.dayOfWeek}`)}</p>
             <h1 className="text-2xl font-bold text-brand-navy">
               {detail.name}
             </h1>
@@ -79,7 +89,7 @@ export default async function ClassDetailPage({
               </span>
               <span className="inline-flex items-center gap-1.5">
                 <UserIcon size={14} />
-                {detail.instructorName ?? "Unassigned"}
+                {detail.instructorName ?? t("unassigned")}
               </span>
               {detail.location && (
                 <span className="inline-flex items-center gap-1.5">
@@ -98,21 +108,21 @@ export default async function ClassDetailPage({
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={<Percent size={18} />}
-          label="Avg fill rate"
+          label={t("avgFillRate")}
           value={`${Math.round(detail.stats.avgFillRate * 100)}%`}
-          hint="Check-ins ÷ capacity"
+          hint={t("avgFillRateHint")}
         />
         <StatCard
           icon={<CalendarDays size={18} />}
-          label="Sessions held"
+          label={t("sessionsHeld")}
           value={String(detail.stats.totalSessions)}
-          hint="To date"
+          hint={t("sessionsHeldHint")}
         />
         <StatCard
           icon={<UserIcon size={18} />}
-          label="Total check-ins"
+          label={t("totalCheckins")}
           value={String(detail.stats.totalCheckins)}
-          hint="All sessions"
+          hint={t("totalCheckinsHint")}
         />
       </div>
 
@@ -120,11 +130,11 @@ export default async function ClassDetailPage({
         {/* Upcoming sessions */}
         <div className="space-y-4">
           <h2 className="text-lg font-bold text-brand-navy">
-            Upcoming sessions
+            {t("upcomingSessions")}
           </h2>
           {detail.sessions.length === 0 ? (
             <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-              No upcoming sessions scheduled.
+              {t("noUpcomingSessions")}
             </p>
           ) : (
             detail.sessions.map((session) => (
@@ -144,20 +154,20 @@ export default async function ClassDetailPage({
           <div className="rounded-xl border border-border bg-card p-5 text-center shadow-sm">
             <h2 className="flex items-center justify-center gap-2 text-sm font-semibold text-brand-navy">
               <QrCode size={16} className="text-brand-teal" />
-              Self check-in
+              {t("selfCheckin")}
             </h2>
             {qr && checkinUrl ? (
               <>
                 <Image
                   src={qr}
-                  alt="Check-in QR code"
+                  alt={t("checkinQrAlt")}
                   width={180}
                   height={180}
                   unoptimized
                   className="mx-auto mt-3 rounded-lg border border-border"
                 />
                 <p className="mt-3 text-xs text-muted-foreground">
-                  Students scan to check in to the next session.
+                  {t("scanToCheckin")}
                 </p>
                 <code className="mt-2 block truncate rounded-md bg-muted/50 px-2 py-1 text-[0.65rem] text-muted-foreground">
                   {checkinUrl}
@@ -165,7 +175,7 @@ export default async function ClassDetailPage({
               </>
             ) : (
               <p className="mt-3 text-xs text-muted-foreground">
-                The QR code appears once an upcoming session is scheduled.
+                {t("qrAppearsLater")}
               </p>
             )}
           </div>
@@ -204,7 +214,8 @@ function StatCard({
   );
 }
 
-function NotConfigured() {
+async function NotConfigured() {
+  const t = await getTranslations("Classes");
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -212,16 +223,15 @@ function NotConfigured() {
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
       >
         <ArrowLeft size={15} />
-        Back to schedule
+        {t("backToSchedule")}
       </Link>
       <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
         <div className="mx-auto mb-3 text-4xl">🥋</div>
         <h2 className="text-lg font-bold text-brand-navy">
-          Class details aren&apos;t available yet
+          {t("notConfiguredTitle")}
         </h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Connect a database to view sessions, check students in, and track
-          attendance.
+          {t("notConfiguredBody")}
         </p>
       </div>
     </div>

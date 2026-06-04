@@ -7,7 +7,15 @@ import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Sparring — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Sparring" });
+  return { title: `${t("title")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +31,7 @@ export default async function SparringPage() {
           <p className="eyebrow">{t("eyebrow")}</p>
           <h1 className="text-2xl font-bold text-brand-navy">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Auto-pair students for safe, balanced rounds by belt and rotate byes.
+            {t("subtitle")}
           </p>
         </div>
         {club && (
@@ -32,28 +40,30 @@ export default async function SparringPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
           >
             <Swords size={16} />
-            New session
+            {t("newSession")}
           </Link>
         )}
       </div>
 
       {!club ? (
-        <NotConfigured />
+        <NotConfigured
+          title={t("notConfiguredTitle")}
+          body={t("notConfiguredBody")}
+        />
       ) : sessions.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
           <div className="mx-auto mb-3 text-4xl">🥊</div>
           <h2 className="text-lg font-bold text-brand-navy">
-            No sparring sessions yet
+            {t("emptyTitle")}
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Start a session, pick who&apos;s on the mat, and we&apos;ll generate
-            balanced pairings.
+            {t("emptyBody")}
           </p>
           <Link
             href="/sparring/new"
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
           >
-            New session
+            {t("newSession")}
           </Link>
         </div>
       ) : (
@@ -71,7 +81,7 @@ export default async function SparringPage() {
                   </span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-semibold text-brand-navy">
-                      {s.name ?? "Sparring session"}
+                      {s.name ?? t("sessionFallback")}
                     </p>
                     <p className="flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
                       <span className="inline-flex items-center gap-1">
@@ -91,8 +101,8 @@ export default async function SparringPage() {
                       {s.participantCount}
                     </p>
                     <p>
-                      {s.pairCount} {s.pairCount === 1 ? "bout" : "bouts"} ·{" "}
-                      {s.rounds} {s.rounds === 1 ? "round" : "rounds"}
+                      {t("boutCount", { count: s.pairCount })} ·{" "}
+                      {t("roundCount", { count: s.rounds })}
                     </p>
                   </div>
                 </Link>
@@ -105,16 +115,12 @@ export default async function SparringPage() {
   );
 }
 
-function NotConfigured() {
+function NotConfigured({ title, body }: { title: string; body: string }) {
   return (
     <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
       <div className="mx-auto mb-3 text-4xl">🥊</div>
-      <h2 className="text-lg font-bold text-brand-navy">
-        Sparring isn&apos;t available yet
-      </h2>
-      <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-        Connect a database to generate and save sparring pairings.
-      </p>
+      <h2 className="text-lg font-bold text-brand-navy">{title}</h2>
+      <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">{body}</p>
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import {
   Ban,
@@ -31,6 +32,7 @@ export function SessionManager({
   maxStudents,
   timeLabel,
 }: SessionManagerProps) {
+  const t = useTranslations("Classes");
   const router = useRouter();
   const [rows, setRows] = useState<SessionBookingRow[]>(session.bookings);
   const [cancelled, setCancelled] = useState(session.cancelled);
@@ -62,7 +64,7 @@ export function SessionManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not check in.");
+      if (!res.ok) throw new Error(data.error ?? t("checkinError"));
       setRows((prev) =>
         prev.map((r) =>
           r.studentId === studentId
@@ -72,7 +74,7 @@ export function SessionManager({
       );
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not check in.");
+      setError(err instanceof Error ? err.message : t("checkinError"));
     } finally {
       setBusy(null);
     }
@@ -95,7 +97,7 @@ export function SessionManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not check in.");
+      if (!res.ok) throw new Error(data.error ?? t("checkinError"));
       setRows((prev) => [
         ...prev,
         {
@@ -111,7 +113,7 @@ export function SessionManager({
       setPickerId("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not check in.");
+      setError(err instanceof Error ? err.message : t("checkinError"));
     } finally {
       setBusy(null);
     }
@@ -130,12 +132,12 @@ export function SessionManager({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not update session.");
+      if (!res.ok) throw new Error(data.error ?? t("updateSessionError"));
       setCancelled(next);
       setShowCancel(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update.");
+      setError(err instanceof Error ? err.message : t("updateSessionError"));
     } finally {
       setBusy(null);
     }
@@ -153,11 +155,15 @@ export function SessionManager({
         </div>
         {cancelled ? (
           <span className="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-0.5 text-xs font-semibold text-red-700">
-            <Ban size={12} /> Cancelled
+            <Ban size={12} /> {t("cancelled")}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">
-            {checkedInCount} in · {enrolledCount}/{maxStudents} booked
+            {t("sessionStats", {
+              checkedIn: checkedInCount,
+              enrolled: enrolledCount,
+              max: maxStudents,
+            })}
           </span>
         )}
       </div>
@@ -166,8 +172,8 @@ export function SessionManager({
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-red-50 p-3">
           <p className="text-sm text-red-700">
             {session.cancelReason
-              ? `Cancelled — ${session.cancelReason}`
-              : "This session has been cancelled."}
+              ? t("cancelledWithReason", { reason: session.cancelReason })
+              : t("sessionCancelled")}
           </p>
           <button
             type="button"
@@ -180,14 +186,14 @@ export function SessionManager({
             ) : (
               <RotateCcw size={13} />
             )}
-            Reinstate
+            {t("reinstate")}
           </button>
         </div>
       ) : (
         <>
           {rows.length === 0 ? (
             <p className="mt-4 rounded-lg bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-              No one booked yet.
+              {t("noOneBooked")}
             </p>
           ) : (
             <ul className="mt-4 divide-y divide-border">
@@ -202,15 +208,15 @@ export function SessionManager({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {r.status === "WAITLISTED"
-                        ? "Waitlisted"
+                        ? t("waitlisted")
                         : r.status === "BOOKED"
-                          ? "Booked"
-                          : "Drop-in"}
+                          ? t("booked")
+                          : t("dropIn")}
                     </p>
                   </div>
                   {r.checkedIn ? (
                     <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-teal">
-                      <CheckCircle2 size={15} /> Checked in
+                      <CheckCircle2 size={15} /> {t("checkedIn")}
                     </span>
                   ) : (
                     <button
@@ -224,7 +230,7 @@ export function SessionManager({
                       ) : (
                         <Check size={13} />
                       )}
-                      Check in
+                      {t("checkIn")}
                     </button>
                   )}
                 </li>
@@ -240,7 +246,7 @@ export function SessionManager({
                 onChange={(e) => setPickerId(e.target.value)}
                 className="min-w-0 flex-1 rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
               >
-                <option value="">Add a drop-in…</option>
+                <option value="">{t("addDropIn")}</option>
                 {available.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.fullName}
@@ -254,7 +260,7 @@ export function SessionManager({
                 className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-semibold text-brand-navy transition-colors hover:bg-muted/50 disabled:opacity-50"
               >
                 <UserPlus size={14} />
-                Check in
+                {t("checkIn")}
               </button>
             </div>
           )}
@@ -267,7 +273,7 @@ export function SessionManager({
                   type="text"
                   value={cancelReason}
                   onChange={(e) => setCancelReason(e.target.value)}
-                  placeholder="Reason (optional) — e.g. instructor away"
+                  placeholder={t("cancelReasonPlaceholder")}
                   className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
                 />
                 <div className="flex items-center gap-2">
@@ -282,18 +288,18 @@ export function SessionManager({
                     ) : (
                       <Ban size={13} />
                     )}
-                    Confirm cancellation
+                    {t("confirmCancellation")}
                   </button>
                   <button
                     type="button"
                     onClick={() => setShowCancel(false)}
                     className="text-xs font-medium text-muted-foreground hover:text-brand-navy"
                   >
-                    Keep session
+                    {t("keepSession")}
                   </button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Booked students will be notified.
+                  {t("bookedStudentsNotified")}
                 </p>
               </div>
             ) : (
@@ -303,7 +309,7 @@ export function SessionManager({
                 className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground transition-colors hover:text-red-600"
               >
                 <Ban size={13} />
-                Cancel this session
+                {t("cancelThisSession")}
               </button>
             )}
           </div>

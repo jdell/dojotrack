@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Check, Globe } from "lucide-react";
 import { usePathname, useRouter } from "@/i18n/navigation";
 import { routing, LOCALE_LABELS, type Locale } from "@/i18n/routing";
@@ -24,6 +24,7 @@ export function LanguageSwitcher({
   className?: string;
 }) {
   const locale = useLocale() as Locale;
+  const t = useTranslations("LanguageSwitcher");
   const router = useRouter();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -47,6 +48,7 @@ export function LanguageSwitcher({
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-label={t("label")}
         className={cn(
           "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-sm font-medium transition-colors",
           trigger,
@@ -61,7 +63,7 @@ export function LanguageSwitcher({
           {/* Click-away backdrop. */}
           <button
             type="button"
-            aria-label="Close language menu"
+            aria-label={t("closeMenu")}
             className="fixed inset-0 z-40 cursor-default"
             onClick={() => setOpen(false)}
           />

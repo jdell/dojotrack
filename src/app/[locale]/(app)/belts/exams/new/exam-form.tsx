@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react";
@@ -28,6 +29,8 @@ export function ExamForm({
   prevRankName: string | null;
   suggestions: SuggestedCandidate[];
 }) {
+  const t = useTranslations("Belts");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -76,13 +79,11 @@ export function ExamForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not schedule the exam.");
+      if (!res.ok) throw new Error(data.error ?? t("errSchedule"));
       router.push(`/belts/exams/${data.exam.id}`);
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not schedule the exam.",
-      );
+      setError(err instanceof Error ? err.message : t("errSchedule"));
       setLoading(false);
     }
   }
@@ -100,25 +101,25 @@ export function ExamForm({
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Exam details
+          {t("examDetails")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Belt being tested for</label>
+            <label className={labelClass}>{t("beltTestedFor")}</label>
             <select
               value={targetRank.id}
               onChange={(e) => changeTarget(e.target.value)}
               className={`${inputClass} bg-white`}
             >
-              {targets.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
+              {targets.map((target) => (
+                <option key={target.id} value={target.id}>
+                  {target.name}
                 </option>
               ))}
             </select>
           </div>
           <div>
-            <label className={labelClass}>Date</label>
+            <label className={labelClass}>{t("date")}</label>
             <input
               type="date"
               required
@@ -130,17 +131,17 @@ export function ExamForm({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Location</label>
+            <label className={labelClass}>{t("location")}</label>
             <input
               type="text"
-              placeholder="Main dojo"
+              placeholder={t("locationPlaceholder")}
               value={form.location}
               onChange={(e) => update("location", e.target.value)}
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Fee (optional)</label>
+            <label className={labelClass}>{t("feeLabel")}</label>
             <input
               type="number"
               min={0}
@@ -153,10 +154,10 @@ export function ExamForm({
           </div>
         </div>
         <div>
-          <label className={labelClass}>Notes (optional)</label>
+          <label className={labelClass}>{t("notesLabel")}</label>
           <textarea
             rows={2}
-            placeholder="Anything candidates should bring or know."
+            placeholder={t("notesExamPlaceholder")}
             value={form.notes}
             onChange={(e) => update("notes", e.target.value)}
             className={`${inputClass} resize-y`}
@@ -166,16 +167,16 @@ export function ExamForm({
 
       <fieldset className="space-y-3">
         <legend className="text-sm font-semibold text-brand-navy">
-          Candidates
+          {t("candidates")}
           {prevRankName ? (
             <span className="ml-1 font-normal text-muted-foreground">
-              (currently {prevRankName})
+              {t("currentlyRank", { rank: prevRankName })}
             </span>
           ) : null}
         </legend>
         {suggestions.length === 0 ? (
           <p className="rounded-lg bg-muted/30 p-4 text-center text-sm text-muted-foreground">
-            No students are at the rank below to test.
+            {t("noStudentsBelowToTest")}
           </p>
         ) : (
           <ul className="divide-y divide-border overflow-hidden rounded-lg border border-border">
@@ -193,12 +194,15 @@ export function ExamForm({
                       {s.studentName}
                     </span>
                     <span className="text-xs text-muted-foreground">
-                      {s.metCount}/{s.totalCount} requirements met
+                      {t("requirementsMet", {
+                        met: s.metCount,
+                        total: s.totalCount,
+                      })}
                     </span>
                   </span>
                   {s.eligible && (
                     <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[0.65rem] font-semibold text-green-800">
-                      Ready
+                      {t("ready")}
                     </span>
                   )}
                 </label>
@@ -215,13 +219,13 @@ export function ExamForm({
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? "Scheduling…" : "Schedule exam"}
+          {loading ? t("scheduling") : t("newExam")}
         </button>
         <Link
           href="/belts/exams"
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
       </div>
     </form>

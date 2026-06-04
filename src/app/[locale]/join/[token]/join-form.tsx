@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface JoinFormProps {
@@ -18,6 +19,7 @@ const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
  * student record and marks the invite as accepted, then shows a confirmation.
  */
 export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
+  const t = useTranslations("Public.join");
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState("");
@@ -48,10 +50,10 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not complete sign-up.");
+      if (!res.ok) throw new Error(data.error ?? t("errorComplete"));
       setDone(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not sign up.");
+      setError(err instanceof Error ? err.message : t("errorSignUp"));
       setLoading(false);
     }
   }
@@ -61,11 +63,13 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
       <div className="text-center">
         <CheckCircle2 size={44} className="mx-auto text-brand-teal" />
         <h2 className="mt-3 text-lg font-bold text-brand-navy">
-          You&apos;re in!
+          {t("successTitle")}
         </h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-          Thanks, {form.fullName.split(" ")[0]}. {clubName} has your details —
-          they&apos;ll be in touch about your first class.
+          {t("successBody", {
+            name: form.fullName.split(" ")[0],
+            club: clubName,
+          })}
         </p>
       </div>
     );
@@ -79,18 +83,18 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
         </div>
       )}
       <div>
-        <label className={labelClass}>Full name</label>
+        <label className={labelClass}>{t("fullName")}</label>
         <input
           type="text"
           required
-          placeholder="Your name"
+          placeholder={t("fullNamePlaceholder")}
           value={form.fullName}
           onChange={(e) => update("fullName", e.target.value)}
           className={inputClass}
         />
       </div>
       <div>
-        <label className={labelClass}>Phone</label>
+        <label className={labelClass}>{t("phone")}</label>
         <input
           type="tel"
           autoComplete="tel"
@@ -101,7 +105,7 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
         />
       </div>
       <div>
-        <label className={labelClass}>Email</label>
+        <label className={labelClass}>{t("email")}</label>
         <input
           type="email"
           autoComplete="email"
@@ -112,7 +116,7 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
         />
       </div>
       <div>
-        <label className={labelClass}>Date of birth</label>
+        <label className={labelClass}>{t("dateOfBirth")}</label>
         <input
           type="date"
           value={form.dateOfBirth}
@@ -126,7 +130,7 @@ export function JoinForm({ token, clubName, unitLabel }: JoinFormProps) {
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-teal py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
       >
         {loading && <Loader2 size={16} className="animate-spin" />}
-        {loading ? "Joining…" : `Join ${clubName}`}
+        {loading ? t("joining") : t("joinButton", { club: clubName })}
       </button>
     </form>
   );

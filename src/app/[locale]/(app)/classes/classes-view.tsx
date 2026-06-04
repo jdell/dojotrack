@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import {
@@ -14,7 +15,7 @@ import type { BookingStatus } from "@prisma/client";
 import type { ClassCard, CurrentStudent } from "@/lib/queries";
 import { LevelBadge } from "@/components/level-badge";
 import { disciplineMeta } from "@/lib/constants";
-import { DAY_ORDER, DAY_SHORT, formatTime } from "@/lib/schedule";
+import { DAY_ORDER, formatTime } from "@/lib/schedule";
 
 interface ClassesViewProps {
   classes: ClassCard[];
@@ -27,6 +28,7 @@ interface ClassesViewProps {
  * context, each card carries a book/cancel control with waitlist support.
  */
 export function ClassesView({ classes, student }: ClassesViewProps) {
+  const t = useTranslations("Classes");
   const [view, setView] = useState<"week" | "list">("week");
 
   const byDay = useMemo(() => {
@@ -40,16 +42,15 @@ export function ClassesView({ classes, student }: ClassesViewProps) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
         <div className="mx-auto mb-3 text-4xl">📅</div>
-        <h2 className="text-lg font-bold text-brand-navy">No classes yet</h2>
+        <h2 className="text-lg font-bold text-brand-navy">{t("emptyTitle")}</h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Build your weekly timetable. Add your first class and students will be
-          able to book and check in.
+          {t("emptyBody")}
         </p>
         <Link
           href="/classes/new"
           className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
         >
-          Add class
+          {t("addClass")}
         </Link>
       </div>
     );
@@ -60,10 +61,12 @@ export function ClassesView({ classes, student }: ClassesViewProps) {
       <div className="flex items-center justify-between gap-3">
         {student && (
           <p className="text-xs text-muted-foreground">
-            Booking as{" "}
-            <span className="font-medium text-brand-navy">
-              {student.fullName}
-            </span>
+            {t.rich("bookingAs", {
+              name: student.fullName,
+              strong: (chunks) => (
+                <span className="font-medium text-brand-navy">{chunks}</span>
+              ),
+            })}
           </p>
         )}
         <div className="ml-auto inline-flex rounded-lg border border-border bg-card p-0.5 text-sm">
@@ -72,13 +75,13 @@ export function ClassesView({ classes, student }: ClassesViewProps) {
               key={v}
               type="button"
               onClick={() => setView(v)}
-              className={`rounded-md px-3 py-1.5 font-medium capitalize transition-colors ${
+              className={`rounded-md px-3 py-1.5 font-medium transition-colors ${
                 view === v
                   ? "bg-brand-teal text-white"
                   : "text-muted-foreground hover:text-brand-navy"
               }`}
             >
-              {v} view
+              {t(`view.${v}`)}
             </button>
           ))}
         </div>
@@ -91,11 +94,11 @@ export function ClassesView({ classes, student }: ClassesViewProps) {
             return (
               <div key={day} className="space-y-2">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  {DAY_SHORT[day]}
+                  {t(`dayShort.${day}`)}
                 </p>
                 {dayClasses.length === 0 ? (
                   <div className="rounded-xl border border-dashed border-border bg-card p-4 text-center text-xs text-muted-foreground">
-                    No classes
+                    {t("noClasses")}
                   </div>
                 ) : (
                   dayClasses.map((c) => (
@@ -126,6 +129,7 @@ function ClassCardItem({
   student: CurrentStudent | null;
   listView?: boolean;
 }) {
+  const t = useTranslations("Classes");
   const discipline = disciplineMeta(card.discipline);
   return (
     <div className="rounded-xl border border-border bg-card p-3 shadow-sm">
@@ -138,7 +142,7 @@ function ClassCardItem({
             {formatTime(card.startTime)} – {formatTime(card.endTime)}
             {listView && (
               <span className="text-muted-foreground">
-                · {DAY_SHORT[card.dayOfWeek]}
+                · {t(`dayShort.${card.dayOfWeek}`)}
               </span>
             )}
           </p>
@@ -155,7 +159,7 @@ function ClassCardItem({
             <LevelBadge level={card.level} />
             <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
               <UserIcon size={12} />
-              {card.instructorName ?? "Unassigned"}
+              {card.instructorName ?? t("unassigned")}
             </span>
           </div>
           {card.location && (
@@ -171,11 +175,11 @@ function ClassCardItem({
             className={`inline-flex items-center gap-1 text-xs font-medium ${
               card.isFull ? "text-amber-600" : "text-muted-foreground"
             }`}
-            title="Enrolled / capacity"
+            title={t("enrolledCapacity")}
           >
             <CalendarDays size={12} />
             {card.enrolledCount}/{card.maxStudents}
-            {card.isFull && " · Full"}
+            {card.isFull && ` · ${t("full")}`}
           </span>
         </div>
       </div>
@@ -196,6 +200,7 @@ function BookButton({
   card: ClassCard;
   studentId: string;
 }) {
+  const t = useTranslations("Classes");
   const router = useRouter();
   const [status, setStatus] = useState<BookingStatus | null>(
     card.bookingStatus,
@@ -216,12 +221,12 @@ function BookButton({
         body: JSON.stringify({ classScheduleId: card.id, studentId }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not book the class.");
+      if (!res.ok) throw new Error(data.error ?? t("bookError"));
       setStatus(data.booking.status);
       setPosition(data.waitlistPosition ?? null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not book.");
+      setError(err instanceof Error ? err.message : t("bookError"));
     } finally {
       setLoading(false);
     }
@@ -245,12 +250,12 @@ function BookButton({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not cancel.");
+      if (!res.ok) throw new Error(data.error ?? t("cancelError"));
       setStatus(null);
       setPosition(null);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not cancel.");
+      setError(err instanceof Error ? err.message : t("cancelError"));
     } finally {
       setLoading(false);
     }
@@ -261,7 +266,7 @@ function BookButton({
       {status === "BOOKED" ? (
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-800">
-            Booked
+            {t("booked")}
           </span>
           <button
             type="button"
@@ -269,13 +274,15 @@ function BookButton({
             disabled={loading}
             className="text-xs font-medium text-muted-foreground transition-colors hover:text-red-600 disabled:opacity-50"
           >
-            {loading ? "…" : "Cancel"}
+            {loading ? "…" : t("cancel")}
           </button>
         </div>
       ) : status === "WAITLISTED" ? (
         <div className="flex items-center justify-between gap-2">
           <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
-            Waitlist{position ? ` · #${position}` : ""}
+            {position
+              ? t("waitlistPosition", { position })
+              : t("waitlist")}
           </span>
           <button
             type="button"
@@ -283,7 +290,7 @@ function BookButton({
             disabled={loading}
             className="text-xs font-medium text-muted-foreground transition-colors hover:text-red-600 disabled:opacity-50"
           >
-            {loading ? "…" : "Leave"}
+            {loading ? "…" : t("leave")}
           </button>
         </div>
       ) : (
@@ -294,7 +301,7 @@ function BookButton({
           className="inline-flex w-full items-center justify-center gap-1.5 rounded-lg bg-brand-teal px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50"
         >
           {loading && <Loader2 size={13} className="animate-spin" />}
-          {card.isFull ? "Join waitlist" : "Book"}
+          {card.isFull ? t("joinWaitlist") : t("book")}
         </button>
       )}
       {error && <p className="text-xs text-red-600">{error}</p>}

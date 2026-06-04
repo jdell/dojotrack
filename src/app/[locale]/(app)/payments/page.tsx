@@ -15,34 +15,35 @@ import {
   getStudentOptions,
 } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
-import { BILLING_INTERVAL_LABELS } from "@/lib/constants";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { NewPlanForm } from "./new-plan-form";
 import { CheckoutPanel } from "./checkout-panel";
 
-export const metadata: Metadata = { title: "Payments — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Payments" });
+  return { title: `${t("title")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
-const MEMBER_STATUS: Record<
-  MembershipStatus,
-  { label: string; className: string }
-> = {
-  ACTIVE: { label: "Active", className: "bg-green-100 text-green-800" },
-  TRIALING: { label: "Trialing", className: "bg-blue-100 text-blue-800" },
-  PAST_DUE: { label: "Past due", className: "bg-red-100 text-red-800" },
-  CANCELLED: { label: "Cancelled", className: "bg-slate-100 text-slate-600" },
-  INCOMPLETE: { label: "Incomplete", className: "bg-amber-100 text-amber-800" },
+const MEMBER_STATUS: Record<MembershipStatus, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  TRIALING: "bg-blue-100 text-blue-800",
+  PAST_DUE: "bg-red-100 text-red-800",
+  CANCELLED: "bg-slate-100 text-slate-600",
+  INCOMPLETE: "bg-amber-100 text-amber-800",
 };
 
-const PAYMENT_STATUS: Record<
-  PaymentStatus,
-  { label: string; className: string }
-> = {
-  PAID: { label: "Paid", className: "bg-green-100 text-green-800" },
-  PENDING: { label: "Pending", className: "bg-amber-100 text-amber-800" },
-  FAILED: { label: "Failed", className: "bg-red-100 text-red-800" },
-  REFUNDED: { label: "Refunded", className: "bg-slate-100 text-slate-600" },
+const PAYMENT_STATUS: Record<PaymentStatus, string> = {
+  PAID: "bg-green-100 text-green-800",
+  PENDING: "bg-amber-100 text-amber-800",
+  FAILED: "bg-red-100 text-red-800",
+  REFUNDED: "bg-slate-100 text-slate-600",
 };
 
 export default async function PaymentsPage({
@@ -62,27 +63,27 @@ export default async function PaymentsPage({
 
   const metrics = [
     {
-      label: "Monthly revenue",
+      label: t("metrics.monthlyRevenue"),
       value: data ? formatMoney(data.monthlyRevenue, currency) : "—",
-      hint: "Collected this month",
+      hint: t("metrics.monthlyRevenueHint"),
       icon: TrendingUp,
     },
     {
-      label: "Total collected",
+      label: t("metrics.totalCollected"),
       value: data ? formatMoney(data.totalCollected, currency) : "—",
-      hint: "All time",
+      hint: t("metrics.totalCollectedHint"),
       icon: Wallet,
     },
     {
-      label: "Active members",
+      label: t("metrics.activeMembers"),
       value: data ? String(data.activeMembers) : "—",
-      hint: "On a paid plan",
+      hint: t("metrics.activeMembersHint"),
       icon: Users,
     },
     {
-      label: "Past due",
+      label: t("metrics.pastDue"),
       value: data ? String(data.pastDueCount) : "—",
-      hint: "Need attention",
+      hint: t("metrics.pastDueHint"),
       icon: CreditCard,
     },
   ];
@@ -94,7 +95,7 @@ export default async function PaymentsPage({
           <p className="eyebrow">{t("eyebrow")}</p>
           <h1 className="text-2xl font-bold text-brand-navy">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Membership plans, member billing, and revenue at a glance.
+            {t("subtitle")}
           </p>
         </div>
       </div>
@@ -102,13 +103,13 @@ export default async function PaymentsPage({
       {status === "success" && (
         <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-3 text-sm text-green-800">
           <CheckCircle2 size={16} />
-          Checkout complete — the payment will appear once Stripe confirms it.
+          {t("checkoutSuccess")}
         </div>
       )}
       {status === "cancelled" && (
         <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
           <XCircle size={16} />
-          Checkout cancelled. No charge was made.
+          {t("checkoutCancelled")}
         </div>
       )}
 
@@ -140,26 +141,29 @@ export default async function PaymentsPage({
 
           {!data?.stripeConfigured && (
             <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
-              Stripe isn&apos;t configured yet. Add{" "}
-              <code className="rounded bg-amber-100 px-1">STRIPE_SECRET_KEY</code>{" "}
-              to enable live checkout. You can still set up plans below.
+              {t.rich("stripeNotConfigured", {
+                code: (chunks) => (
+                  <code className="rounded bg-amber-100 px-1">{chunks}</code>
+                ),
+              })}
             </div>
           )}
 
           <section className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-brand-navy">Plans</h2>
+                <h2 className="text-lg font-bold text-brand-navy">
+                  {t("plansHeading")}
+                </h2>
                 <NewPlanForm />
               </div>
               {activePlans.length === 0 && (data?.plans.length ?? 0) === 0 ? (
                 <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                  No plans yet. Add a membership plan to start billing members.
+                  {t("plansEmpty")}
                 </p>
               ) : (
                 <ul className="space-y-2">
                   {(data?.plans ?? []).map((plan) => {
-                    const interval = BILLING_INTERVAL_LABELS[plan.interval];
                     return (
                       <li
                         key={plan.id}
@@ -173,13 +177,12 @@ export default async function PaymentsPage({
                             {plan.name}
                             {!plan.active && (
                               <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-semibold text-slate-600">
-                                Inactive
+                                {t("inactive")}
                               </span>
                             )}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {plan.activeMembers}{" "}
-                            {plan.activeMembers === 1 ? "member" : "members"}
+                            {t("memberCount", { count: plan.activeMembers })}
                             {plan.description ? ` · ${plan.description}` : ""}
                           </p>
                         </div>
@@ -187,11 +190,11 @@ export default async function PaymentsPage({
                           <p className="font-bold text-brand-navy">
                             {formatMoney(plan.amount, plan.currency)}
                             <span className="text-xs font-normal text-muted-foreground">
-                              {interval.short}
+                              {t(`intervalShort.${plan.interval}`)}
                             </span>
                           </p>
                           <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                            {interval.label}
+                            {t(`interval.${plan.interval}`)}
                           </p>
                         </div>
                       </li>
@@ -203,7 +206,7 @@ export default async function PaymentsPage({
 
             <div className="space-y-3">
               <h2 className="text-lg font-bold text-brand-navy">
-                Charge a member
+                {t("chargeMember")}
               </h2>
               <CheckoutPanel
                 students={students}
@@ -214,27 +217,34 @@ export default async function PaymentsPage({
           </section>
 
           <section className="space-y-3">
-            <h2 className="text-lg font-bold text-brand-navy">Members</h2>
+            <h2 className="text-lg font-bold text-brand-navy">
+              {t("membersHeading")}
+            </h2>
             {(data?.members.length ?? 0) === 0 ? (
               <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                No members on a plan yet. Charge a member to start a
-                subscription.
+                {t("membersEmpty")}
               </p>
             ) : (
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">Member</th>
-                      <th className="px-4 py-3 font-semibold">Plan</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
-                      <th className="px-4 py-3 font-semibold">Renews</th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.member")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.plan")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.status")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.renews")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
                     {(data?.members ?? []).map((m) => {
-                      const meta = MEMBER_STATUS[m.status];
-                      const interval = BILLING_INTERVAL_LABELS[m.interval];
                       return (
                         <tr
                           key={m.membershipId}
@@ -247,14 +257,14 @@ export default async function PaymentsPage({
                             {m.planName}{" "}
                             <span className="text-xs">
                               ({formatMoney(m.amount, currency)}
-                              {interval.short})
+                              {t(`intervalShort.${m.interval}`)})
                             </span>
                           </td>
                           <td className="px-4 py-3">
                             <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.className}`}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${MEMBER_STATUS[m.status]}`}
                             >
-                              {meta.label}
+                              {t(`membershipStatus.${m.status}`)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
@@ -273,29 +283,36 @@ export default async function PaymentsPage({
 
           <section className="space-y-3">
             <h2 className="text-lg font-bold text-brand-navy">
-              Recent payments
+              {t("recentPaymentsHeading")}
             </h2>
             {(data?.recentPayments.length ?? 0) === 0 ? (
               <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                No payments recorded yet.
+                {t("paymentsEmpty")}
               </p>
             ) : (
               <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 <table className="w-full text-left text-sm">
                   <thead>
                     <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">Date</th>
-                      <th className="px-4 py-3 font-semibold">Member</th>
-                      <th className="px-4 py-3 font-semibold">For</th>
-                      <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.date")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.member")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.for")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
+                        {t("table.status")}
+                      </th>
                       <th className="px-4 py-3 text-right font-semibold">
-                        Amount
+                        {t("table.amount")}
                       </th>
                     </tr>
                   </thead>
                   <tbody>
                     {(data?.recentPayments ?? []).map((p) => {
-                      const meta = PAYMENT_STATUS[p.status];
                       return (
                         <tr
                           key={p.id}
@@ -312,9 +329,9 @@ export default async function PaymentsPage({
                           </td>
                           <td className="px-4 py-3">
                             <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.className}`}
+                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS[p.status]}`}
                             >
-                              {meta.label}
+                              {t(`paymentStatus.${p.status}`)}
                             </span>
                           </td>
                           <td className="px-4 py-3 text-right font-semibold text-brand-navy">
@@ -334,15 +351,16 @@ export default async function PaymentsPage({
   );
 }
 
-function NotConfigured() {
+async function NotConfigured() {
+  const t = await getTranslations("Payments");
   return (
     <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
       <div className="mx-auto mb-3 text-4xl">💳</div>
       <h2 className="text-lg font-bold text-brand-navy">
-        Payments aren&apos;t available yet
+        {t("notAvailableTitle")}
       </h2>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-        Connect a database (and Stripe) to set up plans and bill members.
+        {t("notAvailableBody")}
       </p>
     </div>
   );

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CreditCard, Loader2 } from "lucide-react";
-import { BILLING_INTERVAL_LABELS } from "@/lib/constants";
 import { formatMoney } from "@/lib/utils";
 import type { PaymentPlanRow, StudentOption } from "@/lib/queries";
 
@@ -23,6 +23,7 @@ export function CheckoutPanel({
   plans: PaymentPlanRow[];
   stripeConfigured: boolean;
 }) {
+  const t = useTranslations("Payments");
   const [studentId, setStudentId] = useState("");
   const [planId, setPlanId] = useState(plans[0]?.id ?? "");
   const [loading, setLoading] = useState(false);
@@ -47,11 +48,11 @@ export function CheckoutPanel({
       });
       const data = await res.json();
       if (!res.ok || !data.url) {
-        throw new Error(data.error ?? "Could not start checkout.");
+        throw new Error(data.error ?? t("checkoutError"));
       }
       window.location.href = data.url;
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not start checkout.");
+      setError(err instanceof Error ? err.message : t("checkoutError"));
       setLoading(false);
     }
   }
@@ -60,18 +61,18 @@ export function CheckoutPanel({
     <div className="space-y-3 rounded-xl border border-border bg-card p-4 shadow-sm">
       {plans.length === 0 ? (
         <p className="text-sm text-muted-foreground">
-          Add an active plan first, then you can charge members.
+          {t("checkout.noPlans")}
         </p>
       ) : (
         <>
           <div>
-            <label className={labelClass}>Member</label>
+            <label className={labelClass}>{t("checkout.member")}</label>
             <select
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
               className={controlClass}
             >
-              <option value="">Select a member…</option>
+              <option value="">{t("checkout.selectMember")}</option>
               {students.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -80,7 +81,7 @@ export function CheckoutPanel({
             </select>
           </div>
           <div>
-            <label className={labelClass}>Plan</label>
+            <label className={labelClass}>{t("checkout.plan")}</label>
             <select
               value={planId}
               onChange={(e) => setPlanId(e.target.value)}
@@ -89,7 +90,7 @@ export function CheckoutPanel({
               {plans.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name} — {formatMoney(p.amount, p.currency)}
-                  {BILLING_INTERVAL_LABELS[p.interval].short}
+                  {t(`intervalShort.${p.interval}`)}
                 </option>
               ))}
             </select>
@@ -106,11 +107,11 @@ export function CheckoutPanel({
             ) : (
               <CreditCard size={16} />
             )}
-            {loading ? "Redirecting…" : "Start checkout"}
+            {loading ? t("checkout.redirecting") : t("checkout.start")}
           </button>
           {!stripeConfigured && (
             <p className="text-xs text-muted-foreground">
-              Connect Stripe to enable live checkout.
+              {t("checkout.connectStripe")}
             </p>
           )}
         </>

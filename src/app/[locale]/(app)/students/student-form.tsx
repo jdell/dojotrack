@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react";
@@ -22,6 +23,8 @@ const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
  * existing family id or a new family name to create alongside the student.
  */
 export function StudentForm({ beltOptions, families }: StudentFormProps) {
+  const t = useTranslations("Students");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -69,13 +72,11 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not add the student.");
+      if (!res.ok) throw new Error(data.error ?? t("errorAdd"));
       router.push("/students");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not add the student.",
-      );
+      setError(err instanceof Error ? err.message : t("errorAdd"));
       setLoading(false);
     }
   }
@@ -94,14 +95,14 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
       {/* Identity */}
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Member details
+          {t("sectionMemberDetails")}
         </legend>
         <div>
-          <label className={labelClass}>Full name</label>
+          <label className={labelClass}>{t("fieldFullName")}</label>
           <input
             type="text"
             required
-            placeholder="Alex Johnson"
+            placeholder={t("placeholderFullName")}
             value={form.fullName}
             onChange={(e) => update("fullName", e.target.value)}
             className={inputClass}
@@ -109,7 +110,7 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Phone</label>
+            <label className={labelClass}>{t("fieldPhone")}</label>
             <input
               type="tel"
               autoComplete="tel"
@@ -120,7 +121,7 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
             />
           </div>
           <div>
-            <label className={labelClass}>Email</label>
+            <label className={labelClass}>{t("fieldEmail")}</label>
             <input
               type="email"
               autoComplete="email"
@@ -133,7 +134,7 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Date of birth</label>
+            <label className={labelClass}>{t("fieldDateOfBirth")}</label>
             <input
               type="date"
               value={form.dateOfBirth}
@@ -142,13 +143,13 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
             />
           </div>
           <div>
-            <label className={labelClass}>Belt rank</label>
+            <label className={labelClass}>{t("fieldBeltRank")}</label>
             <select
               value={form.beltRankId}
               onChange={(e) => update("beltRankId", e.target.value)}
               className={`${inputClass} bg-white`}
             >
-              <option value="">No belt yet</option>
+              <option value="">{t("optionNoBeltYet")}</option>
               {beltOptions.map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -162,30 +163,30 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
       {/* Family */}
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Family
+          {t("sectionFamily")}
         </legend>
         <div>
-          <label className={labelClass}>Add to family</label>
+          <label className={labelClass}>{t("fieldAddToFamily")}</label>
           <select
             value={familyChoice}
             onChange={(e) => setFamilyChoice(e.target.value)}
             className={`${inputClass} bg-white`}
           >
-            <option value="">No family</option>
+            <option value="">{t("optionNoFamily")}</option>
             {families.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.name}
               </option>
             ))}
-            <option value={NEW_FAMILY}>+ Create new family…</option>
+            <option value={NEW_FAMILY}>{t("optionCreateFamily")}</option>
           </select>
         </div>
         {familyChoice === NEW_FAMILY && (
           <div>
-            <label className={labelClass}>New family name</label>
+            <label className={labelClass}>{t("fieldNewFamilyName")}</label>
             <input
               type="text"
-              placeholder="The Johnsons"
+              placeholder={t("placeholderNewFamilyName")}
               value={form.newFamilyName}
               onChange={(e) => update("newFamilyName", e.target.value)}
               className={inputClass}
@@ -197,21 +198,21 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
       {/* Emergency + medical */}
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Safety
+          {t("sectionSafety")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Emergency contact</label>
+            <label className={labelClass}>{t("fieldEmergencyContact")}</label>
             <input
               type="text"
-              placeholder="Parent / guardian name"
+              placeholder={t("placeholderEmergencyContact")}
               value={form.emergencyContact}
               onChange={(e) => update("emergencyContact", e.target.value)}
               className={inputClass}
             />
           </div>
           <div>
-            <label className={labelClass}>Emergency phone</label>
+            <label className={labelClass}>{t("fieldEmergencyPhone")}</label>
             <input
               type="tel"
               placeholder="+1 555 987 6543"
@@ -222,10 +223,10 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
           </div>
         </div>
         <div>
-          <label className={labelClass}>Medical notes</label>
+          <label className={labelClass}>{t("fieldMedicalNotes")}</label>
           <textarea
             rows={3}
-            placeholder="Allergies, injuries, or conditions instructors should know about."
+            placeholder={t("placeholderMedicalNotes")}
             value={form.medicalNotes}
             onChange={(e) => update("medicalNotes", e.target.value)}
             className={`${inputClass} resize-y`}
@@ -240,13 +241,13 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? "Saving…" : "Add student"}
+          {loading ? tc("saving") : t("addStudent")}
         </button>
         <Link
           href="/students"
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
       </div>
     </form>

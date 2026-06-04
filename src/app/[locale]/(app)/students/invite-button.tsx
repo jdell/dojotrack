@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Check, Copy, LinkIcon, Loader2, Mail } from "lucide-react";
 
 interface InviteButtonProps {
@@ -29,6 +30,8 @@ export function InviteButton({
   variant = "secondary",
   className,
 }: InviteButtonProps) {
+  const t = useTranslations("Students");
+  const tc = useTranslations("Common");
   const [loading, setLoading] = useState(false);
   const [invite, setInvite] = useState<GeneratedInvite | null>(null);
   const [email, setEmail] = useState("");
@@ -49,8 +52,7 @@ export function InviteButton({
         }),
       });
       const data = await res.json();
-      if (!res.ok)
-        throw new Error(data.error ?? "Could not create the invite.");
+      if (!res.ok) throw new Error(data.error ?? t("errorInvite"));
       setInvite({
         link: data.link,
         whatsappUrl: data.whatsappUrl,
@@ -59,7 +61,7 @@ export function InviteButton({
         email: trimmedEmail || null,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create invite.");
+      setError(err instanceof Error ? err.message : t("errorInvite"));
     } finally {
       setLoading(false);
     }
@@ -72,7 +74,7 @@ export function InviteButton({
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      setError("Couldn't access the clipboard — copy the link manually.");
+      setError(t("errorClipboard"));
     }
   }
 
@@ -91,7 +93,7 @@ export function InviteButton({
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="email to send to (optional)"
+              placeholder={t("inviteEmailPlaceholder")}
               className="w-52 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
@@ -108,18 +110,18 @@ export function InviteButton({
             ) : (
               <LinkIcon size={16} />
             )}
-            {email.trim() ? "Send invite" : "Invite via link"}
+            {email.trim() ? t("sendInvite") : t("inviteViaLink")}
           </button>
         </div>
       ) : (
         <div className="rounded-lg border border-border bg-card p-3 shadow-sm">
           {invite.emailed && invite.email && (
             <p className="mb-2 inline-flex items-center gap-1.5 text-xs font-medium text-brand-teal">
-              <Check size={14} /> Invite emailed to {invite.email}
+              <Check size={14} /> {t("inviteEmailedTo", { email: invite.email })}
             </p>
           )}
           <p className="mb-2 text-xs font-medium text-muted-foreground">
-            Share this link to invite a student:
+            {t("inviteShare")}
           </p>
           <div className="flex flex-wrap items-center gap-2">
             <code className="min-w-0 flex-1 truncate rounded-md bg-muted/50 px-2.5 py-1.5 text-xs text-brand-navy">
@@ -132,11 +134,11 @@ export function InviteButton({
             >
               {copied ? (
                 <>
-                  <Check size={14} className="text-brand-teal" /> Copied
+                  <Check size={14} className="text-brand-teal" /> {tc("copied")}
                 </>
               ) : (
                 <>
-                  <Copy size={14} /> Copy
+                  <Copy size={14} /> {tc("copy")}
                 </>
               )}
             </button>
@@ -157,7 +159,7 @@ export function InviteButton({
             }}
             className="mt-2 text-xs text-muted-foreground hover:text-brand-navy"
           >
-            Generate another
+            {t("generateAnother")}
           </button>
         </div>
       )}

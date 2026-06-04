@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -15,7 +16,15 @@ import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { BeltBadge } from "@/components/belt-badge";
 
-export const metadata: Metadata = { title: "Student — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Students" });
+  return { title: `${t("memberEyebrow")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +34,7 @@ export default async function StudentProfilePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Students");
 
   if (!isDbConfigured()) return <NotConfigured />;
 
@@ -39,20 +49,22 @@ export default async function StudentProfilePage({
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to roster
+          {t("backToRoster")}
         </Link>
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="eyebrow">Member</p>
+            <p className="eyebrow">{t("memberEyebrow")}</p>
             <h1 className="text-2xl font-bold text-brand-navy">
               {student.fullName}
             </h1>
             <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
               <BeltBadge name={student.beltName} color={student.beltColor} />
-              <span>Member since {formatDate(student.joinDate)}</span>
+              <span>
+                {t("memberSince", { date: formatDate(student.joinDate) })}
+              </span>
               {!student.active && (
                 <span className="rounded-full bg-muted/60 px-2 py-0.5 text-xs">
-                  Inactive
+                  {t("status.inactive")}
                 </span>
               )}
             </div>
@@ -62,7 +74,7 @@ export default async function StudentProfilePage({
             className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
           >
             <Award size={16} />
-            Belt progress
+            {t("beltProgress")}
           </Link>
         </div>
       </div>
@@ -70,38 +82,40 @@ export default async function StudentProfilePage({
       <div className="grid gap-4 sm:grid-cols-3">
         <StatCard
           icon={<CalendarDays size={18} />}
-          label="Classes attended"
+          label={t("statClassesAttended")}
           value={String(student.totalClasses)}
-          hint="All time"
+          hint={t("statAllTime")}
         />
         <StatCard
           icon={<Flame size={18} />}
-          label="Current streak"
-          value={`${student.streakWeeks} ${student.streakWeeks === 1 ? "week" : "weeks"}`}
-          hint="Consecutive weeks training"
+          label={t("statCurrentStreak")}
+          value={t("weeksValue", { count: student.streakWeeks })}
+          hint={t("statConsecutiveWeeks")}
         />
         <StatCard
           icon={<Trophy size={18} />}
-          label="Belt"
+          label={t("colBelt")}
           value={student.beltName ?? "—"}
-          hint="Current rank"
+          hint={t("statCurrentRank")}
         />
       </div>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-brand-navy">Attendance history</h2>
+        <h2 className="text-lg font-bold text-brand-navy">
+          {t("attendanceHistory")}
+        </h2>
         {student.history.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-            No check-ins recorded yet.
+            {t("noCheckIns")}
           </p>
         ) : (
           <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
             <table className="w-full text-left text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                  <th className="px-4 py-3 font-semibold">Class</th>
-                  <th className="px-4 py-3 font-semibold">Date</th>
-                  <th className="px-4 py-3 font-semibold">Method</th>
+                  <th className="px-4 py-3 font-semibold">{t("colClass")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("colDate")}</th>
+                  <th className="px-4 py-3 font-semibold">{t("colMethod")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -125,11 +139,11 @@ export default async function StudentProfilePage({
                     <td className="px-4 py-3">
                       {h.method === "QR_SCAN" ? (
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                          <QrCode size={13} /> Self check-in
+                          <QrCode size={13} /> {t("methodSelfCheckIn")}
                         </span>
                       ) : (
                         <span className="text-xs text-muted-foreground">
-                          Manual
+                          {t("methodManual")}
                         </span>
                       )}
                     </td>
@@ -173,7 +187,8 @@ function StatCard({
   );
 }
 
-function NotConfigured() {
+async function NotConfigured() {
+  const t = await getTranslations("Students");
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -181,15 +196,15 @@ function NotConfigured() {
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
       >
         <ArrowLeft size={15} />
-        Back to roster
+        {t("backToRoster")}
       </Link>
       <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
         <div className="mx-auto mb-3 text-4xl">🥋</div>
         <h2 className="text-lg font-bold text-brand-navy">
-          Profiles aren&apos;t available yet
+          {t("profilesUnavailableTitle")}
         </h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Connect a database to see attendance history and streaks.
+          {t("profilesUnavailableBody")}
         </p>
       </div>
     </div>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
@@ -8,7 +9,15 @@ import { formatDate, readableTextColor } from "@/lib/utils";
 import { BRAND } from "@/lib/constants";
 import { PrintButton } from "./print-button";
 
-export const metadata: Metadata = { title: "Certificate — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Public.certificate" });
+  return { title: t("metaTitle") };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +27,7 @@ export default async function CertificatePage({
   params: Promise<{ candidateId: string }>;
 }) {
   const { candidateId } = await params;
+  const t = await getTranslations("Public.certificate");
 
   if (!isDbConfigured()) notFound();
   const cert = await getCertificateData(candidateId);
@@ -27,17 +37,17 @@ export default async function CertificatePage({
     return (
       <div className="mx-auto max-w-xl px-4 py-16 text-center">
         <h1 className="text-xl font-bold text-brand-navy">
-          No certificate available
+          {t("unavailableTitle")}
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          A certificate is issued once the candidate passes their grading.
+          {t("unavailableBody")}
         </p>
         <Link
           href="/belts/exams"
           className="mt-6 inline-flex items-center gap-1.5 text-sm font-medium text-brand-teal hover:underline"
         >
           <ArrowLeft size={15} />
-          Back to exams
+          {t("backToExams")}
         </Link>
       </div>
     );
@@ -60,7 +70,7 @@ export default async function CertificatePage({
           className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to exams
+          {t("backToExams")}
         </Link>
         <PrintButton />
       </div>
@@ -77,16 +87,16 @@ export default async function CertificatePage({
             {cert.clubName}
           </p>
           <h1 className="mt-6 text-3xl font-bold tracking-tight text-brand-navy sm:text-4xl">
-            Certificate of Promotion
+            {t("title")}
           </h1>
           <p className="mt-6 text-sm text-muted-foreground">
-            This is to certify that
+            {t("certifyThat")}
           </p>
           <p className="mt-2 text-2xl font-bold text-brand-navy sm:text-3xl">
             {cert.studentName}
           </p>
           <p className="mt-4 text-sm text-muted-foreground">
-            has been awarded the rank of
+            {t("awardedRank")}
           </p>
           <p className="mt-3 inline-flex items-center gap-3">
             <span
@@ -105,23 +115,23 @@ export default async function CertificatePage({
               <p className="border-t border-slate-300 pt-1 font-medium text-brand-navy">
                 {formatDate(cert.date)}
               </p>
-              <p className="text-xs text-muted-foreground">Date awarded</p>
+              <p className="text-xs text-muted-foreground">{t("dateAwarded")}</p>
             </div>
             <div className="text-center">
               <p className="border-t border-slate-300 pt-1 font-medium text-brand-navy">
                 {cert.instructorName}
               </p>
-              <p className="text-xs text-muted-foreground">Assessed by</p>
+              <p className="text-xs text-muted-foreground">{t("assessedBy")}</p>
             </div>
           </div>
 
           {cert.location && (
             <p className="mt-8 text-xs text-muted-foreground">
-              Awarded at {cert.location}
+              {t("awardedAt", { location: cert.location })}
             </p>
           )}
           <p className="mt-2 text-[0.65rem] uppercase tracking-widest text-muted-foreground">
-            Issued via {BRAND.name}
+            {t("issuedVia", { brand: BRAND.name })}
           </p>
         </div>
       </article>

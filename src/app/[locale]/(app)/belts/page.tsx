@@ -12,7 +12,15 @@ import { BELT_SYSTEMS } from "@/lib/constants";
 import type { BeltSystem } from "@/types";
 import { BeltsManager } from "./belts-manager";
 
-export const metadata: Metadata = { title: "Belts — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Belts" });
+  return { title: `${t("metaBelts")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +44,7 @@ export default async function BeltsPage() {
             {t("title")}
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Define what each rank demands — time on the mat, classes attended,
-            techniques, and competition — then track who&apos;s ready to grade.
+            {t("intro")}
           </p>
         </div>
         <Link
@@ -45,7 +52,7 @@ export default async function BeltsPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
         >
           <GraduationCap size={16} />
-          Grading exams
+          {t("exams")}
         </Link>
       </div>
 
@@ -53,7 +60,7 @@ export default async function BeltsPage() {
         <BeltsManager ranks={ranks} />
       ) : club ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
-          Setting up your belt ladder… refresh in a moment.
+          {t("settingUp")}
         </p>
       ) : (
         <BuiltInPreview />
@@ -66,12 +73,12 @@ export default async function BeltsPage() {
  * Read-only preview of the built-in ladders, shown before a database is
  * attached. Once connected, a club's own ranks are seeded and become editable.
  */
-function BuiltInPreview() {
+async function BuiltInPreview() {
+  const t = await getTranslations("Belts");
   return (
     <div className="space-y-5">
       <p className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
-        Connect a database to configure requirements and grade students. These
-        are the ladders DojoTrack ships with.
+        {t("builtInPreviewHint")}
       </p>
       {SYSTEMS.map((system) => (
         <section
@@ -81,7 +88,7 @@ function BuiltInPreview() {
           <div className="mb-4 flex items-baseline justify-between">
             <h2 className="text-lg font-bold text-brand-navy">{system.name}</h2>
             <span className="text-xs text-muted-foreground">
-              {system.belts.length} ranks
+              {t("rankCount", { count: system.belts.length })}
             </span>
           </div>
           <ol className="flex flex-wrap gap-2">

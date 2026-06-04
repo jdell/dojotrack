@@ -9,7 +9,15 @@ import {
 } from "@/lib/queries";
 import { ClassesView } from "./classes-view";
 
-export const metadata: Metadata = { title: "Classes — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Classes" });
+  return { title: `${t("title")} — DojoTrack` };
+}
 
 // Schedule + enrolment counts are per-request, DB-backed — never pre-rendered.
 export const dynamic = "force-dynamic";
@@ -29,7 +37,7 @@ export default async function ClassesPage() {
           <p className="eyebrow">{t("eyebrow")}</p>
           <h1 className="text-2xl font-bold text-brand-navy">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Plan your weekly timetable and track attendance.
+            {t("subtitle")}
           </p>
         </div>
         <Link
@@ -37,7 +45,7 @@ export default async function ClassesPage() {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
         >
           <CalendarPlus size={16} />
-          Add class
+          {t("addClass")}
         </Link>
       </div>
 

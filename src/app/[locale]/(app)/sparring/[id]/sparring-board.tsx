@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Loader2, RefreshCw, Trash2 } from "lucide-react";
 import type { SparringPairRow, SparringSessionDetail } from "@/lib/queries";
@@ -15,10 +16,11 @@ function Fighter({
   belt: string | null;
   color: string | null;
 }) {
+  const t = useTranslations("Sparring");
   if (!name) {
     return (
       <span className="flex-1 text-sm font-medium italic text-muted-foreground">
-        Bye — sits out
+        {t("byeSitsOut")}
       </span>
     );
   }
@@ -34,7 +36,7 @@ function Fighter({
           {name}
         </span>
         <span className="block text-xs text-muted-foreground">
-          {belt ?? "No belt"}
+          {belt ?? t("noBelt")}
         </span>
       </span>
     </span>
@@ -43,6 +45,7 @@ function Fighter({
 
 /** Renders the pairings grouped by round, with regenerate / delete actions. */
 export function SparringBoard({ session }: { session: SparringSessionDetail }) {
+  const t = useTranslations("Sparring");
   const router = useRouter();
   const [busy, setBusy] = useState<"regen" | "delete" | null>(null);
   const [error, setError] = useState("");
@@ -68,20 +71,18 @@ export function SparringBoard({ session }: { session: SparringSessionDetail }) {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Could not regenerate pairs.");
+        throw new Error(data.error ?? t("regenerateError"));
       }
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not regenerate pairs.",
-      );
+      setError(err instanceof Error ? err.message : t("regenerateError"));
     } finally {
       setBusy(null);
     }
   }
 
   async function remove() {
-    if (!confirm("Delete this sparring session?")) return;
+    if (!confirm(t("deleteConfirm"))) return;
     setBusy("delete");
     setError("");
     try {
@@ -90,14 +91,12 @@ export function SparringBoard({ session }: { session: SparringSessionDetail }) {
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Could not delete the session.");
+        throw new Error(data.error ?? t("deleteError"));
       }
       router.push("/sparring");
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not delete the session.",
-      );
+      setError(err instanceof Error ? err.message : t("deleteError"));
       setBusy(null);
     }
   }
@@ -116,7 +115,7 @@ export function SparringBoard({ session }: { session: SparringSessionDetail }) {
           ) : (
             <RefreshCw size={15} />
           )}
-          Re-pair
+          {t("regenerate")}
         </button>
         <button
           type="button"
@@ -129,24 +128,24 @@ export function SparringBoard({ session }: { session: SparringSessionDetail }) {
           ) : (
             <Trash2 size={15} />
           )}
-          Delete session
+          {t("deleteSession")}
         </button>
         <span className="text-xs text-muted-foreground">
-          Re-pair reshuffles the draw and reaches for fresh matchups.
+          {t("regenerateHint")}
         </span>
         {error && <span className="text-sm text-red-600">{error}</span>}
       </div>
 
       {rounds.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          No pairings yet.
+          {t("noPairings")}
         </p>
       ) : (
         rounds.map(([round, pairs]) => (
           <section key={round} className="space-y-2">
             {session.rounds > 1 && (
               <h2 className="text-sm font-bold uppercase tracking-wide text-brand-teal">
-                Round {round}
+                {t("roundN", { n: round })}
               </h2>
             )}
             <ul className="space-y-2">
@@ -164,7 +163,7 @@ export function SparringBoard({ session }: { session: SparringSessionDetail }) {
                     color={p.studentAColor}
                   />
                   <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-muted-foreground">
-                    {p.studentBId ? "vs" : ""}
+                    {p.studentBId ? t("versus") : ""}
                   </span>
                   <Fighter
                     name={p.studentBName}

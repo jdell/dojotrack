@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import {
@@ -14,7 +15,15 @@ import { formatDate } from "@/lib/utils";
 import { BeltBadge } from "@/components/belt-badge";
 import { BeltProgressChecklist } from "./belt-progress-checklist";
 
-export const metadata: Metadata = { title: "Belt progress — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Students" });
+  return { title: `${t("beltProgress")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +33,7 @@ export default async function StudentBeltPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Students");
 
   if (!isDbConfigured()) return <NotConfigured studentId={id} />;
 
@@ -41,9 +51,9 @@ export default async function StudentBeltPage({
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to profile
+          {t("backToProfile")}
         </Link>
-        <p className="eyebrow">Belt progression</p>
+        <p className="eyebrow">{t("beltProgressionEyebrow")}</p>
         <h1 className="text-2xl font-bold text-brand-navy">
           {progress.studentName}
         </h1>
@@ -55,7 +65,7 @@ export default async function StudentBeltPage({
           {progress.nextBelt && (
             <span className="inline-flex items-center gap-1.5">
               <Trophy size={14} className="text-brand-gold" />
-              Working toward {progress.nextBelt.name}
+              {t("workingToward", { belt: progress.nextBelt.name })}
             </span>
           )}
         </div>
@@ -64,24 +74,22 @@ export default async function StudentBeltPage({
       {progress.eligible && (
         <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 p-4 text-sm font-medium text-green-800">
           <CheckCircle2 size={18} />
-          All requirements met — ready to grade for {progress.nextBelt?.name}.
+          {t("readyToGrade", { belt: progress.nextBelt?.name ?? "" })}
         </div>
       )}
 
       <div className="grid gap-4 sm:grid-cols-2">
         <StatCard
           icon={<Clock size={18} />}
-          label="Time at current belt"
-          value={`${progress.monthsAtCurrentBelt} ${
-            progress.monthsAtCurrentBelt === 1 ? "month" : "months"
-          }`}
-          hint={`Since ${formatDate(progress.sinceDate)}`}
+          label={t("statTimeAtBelt")}
+          value={t("monthsValue", { count: progress.monthsAtCurrentBelt })}
+          hint={t("statSince", { date: formatDate(progress.sinceDate) })}
         />
         <StatCard
           icon={<CalendarDays size={18} />}
-          label="Classes attended"
+          label={t("statClassesAttended")}
           value={String(progress.totalClasses)}
-          hint="All time"
+          hint={t("statAllTime")}
         />
       </div>
 
@@ -96,21 +104,22 @@ export default async function StudentBeltPage({
         <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">
           <div className="mx-auto mb-2 text-3xl">🏆</div>
           <p className="text-sm font-medium text-brand-navy">
-            Top of the ladder
+            {t("topOfLadderTitle")}
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            {progress.studentName} holds the highest rank — no further belt to
-            work toward.
+            {t("topOfLadderBody", { name: progress.studentName })}
           </p>
         </div>
       )}
 
       {/* Belt history */}
       <section className="space-y-3">
-        <h2 className="text-lg font-bold text-brand-navy">Belt history</h2>
+        <h2 className="text-lg font-bold text-brand-navy">
+          {t("beltHistory")}
+        </h2>
         {progress.history.length === 0 ? (
           <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-            No belt history yet.
+            {t("noBeltHistory")}
           </p>
         ) : (
           <ol className="relative space-y-4 border-l border-border pl-6">
@@ -127,13 +136,13 @@ export default async function StudentBeltPage({
                     {h.beltName}
                     {isLast && (
                       <span className="ml-2 inline-flex items-center rounded-full bg-brand-teal/10 px-2 py-0.5 text-[0.65rem] font-semibold text-brand-teal">
-                        Current
+                        {t("currentBadge")}
                       </span>
                     )}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {h.via === "enrollment" ? "Enrolled" : "Promoted"} ·{" "}
-                    {formatDate(h.date)}
+                    {h.via === "enrollment" ? t("viaEnrolled") : t("viaPromoted")}{" "}
+                    · {formatDate(h.date)}
                   </p>
                 </li>
               );
@@ -174,7 +183,8 @@ function StatCard({
   );
 }
 
-function NotConfigured({ studentId }: { studentId: string }) {
+async function NotConfigured({ studentId }: { studentId: string }) {
+  const t = await getTranslations("Students");
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -182,15 +192,15 @@ function NotConfigured({ studentId }: { studentId: string }) {
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
       >
         <ArrowLeft size={15} />
-        Back to profile
+        {t("backToProfile")}
       </Link>
       <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
         <div className="mx-auto mb-3 text-4xl">🥋</div>
         <h2 className="text-lg font-bold text-brand-navy">
-          Belt progress isn&apos;t available yet
+          {t("beltUnavailableTitle")}
         </h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Connect a database to track requirements and gradings.
+          {t("beltUnavailableBody")}
         </p>
       </div>
     </div>

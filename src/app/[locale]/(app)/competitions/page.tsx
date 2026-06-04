@@ -12,7 +12,15 @@ import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Competitions — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Competitions" });
+  return { title: `${t("title")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -30,7 +38,7 @@ export default async function CompetitionsPage() {
           <p className="eyebrow">{t("eyebrow")}</p>
           <h1 className="text-2xl font-bold text-brand-navy">{t("title")}</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Track tournaments your students enter and record their results.
+            {t("subtitle")}
           </p>
         </div>
         {club && (
@@ -39,7 +47,7 @@ export default async function CompetitionsPage() {
             className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
           >
             <Trophy size={16} />
-            Add competition
+            {t("addCompetition")}
           </Link>
         )}
       </div>
@@ -50,29 +58,29 @@ export default async function CompetitionsPage() {
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
           <div className="mx-auto mb-3 text-4xl">🏆</div>
           <h2 className="text-lg font-bold text-brand-navy">
-            No competitions yet
+            {t("emptyTitle")}
           </h2>
           <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            Add a competition to enter students and log their placements.
+            {t("emptyHint")}
           </p>
           <Link
             href="/competitions/new"
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
           >
-            Add competition
+            {t("addCompetition")}
           </Link>
         </div>
       ) : (
         <div className="space-y-6">
           <CompetitionGroup
-            title="Upcoming"
+            title={t("upcoming")}
             competitions={upcoming}
-            emptyHint="None scheduled."
+            emptyHint={t("noneScheduled")}
           />
           <CompetitionGroup
-            title="Past"
+            title={t("past")}
             competitions={past}
-            emptyHint="No past competitions."
+            emptyHint={t("noPastCompetitions")}
           />
         </div>
       )}
@@ -80,7 +88,7 @@ export default async function CompetitionsPage() {
   );
 }
 
-function CompetitionGroup({
+async function CompetitionGroup({
   title,
   competitions,
   emptyHint,
@@ -89,6 +97,7 @@ function CompetitionGroup({
   competitions: CompetitionRow[];
   emptyHint: string;
 }) {
+  const t = await getTranslations("Competitions");
   return (
     <section className="space-y-3">
       <h2 className="text-lg font-bold text-brand-navy">{title}</h2>
@@ -134,8 +143,7 @@ function CompetitionGroup({
                   <div className="shrink-0 text-right">
                     <CompetitionStatusBadge status={c.status} />
                     <p className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
-                      {c.entryCount}{" "}
-                      {c.entryCount === 1 ? "entry" : "entries"}
+                      {t("entryCount", { count: c.entryCount })}
                       {c.medalCount > 0 && (
                         <span className="inline-flex items-center gap-0.5 text-brand-gold">
                           · <Medal size={12} />
@@ -154,40 +162,38 @@ function CompetitionGroup({
   );
 }
 
-const STATUS_META: Record<
-  CompetitionStatus,
-  { label: string; className: string }
-> = {
-  SCHEDULED: { label: "Scheduled", className: "bg-blue-100 text-blue-800" },
-  IN_PROGRESS: { label: "In progress", className: "bg-amber-100 text-amber-800" },
-  COMPLETED: { label: "Completed", className: "bg-green-100 text-green-800" },
-  CANCELLED: { label: "Cancelled", className: "bg-slate-100 text-slate-600" },
+const STATUS_CLASS: Record<CompetitionStatus, string> = {
+  SCHEDULED: "bg-blue-100 text-blue-800",
+  IN_PROGRESS: "bg-amber-100 text-amber-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  CANCELLED: "bg-slate-100 text-slate-600",
 };
 
-export function CompetitionStatusBadge({
+export async function CompetitionStatusBadge({
   status,
 }: {
   status: CompetitionStatus;
 }) {
-  const meta = STATUS_META[status];
+  const t = await getTranslations("Competitions");
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${meta.className}`}
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${STATUS_CLASS[status]}`}
     >
-      {meta.label}
+      {t(`status.${status}`)}
     </span>
   );
 }
 
-function NotConfigured() {
+async function NotConfigured() {
+  const t = await getTranslations("Competitions");
   return (
     <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
       <div className="mx-auto mb-3 text-4xl">🏆</div>
       <h2 className="text-lg font-bold text-brand-navy">
-        Competitions aren&apos;t available yet
+        {t("notConfiguredTitle")}
       </h2>
       <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-        Connect a database to track competitions and record results.
+        {t("notConfiguredHint")}
       </p>
     </div>
   );

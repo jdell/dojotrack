@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 interface CheckinFormProps {
@@ -14,6 +15,7 @@ interface CheckinFormProps {
  * the student selects themselves from the club roster.
  */
 export function CheckinForm({ sessionId, students }: CheckinFormProps) {
+  const t = useTranslations("Public.checkin");
   const [loading, setLoading] = useState<string | null>(null);
   const [done, setDone] = useState<{ name: string } | null>(null);
   const [checkedIn, setCheckedIn] = useState<Set<string>>(
@@ -35,11 +37,11 @@ export function CheckinForm({ sessionId, students }: CheckinFormProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not check you in.");
+      if (!res.ok) throw new Error(data.error ?? t("errorCheckYouIn"));
       setCheckedIn((prev) => new Set(prev).add(student.id));
       setDone({ name: student.fullName });
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not check in.");
+      setError(err instanceof Error ? err.message : t("errorCheckIn"));
     } finally {
       setLoading(null);
     }
@@ -50,10 +52,10 @@ export function CheckinForm({ sessionId, students }: CheckinFormProps) {
       <div className="text-center">
         <CheckCircle2 size={44} className="mx-auto text-brand-teal" />
         <h2 className="mt-3 text-lg font-bold text-brand-navy">
-          You&apos;re checked in!
+          {t("successTitle")}
         </h2>
         <p className="mx-auto mt-1 max-w-sm text-sm text-slate-500">
-          See you on the mat, {done.name.split(" ")[0]}.
+          {t("successBody", { name: done.name.split(" ")[0] })}
         </p>
       </div>
     );
@@ -62,8 +64,7 @@ export function CheckinForm({ sessionId, students }: CheckinFormProps) {
   if (students.length === 0) {
     return (
       <p className="rounded-lg bg-slate-50 p-4 text-center text-sm text-slate-500">
-        No members are set up for this club yet. Ask your instructor to add you
-        to the roster.
+        {t("noMembers")}
       </p>
     );
   }
@@ -89,12 +90,14 @@ export function CheckinForm({ sessionId, students }: CheckinFormProps) {
                 <span className="truncate">{s.fullName}</span>
                 {already ? (
                   <span className="inline-flex items-center gap-1 text-xs font-semibold text-brand-teal">
-                    <CheckCircle2 size={15} /> In
+                    <CheckCircle2 size={15} /> {t("in")}
                   </span>
                 ) : loading === s.id ? (
                   <Loader2 size={16} className="animate-spin text-brand-teal" />
                 ) : (
-                  <span className="text-xs text-muted-foreground">Tap to check in</span>
+                  <span className="text-xs text-muted-foreground">
+                    {t("tapToCheckIn")}
+                  </span>
                 )}
               </button>
             </li>

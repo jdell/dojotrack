@@ -1,3 +1,6 @@
+"use client";
+
+import { useTranslations } from "next-intl";
 import { cn } from "@/lib/utils";
 
 interface BeltBadgeProps {
@@ -12,6 +15,7 @@ interface BeltBadgeProps {
  * "No belt" pill when a student hasn't been assigned a rank yet.
  */
 export function BeltBadge({ name, color, className }: BeltBadgeProps) {
+  const t = useTranslations("Belts");
   if (!name) {
     return (
       <span
@@ -20,7 +24,7 @@ export function BeltBadge({ name, color, className }: BeltBadgeProps) {
           className,
         )}
       >
-        No belt
+        {t("noBelt")}
       </span>
     );
   }

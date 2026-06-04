@@ -1,14 +1,24 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getBeltOptions, getCurrentClub, getFamilies } from "@/lib/queries";
 import { StudentForm } from "../student-form";
 
-export const metadata: Metadata = { title: "Add student — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Students" });
+  return { title: `${t("addStudent")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function NewStudentPage() {
+  const t = await getTranslations("Students");
   const club = await getCurrentClub();
   const [beltOptions, families] = await Promise.all([
     getBeltOptions(club),
@@ -23,12 +33,14 @@ export default async function NewStudentPage() {
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to roster
+          {t("backToRoster")}
         </Link>
-        <p className="eyebrow">New member</p>
-        <h1 className="text-2xl font-bold text-brand-navy">Add a student</h1>
+        <p className="eyebrow">{t("newMemberEyebrow")}</p>
+        <h1 className="text-2xl font-bold text-brand-navy">
+          {t("newMemberTitle")}
+        </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Enrol a new member and assign them to a belt rank and family.
+          {t("newMemberSubtitle")}
         </p>
       </div>
 

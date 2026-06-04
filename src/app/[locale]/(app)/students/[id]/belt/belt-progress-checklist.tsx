@@ -1,26 +1,27 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Check, Clock, Loader2, Minus } from "lucide-react";
 import type { TechniqueStatus } from "@prisma/client";
 import type { ProgressState, RequirementProgress } from "@/lib/queries";
 import { requirementTypeMeta } from "@/lib/constants";
 
-const STATUS_OPTIONS: { value: TechniqueStatus; label: string }[] = [
-  { value: "NOT_ASSESSED", label: "Not assessed" },
-  { value: "IN_PROGRESS", label: "In progress" },
-  { value: "PASSED", label: "Passed" },
+const STATUS_OPTIONS: TechniqueStatus[] = [
+  "NOT_ASSESSED",
+  "IN_PROGRESS",
+  "PASSED",
 ];
 
 function fromStatus(status: TechniqueStatus): {
   state: ProgressState;
   detail: string;
 } {
-  if (status === "PASSED") return { state: "met", detail: "Passed" };
+  if (status === "PASSED") return { state: "met", detail: "PASSED" };
   if (status === "IN_PROGRESS")
-    return { state: "in_progress", detail: "In progress" };
-  return { state: "not_met", detail: "Not assessed" };
+    return { state: "in_progress", detail: "IN_PROGRESS" };
+  return { state: "not_met", detail: "NOT_ASSESSED" };
 }
 
 /**
@@ -39,6 +40,7 @@ export function BeltProgressChecklist({
   requirements: RequirementProgress[];
   totalCount: number;
 }) {
+  const t = useTranslations("Students");
   const router = useRouter();
   const [requirements, setRequirements] =
     useState<RequirementProgress[]>(initial);
@@ -58,18 +60,18 @@ export function BeltProgressChecklist({
         body: JSON.stringify({ studentId, requirementId, status }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save.");
+      if (!res.ok) throw new Error(data.error ?? t("errorSave"));
       const { state, detail } = fromStatus(status);
       setRequirements((prev) =>
         prev.map((r) =>
           r.requirement.id === requirementId
-            ? { ...r, logStatus: status, state, detail }
+            ? { ...r, logStatus: status, state, detail: t(`status.${detail}`) }
             : r,
         ),
       );
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(err instanceof Error ? err.message : t("errorSave"));
     } finally {
       setPending(null);
     }
@@ -80,10 +82,10 @@ export function BeltProgressChecklist({
       <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
         <div className="flex items-center justify-between text-sm">
           <span className="font-semibold text-brand-navy">
-            Progress to {nextBeltName}
+            {t("progressTo", { belt: nextBeltName })}
           </span>
           <span className="text-muted-foreground">
-            {metCount} of {totalCount} met
+            {t("metCount", { met: metCount, total: totalCount })}
           </span>
         </div>
         <div className="mt-3 h-3 overflow-hidden rounded-full bg-muted">
@@ -92,12 +94,14 @@ export function BeltProgressChecklist({
             style={{ width: `${pct}%` }}
           />
         </div>
-        <p className="mt-2 text-xs text-muted-foreground">{pct}% complete</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {t("percentComplete", { pct })}
+        </p>
       </div>
 
       {totalCount === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          No requirements are defined for {nextBeltName} yet.
+          {t("noRequirements", { belt: nextBeltName })}
         </p>
       ) : (
         <ul className="space-y-2">
@@ -127,19 +131,18 @@ export function BeltProgressChecklist({
                 {!meta.auto && (
                   <div className="mt-3 flex flex-wrap items-center gap-1.5 pl-9">
                     {STATUS_OPTIONS.map((opt) => {
-                      const active =
-                        (rp.logStatus ?? "NOT_ASSESSED") === opt.value;
+                      const active = (rp.logStatus ?? "NOT_ASSESSED") === opt;
                       return (
                         <button
-                          key={opt.value}
+                          key={opt}
                           type="button"
                           disabled={pending === rp.requirement.id}
-                          onClick={() => assess(rp.requirement.id, opt.value)}
+                          onClick={() => assess(rp.requirement.id, opt)}
                           className={`inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-semibold transition-colors disabled:opacity-50 ${
                             active
-                              ? opt.value === "PASSED"
+                              ? opt === "PASSED"
                                 ? "bg-green-600 text-white"
-                                : opt.value === "IN_PROGRESS"
+                                : opt === "IN_PROGRESS"
                                   ? "bg-amber-500 text-white"
                                   : "bg-slate-500 text-white"
                               : "border border-border bg-card text-muted-foreground hover:bg-muted/50"
@@ -148,7 +151,7 @@ export function BeltProgressChecklist({
                           {pending === rp.requirement.id && active && (
                             <Loader2 size={12} className="animate-spin" />
                           )}
-                          {opt.label}
+                          {t(`status.${opt}`)}
                         </button>
                       );
                     })}

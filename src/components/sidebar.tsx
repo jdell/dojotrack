@@ -107,7 +107,7 @@ export function Sidebar({
         )}
         <button
           type="button"
-          aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-label={collapsed ? t("expandSidebar") : t("collapseSidebar")}
           onClick={() => setCollapsed((c) => !c)}
           className="shrink-0 rounded-md p-1.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors"
         >

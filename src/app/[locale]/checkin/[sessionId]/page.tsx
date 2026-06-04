@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { CalendarX, Link2Off } from "lucide-react";
 import { Logo } from "@/components/logo";
@@ -9,10 +10,18 @@ import { CheckinForm } from "./checkin-form";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Check in — DojoTrack",
-  robots: { index: false },
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Public.checkin" });
+  return {
+    title: t("metaTitle"),
+    robots: { index: false },
+  };
+}
 
 export default async function CheckinPage({
   params,
@@ -21,6 +30,7 @@ export default async function CheckinPage({
 }) {
   const { sessionId } = await params;
   const session = await getSessionForCheckin(sessionId);
+  const t = await getTranslations("Public.checkin");
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -37,14 +47,17 @@ export default async function CheckinPage({
           {!session ? (
             <Problem
               icon={Link2Off}
-              title="Check-in not available"
-              body="We couldn't find this class session. Double-check the QR code or link, or ask your instructor for help."
+              title={t("notAvailableTitle")}
+              body={t("notAvailableBody")}
             />
           ) : session.cancelled ? (
             <Problem
               icon={CalendarX}
-              title="This session was cancelled"
-              body={`${session.className} on ${formatDate(session.date)} isn't running. Check the schedule for the next session.`}
+              title={t("cancelledTitle")}
+              body={t("cancelledBody", {
+                class: session.className,
+                date: formatDate(session.date),
+              })}
             />
           ) : (
             <>
@@ -53,7 +66,8 @@ export default async function CheckinPage({
                 {session.className}
               </h1>
               <p className="mb-6 mt-1 text-sm text-slate-500">
-                {disciplineMeta(session.discipline).emoji} {formatDate(session.date)} — tap your name to check in.
+                {disciplineMeta(session.discipline).emoji}{" "}
+                {t("prompt", { date: formatDate(session.date) })}
               </p>
               <CheckinForm
                 sessionId={session.id}
@@ -67,14 +81,14 @@ export default async function CheckinPage({
       <footer className="border-t border-slate-200 py-6">
         <div className="mx-auto flex max-w-md items-center justify-between px-4">
           <Logo size={22} />
-          <p className="text-xs text-slate-400">Powered by DojoTrack</p>
+          <p className="text-xs text-slate-400">{t("poweredBy")}</p>
         </div>
       </footer>
     </div>
   );
 }
 
-function Problem({
+async function Problem({
   icon: Icon,
   title,
   body,
@@ -83,6 +97,7 @@ function Problem({
   title: string;
   body: string;
 }) {
+  const t = await getTranslations("Public.checkin");
   return (
     <div className="text-center">
       <Icon size={40} className="mx-auto text-slate-400" />
@@ -92,7 +107,7 @@ function Problem({
         href="/"
         className="mt-6 inline-flex rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
       >
-        Go to DojoTrack
+        {t("goToDojoTrack")}
       </Link>
     </div>
   );

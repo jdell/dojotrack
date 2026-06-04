@@ -27,16 +27,16 @@ function locationLine(club: PublicClub): string | null {
 export async function generateMetadata({
   params,
 }: {
-  params: Promise<{ slug: string }>;
+  params: Promise<{ slug: string; locale: string }>;
 }): Promise<Metadata> {
-  const { slug } = await params;
+  const { slug, locale } = await params;
   const club = await getClubBySlug(slug);
   const name = (club?.name ?? humanize(slug)) || "Club";
-  const description =
-    club?.description ??
-    `${name} — class schedules, disciplines, and a free trial booking on DojoTrack.`;
+  const tMeta = await getTranslations({ locale, namespace: "Club" });
+  const description = club?.description ?? tMeta("metaDescription", { name });
   const url = `${baseUrl()}/club/${slug}`;
-  const ogImage = `${baseUrl()}/api/og/${slug}`;
+  // Pass the locale so the OG card's CTA renders in the visitor's language.
+  const ogImage = `${baseUrl()}/api/og/${slug}?lang=${locale}`;
 
   return {
     title: `${name} — DojoTrack`,

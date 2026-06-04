@@ -1,15 +1,25 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { ArrowLeft } from "lucide-react";
 import { getCurrentClub, getSparringRoster } from "@/lib/queries";
 import { disciplineMeta, DISCIPLINES } from "@/lib/constants";
 import { SparringForm } from "../sparring-form";
 
-export const metadata: Metadata = { title: "New sparring session — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Sparring" });
+  return { title: `${t("setUpTitle")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function NewSparringPage() {
+  const t = await getTranslations("Sparring");
   const club = await getCurrentClub();
   const roster = club ? await getSparringRoster(club.id) : [];
 
@@ -30,15 +40,14 @@ export default async function NewSparringPage() {
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to sparring
+          {t("backToSparring")}
         </Link>
-        <p className="eyebrow">New session</p>
+        <p className="eyebrow">{t("newSession")}</p>
         <h1 className="text-2xl font-bold text-brand-navy">
-          Set up sparring
+          {t("setUpTitle")}
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Pick who&apos;s on the mat and how many rounds. We&apos;ll pair by belt,
-          avoid repeats across rounds, and rotate byes.
+          {t("setUpSubtitle")}
         </p>
       </div>
 

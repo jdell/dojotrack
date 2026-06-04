@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Award, CheckCircle2, Loader2 } from "lucide-react";
@@ -21,11 +22,7 @@ interface EditableRow {
   notes: string;
 }
 
-const RESULTS: { value: CandidateResult; label: string }[] = [
-  { value: "PENDING", label: "Pending" },
-  { value: "PASS", label: "Pass" },
-  { value: "FAIL", label: "Fail" },
-];
+const RESULT_VALUES: CandidateResult[] = ["PENDING", "PASS", "FAIL"];
 
 /**
  * Results entry for a grading exam. Set each candidate's outcome, score, and
@@ -41,6 +38,8 @@ export function ExamResults({
   completed: boolean;
   candidates: ExamCandidateRow[];
 }) {
+  const t = useTranslations("Belts");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [rows, setRows] = useState<EditableRow[]>(
     candidates.map((c) => ({
@@ -91,17 +90,17 @@ export function ExamResults({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save results.");
+      if (!res.ok) throw new Error(data.error ?? t("errSaveResults"));
       setConfirmed(new Map(rows.map((r) => [r.id, r.result] as const)));
       const promoted = data.promoted ?? 0;
       setSavedNote(
         promoted > 0
-          ? `Results saved — ${promoted} student${promoted === 1 ? "" : "s"} promoted.`
-          : "Results saved.",
+          ? t("resultsSavedPromoted", { count: promoted })
+          : t("resultsSaved"),
       );
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save results.");
+      setError(err instanceof Error ? err.message : t("errSaveResults"));
     } finally {
       setSaving(false);
     }
@@ -110,7 +109,7 @@ export function ExamResults({
   if (rows.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-        No candidates entered for this exam.
+        {t("noCandidatesEntered")}
       </p>
     );
   }
@@ -134,11 +133,14 @@ export function ExamResults({
                       aria-hidden
                     />
                   )}
-                  {r.currentBeltName ?? "No belt"} · {r.metCount}/{r.totalCount}{" "}
-                  requirements met
+                  {r.currentBeltName ?? t("noBelt")} ·{" "}
+                  {t("requirementsMet", {
+                    met: r.metCount,
+                    total: r.totalCount,
+                  })}
                   {r.eligible && (
                     <span className="ml-1 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[0.65rem] font-semibold text-green-800">
-                      Ready
+                      {t("ready")}
                     </span>
                   )}
                 </p>
@@ -149,7 +151,7 @@ export function ExamResults({
                   className="inline-flex items-center gap-1.5 rounded-lg border border-brand-gold/40 bg-brand-gold/10 px-3 py-1.5 text-xs font-semibold text-brand-navy transition-colors hover:bg-brand-gold/20"
                 >
                   <Award size={14} className="text-brand-gold" />
-                  Certificate
+                  {t("certificate")}
                 </Link>
               )}
             </div>
@@ -157,7 +159,7 @@ export function ExamResults({
             <div className="mt-3 grid gap-3 sm:grid-cols-[8rem_7rem_1fr] sm:items-end">
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Result
+                  {t("resultLabel")}
                 </label>
                 <select
                   value={r.result}
@@ -166,16 +168,16 @@ export function ExamResults({
                   }
                   className="w-full rounded-lg border border-slate-300 bg-white px-2.5 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
                 >
-                  {RESULTS.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                      {opt.label}
+                  {RESULT_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {t(`result.${value}`)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-700">
-                  Score
+                  {t("score")}
                 </label>
                 <input
                   type="number"
@@ -198,13 +200,13 @@ export function ExamResults({
                   }
                   className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal"
                 />
-                Sparring passed
+                {t("sparringPassed")}
               </label>
             </div>
 
             <input
               type="text"
-              placeholder="Notes (optional)"
+              placeholder={t("notesPlaceholderResults")}
               value={r.notes}
               onChange={(e) => patch(r.id, { notes: e.target.value })}
               className="mt-3 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
@@ -225,7 +227,7 @@ export function ExamResults({
           ) : (
             <CheckCircle2 size={16} />
           )}
-          {saving ? "Saving…" : "Save results"}
+          {saving ? tc("saving") : t("saveResults")}
         </button>
         <label className="flex items-center gap-2 text-sm text-slate-700">
           <input
@@ -234,7 +236,7 @@ export function ExamResults({
             onChange={(e) => setMarkComplete(e.target.checked)}
             className="h-4 w-4 rounded border-slate-300 text-brand-teal focus:ring-brand-teal"
           />
-          Mark exam complete
+          {t("markComplete")}
         </label>
         {savedNote && (
           <span className="text-sm font-medium text-green-700">{savedNote}</span>

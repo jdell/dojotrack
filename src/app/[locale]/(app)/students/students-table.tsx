@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Search, Users } from "lucide-react";
 import type { StudentRow } from "@/lib/queries";
@@ -16,6 +17,7 @@ interface StudentsTableProps {
  * Attendance and payment columns are placeholders until those subsystems land.
  */
 export function StudentsTable({ students }: StudentsTableProps) {
+  const t = useTranslations("Students");
   const [query, setQuery] = useState("");
   const [grouped, setGrouped] = useState(false);
 
@@ -39,7 +41,7 @@ export function StudentsTable({ students }: StudentsTableProps) {
             type="search"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search students…"
+            placeholder={t("searchPlaceholder")}
             className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
         </div>
@@ -50,13 +52,13 @@ export function StudentsTable({ students }: StudentsTableProps) {
             onChange={(e) => setGrouped(e.target.checked)}
             className="h-4 w-4 rounded border-border text-brand-teal focus:ring-brand-teal"
           />
-          Group by family
+          {t("groupByFamily")}
         </label>
       </div>
 
       {filtered.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          No students match “{query}”.
+          {t("noMatch", { query })}
         </p>
       ) : grouped ? (
         <div className="space-y-5">
@@ -65,7 +67,7 @@ export function StudentsTable({ students }: StudentsTableProps) {
               <div className="mb-2 flex items-center gap-2">
                 <Users size={15} className="text-brand-teal" />
                 <h3 className="text-sm font-semibold text-brand-navy">
-                  {familyName ?? "No family"}
+                  {familyName ?? t("noFamily")}
                 </h3>
                 <span className="rounded-full bg-muted/60 px-2 py-0.5 text-xs text-muted-foreground">
                   {rows.length}
@@ -89,23 +91,24 @@ function RosterTable({
   rows: StudentRow[];
   showFamily: boolean;
 }) {
+  const t = useTranslations("Students");
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
       <table className="w-full text-left text-sm">
         <thead>
           <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-            <th className="px-4 py-3 font-semibold">Student</th>
-            <th className="px-4 py-3 font-semibold">Belt</th>
+            <th className="px-4 py-3 font-semibold">{t("colStudent")}</th>
+            <th className="px-4 py-3 font-semibold">{t("colBelt")}</th>
             <th className="hidden px-4 py-3 font-semibold sm:table-cell">
-              Joined
+              {t("colJoined")}
             </th>
             <th className="hidden px-4 py-3 font-semibold md:table-cell">
-              Attendance
+              {t("colAttendance")}
             </th>
-            <th className="px-4 py-3 font-semibold">Payment</th>
+            <th className="px-4 py-3 font-semibold">{t("colPayment")}</th>
             {showFamily && (
               <th className="hidden px-4 py-3 font-semibold lg:table-cell">
-                Family
+                {t("colFamily")}
               </th>
             )}
           </tr>
@@ -138,7 +141,7 @@ function RosterTable({
               </td>
               <td className="px-4 py-3">
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                  Pending
+                  {t("paymentPending")}
                 </span>
               </td>
               {showFamily && (

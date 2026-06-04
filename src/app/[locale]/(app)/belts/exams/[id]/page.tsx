@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, MapPin, Receipt } from "lucide-react";
@@ -8,7 +9,15 @@ import { formatDate } from "@/lib/utils";
 import { ExamStatusBadge } from "../page";
 import { ExamResults } from "./exam-results";
 
-export const metadata: Metadata = { title: "Exam — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Belts" });
+  return { title: `${t("metaExam")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +27,7 @@ export default async function ExamDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Belts");
 
   if (!isDbConfigured()) return <NotConfigured />;
 
@@ -35,11 +45,11 @@ export default async function ExamDetailPage({
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to exams
+          {t("backToExams")}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="eyebrow">Grading for</p>
+            <p className="eyebrow">{t("gradingFor")}</p>
             <h1 className="flex items-center gap-2.5 text-2xl font-bold text-brand-navy">
               <span
                 className="h-4 w-10 rounded-full border border-black/10"
@@ -62,7 +72,7 @@ export default async function ExamDetailPage({
               {exam.fee != null && (
                 <span className="inline-flex items-center gap-1.5">
                   <Receipt size={14} />
-                  {exam.fee.toFixed(2)} fee
+                  {t("examFee", { amount: exam.fee.toFixed(2) })}
                 </span>
               )}
             </div>
@@ -78,12 +88,14 @@ export default async function ExamDetailPage({
 
       <section className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-brand-navy">Candidates</h2>
+          <h2 className="text-lg font-bold text-brand-navy">
+            {t("candidates")}
+          </h2>
           <Link
             href={`/belts/${exam.targetBeltId}`}
             className="text-sm font-medium text-brand-teal hover:underline"
           >
-            View requirements
+            {t("viewRequirements")}
           </Link>
         </div>
         <ExamResults
@@ -96,7 +108,8 @@ export default async function ExamDetailPage({
   );
 }
 
-function NotConfigured() {
+async function NotConfigured() {
+  const t = await getTranslations("Belts");
   return (
     <div className="mx-auto max-w-2xl">
       <Link
@@ -104,15 +117,15 @@ function NotConfigured() {
         className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
       >
         <ArrowLeft size={15} />
-        Back to exams
+        {t("backToExams")}
       </Link>
       <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
         <div className="mx-auto mb-3 text-4xl">🥋</div>
         <h2 className="text-lg font-bold text-brand-navy">
-          Exam details aren&apos;t available yet
+          {t("examNotAvailable")}
         </h2>
         <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-          Connect a database to record results and promote students.
+          {t("connectDbResults")}
         </p>
       </div>
     </div>

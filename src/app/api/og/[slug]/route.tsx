@@ -1,4 +1,5 @@
 import { ImageResponse } from "next/og";
+import { getTranslations } from "next-intl/server";
 import { getClubBySlug } from "@/lib/queries";
 
 /**
@@ -28,9 +29,15 @@ function humanize(slug: string): string {
     .join(" ");
 }
 
-export async function GET(_request: Request, { params }: RouteContext) {
+export async function GET(request: Request, { params }: RouteContext) {
   const { slug } = await params;
   const club = await getClubBySlug(slug).catch(() => null);
+
+  // Localize the CTA from the `?lang=` hint the club page appends (en/es/gl).
+  const langParam = new URL(request.url).searchParams.get("lang");
+  const locale = langParam === "es" || langParam === "gl" ? langParam : "en";
+  const t = await getTranslations({ locale, namespace: "Club" });
+  const ctaText = t("ogCta");
 
   const name = club?.name ?? humanize(slug) ?? "DojoTrack Club";
   const location =
@@ -110,7 +117,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
               marginRight: 16,
             }}
           />
-          Book a free trial class on DojoTrack
+          {ctaText}
         </div>
       </div>
     ),

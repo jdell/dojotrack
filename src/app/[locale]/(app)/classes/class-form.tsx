@@ -1,12 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react";
 import type { ClassLevel, DayOfWeek } from "@prisma/client";
 import type { InstructorOption } from "@/lib/queries";
-import { DAY_LABELS, DAY_ORDER } from "@/lib/schedule";
+import { DAY_ORDER } from "@/lib/schedule";
 
 interface DisciplineOption {
   value: string;
@@ -19,11 +20,11 @@ interface ClassFormProps {
   instructors: InstructorOption[];
 }
 
-const LEVELS: { value: ClassLevel; label: string }[] = [
-  { value: "ALL_LEVELS", label: "All levels" },
-  { value: "BEGINNER", label: "Beginner" },
-  { value: "INTERMEDIATE", label: "Intermediate" },
-  { value: "ADVANCED", label: "Advanced" },
+const LEVEL_ORDER: ClassLevel[] = [
+  "ALL_LEVELS",
+  "BEGINNER",
+  "INTERMEDIATE",
+  "ADVANCED",
 ];
 
 const inputClass =
@@ -32,6 +33,7 @@ const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
 
 /** Create-class form. Submits to POST /api/classes, then returns to schedule. */
 export function ClassForm({ disciplines, instructors }: ClassFormProps) {
+  const t = useTranslations("Classes");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -72,11 +74,11 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not add the class.");
+      if (!res.ok) throw new Error(data.error ?? t("addClassError"));
       router.push("/classes");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add the class.");
+      setError(err instanceof Error ? err.message : t("addClassError"));
       setLoading(false);
     }
   }
@@ -94,14 +96,14 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Class details
+          {t("classDetails")}
         </legend>
         <div>
-          <label className={labelClass}>Class name</label>
+          <label className={labelClass}>{t("className")}</label>
           <input
             type="text"
             required
-            placeholder="Adults Fundamentals"
+            placeholder={t("classNamePlaceholder")}
             value={form.name}
             onChange={(e) => update("name", e.target.value)}
             className={inputClass}
@@ -109,7 +111,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Discipline</label>
+            <label className={labelClass}>{t("discipline")}</label>
             <select
               value={form.discipline}
               onChange={(e) => update("discipline", e.target.value)}
@@ -123,15 +125,15 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Level</label>
+            <label className={labelClass}>{t("level.label")}</label>
             <select
               value={form.level}
               onChange={(e) => update("level", e.target.value)}
               className={`${inputClass} bg-white`}
             >
-              {LEVELS.map((l) => (
-                <option key={l.value} value={l.value}>
-                  {l.label}
+              {LEVEL_ORDER.map((value) => (
+                <option key={value} value={value}>
+                  {t(`level.${value}`)}
                 </option>
               ))}
             </select>
@@ -141,10 +143,10 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          When &amp; where
+          {t("whenWhere")}
         </legend>
         <div>
-          <label className={labelClass}>Day of week</label>
+          <label className={labelClass}>{t("dayOfWeek")}</label>
           <select
             value={form.dayOfWeek}
             onChange={(e) => update("dayOfWeek", e.target.value)}
@@ -152,17 +154,17 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           >
             {DAY_ORDER.map((d) => (
               <option key={d} value={d}>
-                {DAY_LABELS[d]}
+                {t(`day.${d}`)}
               </option>
             ))}
           </select>
           <p className="mt-1 text-xs text-muted-foreground">
-            Recurs weekly on this day.
+            {t("recursWeekly")}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Start time</label>
+            <label className={labelClass}>{t("startTime")}</label>
             <input
               type="time"
               required
@@ -172,7 +174,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             />
           </div>
           <div>
-            <label className={labelClass}>End time</label>
+            <label className={labelClass}>{t("endTime")}</label>
             <input
               type="time"
               required
@@ -183,10 +185,10 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           </div>
         </div>
         <div>
-          <label className={labelClass}>Location</label>
+          <label className={labelClass}>{t("location")}</label>
           <input
             type="text"
-            placeholder="Main mat / Studio B"
+            placeholder={t("locationPlaceholder")}
             value={form.location}
             onChange={(e) => update("location", e.target.value)}
             className={inputClass}
@@ -196,17 +198,17 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
 
       <fieldset className="space-y-4">
         <legend className="text-sm font-semibold text-brand-navy">
-          Staffing &amp; capacity
+          {t("staffingCapacity")}
         </legend>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Instructor</label>
+            <label className={labelClass}>{t("instructor")}</label>
             <select
               value={form.instructorId}
               onChange={(e) => update("instructorId", e.target.value)}
               className={`${inputClass} bg-white`}
             >
-              <option value="">Unassigned</option>
+              <option value="">{t("unassigned")}</option>
               {instructors.map((i) => (
                 <option key={i.id} value={i.id}>
                   {i.name}
@@ -215,7 +217,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             </select>
           </div>
           <div>
-            <label className={labelClass}>Max students</label>
+            <label className={labelClass}>{t("maxStudents")}</label>
             <input
               type="number"
               min={1}
@@ -235,13 +237,13 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? "Saving…" : "Add class"}
+          {loading ? t("saving") : t("addClass")}
         </button>
         <Link
           href="/classes"
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
-          Cancel
+          {t("cancel")}
         </Link>
       </div>
     </form>

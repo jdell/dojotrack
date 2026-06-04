@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Loader2, Plus, Save, Trash2 } from "lucide-react";
 import type { CompetitionStatus, Medal } from "@prisma/client";
@@ -20,18 +21,18 @@ interface EditableEntry {
   notes: string;
 }
 
-const MEDALS: { value: Medal; label: string }[] = [
-  { value: "NONE", label: "— No medal" },
-  { value: "GOLD", label: "🥇 Gold" },
-  { value: "SILVER", label: "🥈 Silver" },
-  { value: "BRONZE", label: "🥉 Bronze" },
+const MEDAL_OPTIONS: { value: Medal; emoji: string }[] = [
+  { value: "NONE", emoji: "" },
+  { value: "GOLD", emoji: "🥇" },
+  { value: "SILVER", emoji: "🥈" },
+  { value: "BRONZE", emoji: "🥉" },
 ];
 
-const STATUSES: { value: CompetitionStatus; label: string }[] = [
-  { value: "SCHEDULED", label: "Scheduled" },
-  { value: "IN_PROGRESS", label: "In progress" },
-  { value: "COMPLETED", label: "Completed" },
-  { value: "CANCELLED", label: "Cancelled" },
+const STATUS_VALUES: CompetitionStatus[] = [
+  "SCHEDULED",
+  "IN_PROGRESS",
+  "COMPLETED",
+  "CANCELLED",
 ];
 
 const fieldClass =
@@ -65,6 +66,8 @@ export function CompetitionResults({
   entries: CompetitionEntryRow[];
   availableStudents: StudentOption[];
 }) {
+  const t = useTranslations("Competitions");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [rows, setRows] = useState<EditableEntry[]>(entries.map(toEditable));
   const [busy, setBusy] = useState(false);
@@ -90,11 +93,11 @@ export function CompetitionResults({
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Could not update status.");
+        throw new Error(data.error ?? t("errorStatus"));
       }
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not update status.");
+      setError(err instanceof Error ? err.message : t("errorStatus"));
     }
   }
 
@@ -114,14 +117,14 @@ export function CompetitionResults({
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Could not add the entry.");
+        throw new Error(data.error ?? t("errorAddEntry"));
       }
       setNewStudent("");
       setNewDivision("");
       setNewWeight("");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not add the entry.");
+      setError(err instanceof Error ? err.message : t("errorAddEntry"));
     } finally {
       setBusy(false);
     }
@@ -136,12 +139,12 @@ export function CompetitionResults({
       );
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error ?? "Could not remove the entry.");
+        throw new Error(data.error ?? t("errorRemoveEntry"));
       }
       setRows((prev) => prev.filter((r) => r.id !== entryId));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not remove the entry.");
+      setError(err instanceof Error ? err.message : t("errorRemoveEntry"));
     }
   }
 
@@ -167,11 +170,11 @@ export function CompetitionResults({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save results.");
-      setSavedNote("Results saved.");
+      if (!res.ok) throw new Error(data.error ?? t("errorSaveResults"));
+      setSavedNote(t("resultsSaved"));
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save results.");
+      setError(err instanceof Error ? err.message : t("errorSaveResults"));
     } finally {
       setBusy(false);
     }
@@ -180,38 +183,38 @@ export function CompetitionResults({
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center gap-3 rounded-xl border border-border bg-card p-4 shadow-sm">
-        <label className="text-sm font-medium text-slate-700">Status</label>
+        <label className="text-sm font-medium text-slate-700">{t("statusLabel")}</label>
         <select
           value={status}
           onChange={(e) => changeStatus(e.target.value as CompetitionStatus)}
           className={`${fieldClass} w-auto bg-white`}
         >
-          {STATUSES.map((s) => (
-            <option key={s.value} value={s.value}>
-              {s.label}
+          {STATUS_VALUES.map((s) => (
+            <option key={s} value={s}>
+              {t(`status.${s}`)}
             </option>
           ))}
         </select>
       </div>
 
       <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-        <p className="mb-3 text-sm font-semibold text-brand-navy">Enter a student</p>
+        <p className="mb-3 text-sm font-semibold text-brand-navy">{t("enterStudent")}</p>
         {availableStudents.length === 0 ? (
           <p className="text-sm text-muted-foreground">
-            Every active student is already entered.
+            {t("allEntered")}
           </p>
         ) : (
           <div className="grid gap-3 sm:grid-cols-[1fr_1fr_1fr_auto] sm:items-end">
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Student
+                {t("studentLabel")}
               </label>
               <select
                 value={newStudent}
                 onChange={(e) => setNewStudent(e.target.value)}
                 className={`${fieldClass} bg-white`}
               >
-                <option value="">Select…</option>
+                <option value="">{t("selectStudent")}</option>
                 {availableStudents.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -221,11 +224,11 @@ export function CompetitionResults({
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Division
+                {t("divisionLabel")}
               </label>
               <input
                 type="text"
-                placeholder="Adult / Masters"
+                placeholder={t("divisionPlaceholder")}
                 value={newDivision}
                 onChange={(e) => setNewDivision(e.target.value)}
                 className={fieldClass}
@@ -233,7 +236,7 @@ export function CompetitionResults({
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-700">
-                Weight class
+                {t("weightClassLabel")}
               </label>
               <input
                 type="text"
@@ -250,7 +253,7 @@ export function CompetitionResults({
               className="inline-flex items-center justify-center gap-1.5 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50"
             >
               <Plus size={15} />
-              Add
+              {tc("add")}
             </button>
           </div>
         )}
@@ -258,7 +261,7 @@ export function CompetitionResults({
 
       {rows.length === 0 ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-          No students entered yet. Add an entry above to start recording results.
+          {t("noEntriesYet")}
         </p>
       ) : (
         <ul className="space-y-3">
@@ -284,7 +287,7 @@ export function CompetitionResults({
                 <button
                   type="button"
                   onClick={() => removeEntry(r.id)}
-                  aria-label={`Remove ${r.studentName}`}
+                  aria-label={t("removeEntry", { name: r.studentName })}
                   className="rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-red-50 hover:text-red-600"
                 >
                   <Trash2 size={15} />
@@ -294,7 +297,7 @@ export function CompetitionResults({
               <div className="mt-3 grid gap-3 sm:grid-cols-[7rem_1fr_5rem_5rem]">
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Placement
+                    {t("placementLabel")}
                   </label>
                   <input
                     type="number"
@@ -307,7 +310,7 @@ export function CompetitionResults({
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Medal
+                    {t("medalLabel")}
                   </label>
                   <select
                     value={r.medal}
@@ -316,16 +319,17 @@ export function CompetitionResults({
                     }
                     className={`${fieldClass} bg-white`}
                   >
-                    {MEDALS.map((m) => (
+                    {MEDAL_OPTIONS.map((m) => (
                       <option key={m.value} value={m.value}>
-                        {m.label}
+                        {m.emoji ? `${m.emoji} ` : ""}
+                        {t(`medal.${m.value}`)}
                       </option>
                     ))}
                   </select>
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Wins
+                    {t("winsLabel")}
                   </label>
                   <input
                     type="number"
@@ -337,7 +341,7 @@ export function CompetitionResults({
                 </div>
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-700">
-                    Losses
+                    {t("lossesLabel")}
                   </label>
                   <input
                     type="number"
@@ -352,14 +356,14 @@ export function CompetitionResults({
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <input
                   type="text"
-                  placeholder="Division"
+                  placeholder={t("divisionLabel")}
                   value={r.division}
                   onChange={(e) => patch(r.id, { division: e.target.value })}
                   className={fieldClass}
                 />
                 <input
                   type="text"
-                  placeholder="Weight class"
+                  placeholder={t("weightClassLabel")}
                   value={r.weightClass}
                   onChange={(e) => patch(r.id, { weightClass: e.target.value })}
                   className={fieldClass}
@@ -368,7 +372,7 @@ export function CompetitionResults({
 
               <input
                 type="text"
-                placeholder="Notes (optional)"
+                placeholder={t("notesPlaceholderEntry")}
                 value={r.notes}
                 onChange={(e) => patch(r.id, { notes: e.target.value })}
                 className={`${fieldClass} mt-3`}
@@ -391,7 +395,7 @@ export function CompetitionResults({
             ) : (
               <Save size={16} />
             )}
-            {busy ? "Saving…" : "Save results"}
+            {busy ? tc("saving") : t("saveResults")}
           </button>
           {savedNote && (
             <span className="text-sm font-medium text-green-700">{savedNote}</span>

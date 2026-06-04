@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2, Swords } from "lucide-react";
@@ -34,6 +35,8 @@ export function SparringForm({
   roster: SparringRosterStudent[];
   disciplines: DisciplineOption[];
 }) {
+  const t = useTranslations("Sparring");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -75,13 +78,11 @@ export function SparringForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not create the session.");
+      if (!res.ok) throw new Error(data.error ?? t("createError"));
       router.push(`/sparring/${data.id}`);
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not create the session.",
-      );
+      setError(err instanceof Error ? err.message : t("createError"));
       setLoading(false);
     }
   }
@@ -99,17 +100,17 @@ export function SparringForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>Session name</label>
+          <label className={labelClass}>{t("sessionName")}</label>
           <input
             type="text"
-            placeholder="Friday open mat (optional)"
+            placeholder={t("sessionNamePlaceholder")}
             value={name}
             onChange={(e) => setName(e.target.value)}
             className={inputClass}
           />
         </div>
         <div>
-          <label className={labelClass}>Discipline</label>
+          <label className={labelClass}>{t("discipline")}</label>
           <select
             value={discipline}
             onChange={(e) => setDiscipline(e.target.value)}
@@ -123,7 +124,7 @@ export function SparringForm({
           </select>
         </div>
         <div>
-          <label className={labelClass}>Date</label>
+          <label className={labelClass}>{t("date")}</label>
           <input
             type="date"
             required
@@ -133,7 +134,7 @@ export function SparringForm({
           />
         </div>
         <div>
-          <label className={labelClass}>Rounds</label>
+          <label className={labelClass}>{t("rounds")}</label>
           <input
             type="number"
             min={1}
@@ -148,7 +149,7 @@ export function SparringForm({
       <fieldset>
         <div className="mb-2 flex items-center justify-between">
           <legend className="text-sm font-semibold text-brand-navy">
-            On the mat ({selected.size}/{roster.length})
+            {t("onTheMat", { selected: selected.size, total: roster.length })}
           </legend>
           <div className="flex gap-2 text-xs">
             <button
@@ -156,7 +157,7 @@ export function SparringForm({
               onClick={() => setAll(true)}
               className="font-medium text-brand-teal hover:underline"
             >
-              Select all
+              {t("selectAll")}
             </button>
             <span className="text-muted-foreground">·</span>
             <button
@@ -164,13 +165,13 @@ export function SparringForm({
               onClick={() => setAll(false)}
               className="font-medium text-muted-foreground hover:underline"
             >
-              Clear
+              {t("clear")}
             </button>
           </div>
         </div>
         {roster.length === 0 ? (
           <p className="rounded-lg border border-dashed border-border bg-muted/30 p-4 text-sm text-muted-foreground">
-            No active students to pair. Add students first.
+            {t("noRoster")}
           </p>
         ) : (
           <div className="grid max-h-72 gap-1.5 overflow-y-auto rounded-lg border border-border p-2 sm:grid-cols-2">
@@ -200,7 +201,7 @@ export function SparringForm({
                     {s.name}
                   </span>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {s.beltName ?? "No belt"}
+                    {s.beltName ?? t("noBelt")}
                   </span>
                 </label>
               );
@@ -220,17 +221,17 @@ export function SparringForm({
           ) : (
             <Swords size={16} />
           )}
-          {loading ? "Pairing…" : "Generate pairings"}
+          {loading ? t("pairing") : t("generatePairings")}
         </button>
         <Link
           href="/sparring"
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
         {selected.size < 2 && (
           <span className="text-xs text-muted-foreground">
-            Select at least two students.
+            {t("minTwoStudents")}
           </span>
         )}
       </div>

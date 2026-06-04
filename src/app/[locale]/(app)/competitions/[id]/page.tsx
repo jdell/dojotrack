@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarClock, MapPin } from "lucide-react";
@@ -13,7 +14,15 @@ import { formatDate } from "@/lib/utils";
 import { CompetitionStatusBadge } from "../page";
 import { CompetitionResults } from "./competition-results";
 
-export const metadata: Metadata = { title: "Competition — DojoTrack" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string; id: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "Competitions" });
+  return { title: `${t("detailTitle")} — DojoTrack` };
+}
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +32,7 @@ export default async function CompetitionDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const t = await getTranslations("Competitions");
   if (!isDbConfigured()) notFound();
 
   const club = await getCurrentClub();
@@ -49,11 +59,11 @@ export default async function CompetitionDetailPage({
           className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-brand-navy"
         >
           <ArrowLeft size={15} />
-          Back to competitions
+          {t("backToCompetitions")}
         </Link>
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="eyebrow">Competition</p>
+            <p className="eyebrow">{t("detailEyebrow")}</p>
             <h1 className="text-2xl font-bold text-brand-navy">
               {competition.name}
             </h1>
@@ -86,9 +96,9 @@ export default async function CompetitionDetailPage({
 
       {hasMedals && (
         <div className="flex flex-wrap gap-3">
-          <MedalCount emoji="🥇" label="Gold" count={gold} />
-          <MedalCount emoji="🥈" label="Silver" count={silver} />
-          <MedalCount emoji="🥉" label="Bronze" count={bronze} />
+          <MedalCount emoji="🥇" label={t("medal.GOLD")} count={gold} />
+          <MedalCount emoji="🥈" label={t("medal.SILVER")} count={silver} />
+          <MedalCount emoji="🥉" label={t("medal.BRONZE")} count={bronze} />
         </div>
       )}
 

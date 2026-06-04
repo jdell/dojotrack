@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Check, Clock, Minus } from "lucide-react";
@@ -20,14 +21,15 @@ const NEXT_STATUS: Record<TechniqueStatus, TechniqueStatus> = {
   PASSED: "NOT_ASSESSED",
 };
 
+// The visible status is derived from `logStatus` at render time (translated via
+// the `techStatus` map), so `detail` here is only a non-rendered placeholder.
 function fromStatus(status: TechniqueStatus): {
   state: ProgressState;
   detail: string;
 } {
-  if (status === "PASSED") return { state: "met", detail: "Passed" };
-  if (status === "IN_PROGRESS")
-    return { state: "in_progress", detail: "In progress" };
-  return { state: "not_met", detail: "Not assessed" };
+  if (status === "PASSED") return { state: "met", detail: "" };
+  if (status === "IN_PROGRESS") return { state: "in_progress", detail: "" };
+  return { state: "not_met", detail: "" };
 }
 
 /**
@@ -42,6 +44,7 @@ export function RankCandidateMatrix({
   requirements: RequirementDTO[];
   candidates: RankCandidateRow[];
 }) {
+  const t = useTranslations("Belts");
   const router = useRouter();
   const [candidates, setCandidates] = useState<RankCandidateRow[]>(initial);
   const [busy, setBusy] = useState<string | null>(null);
@@ -67,7 +70,7 @@ export function RankCandidateMatrix({
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not save.");
+      if (!res.ok) throw new Error(data.error ?? t("errSave"));
       const { state, detail } = fromStatus(next);
       setCandidates((prev) =>
         prev.map((c) => {
@@ -86,7 +89,7 @@ export function RankCandidateMatrix({
       );
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not save.");
+      setError(err instanceof Error ? err.message : t("errSave"));
     } finally {
       setBusy(null);
     }
@@ -95,7 +98,7 @@ export function RankCandidateMatrix({
   if (candidates.length === 0) {
     return (
       <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-        No students are at the rank below yet.
+        {t("noStudentsBelow")}
       </p>
     );
   }
@@ -107,7 +110,7 @@ export function RankCandidateMatrix({
           <thead>
             <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
               <th className="sticky left-0 z-10 bg-muted/30 px-4 py-3 font-semibold">
-                Student
+                {t("student")}
               </th>
               {requirements.map((req) => (
                 <th
@@ -123,7 +126,9 @@ export function RankCandidateMatrix({
                   </span>
                 </th>
               ))}
-              <th className="px-4 py-3 text-center font-semibold">Progress</th>
+              <th className="px-4 py-3 text-center font-semibold">
+                {t("progress")}
+              </th>
             </tr>
           </thead>
           <tbody>
@@ -141,7 +146,7 @@ export function RankCandidateMatrix({
                   </Link>
                   {c.eligible && (
                     <span className="ml-2 inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-[0.65rem] font-semibold text-green-800">
-                      Ready
+                      {t("ready")}
                     </span>
                   )}
                 </td>
@@ -157,7 +162,12 @@ export function RankCandidateMatrix({
                           type="button"
                           onClick={() => cycle(c.studentId, rp)}
                           disabled={busy === cellKey}
-                          title={`${rp.requirement.name} — ${rp.detail} (tap to change)`}
+                          title={t("cellTooltip", {
+                            name: rp.requirement.name,
+                            status: t(
+                              `techStatus.${rp.logStatus ?? "NOT_ASSESSED"}`,
+                            ),
+                          })}
                           className="mx-auto block"
                         >
                           <StatusDot state={rp.state} pending={busy === cellKey} />
@@ -174,21 +184,22 @@ export function RankCandidateMatrix({
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">
-        Tap a technique, competition, or custom cell to cycle it through Not
-        assessed → In progress → Passed. Time and class requirements update
-        automatically.
-      </p>
+      <p className="text-xs text-muted-foreground">{t("matrixHint")}</p>
       {error && <p className="text-xs text-red-600">{error}</p>}
     </div>
   );
 }
 
 function AutoCell({ progress }: { progress: RequirementProgress }) {
+  const t = useTranslations("Belts");
   const met = progress.state === "met";
   return (
     <span
-      title={progress.detail}
+      title={t("autoDetail", {
+        current: progress.current ?? 0,
+        target: progress.requirement.targetValue ?? 0,
+        unit: t(`reqUnit.${progress.requirement.type}`),
+      })}
       className={`inline-flex min-w-[2.5rem] items-center justify-center rounded-md px-2 py-1 text-xs font-semibold ${
         met
           ? "bg-green-100 text-green-800"

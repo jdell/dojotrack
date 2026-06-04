@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react";
@@ -21,6 +22,8 @@ export function CompetitionForm({
 }: {
   disciplines: DisciplineOption[];
 }) {
+  const t = useTranslations("Competitions");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -54,14 +57,12 @@ export function CompetitionForm({
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error ?? "Could not add the competition.");
+        throw new Error(data.error ?? t("errorAdd"));
       }
       router.push(`/competitions/${data.competition.id}`);
       router.refresh();
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Could not add the competition.",
-      );
+      setError(err instanceof Error ? err.message : t("errorAdd"));
       setLoading(false);
     }
   }
@@ -78,11 +79,11 @@ export function CompetitionForm({
       )}
 
       <div>
-        <label className={labelClass}>Competition name</label>
+        <label className={labelClass}>{t("nameLabel")}</label>
         <input
           type="text"
           required
-          placeholder="State Open Championship"
+          placeholder={t("namePlaceholder")}
           value={form.name}
           onChange={(e) => update("name", e.target.value)}
           className={inputClass}
@@ -91,7 +92,7 @@ export function CompetitionForm({
 
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>Date</label>
+          <label className={labelClass}>{t("dateLabel")}</label>
           <input
             type="date"
             required
@@ -101,7 +102,7 @@ export function CompetitionForm({
           />
         </div>
         <div>
-          <label className={labelClass}>Discipline</label>
+          <label className={labelClass}>{t("disciplineLabel")}</label>
           <select
             value={form.discipline}
             onChange={(e) => update("discipline", e.target.value)}
@@ -117,10 +118,10 @@ export function CompetitionForm({
       </div>
 
       <div>
-        <label className={labelClass}>Location</label>
+        <label className={labelClass}>{t("locationLabel")}</label>
         <input
           type="text"
-          placeholder="City Convention Center"
+          placeholder={t("locationPlaceholder")}
           value={form.location}
           onChange={(e) => update("location", e.target.value)}
           className={inputClass}
@@ -128,10 +129,10 @@ export function CompetitionForm({
       </div>
 
       <div>
-        <label className={labelClass}>Notes</label>
+        <label className={labelClass}>{t("notesLabel")}</label>
         <textarea
           rows={2}
-          placeholder="Registration details, divisions, etc. (optional)"
+          placeholder={t("notesPlaceholder")}
           value={form.description}
           onChange={(e) => update("description", e.target.value)}
           className={inputClass}
@@ -145,13 +146,13 @@ export function CompetitionForm({
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? "Saving…" : "Add competition"}
+          {loading ? tc("saving") : t("addCompetition")}
         </button>
         <Link
           href="/competitions"
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
       </div>
     </form>

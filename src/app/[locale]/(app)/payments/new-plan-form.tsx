@@ -1,10 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Loader2, Plus, X } from "lucide-react";
 import type { BillingInterval } from "@prisma/client";
-import { BILLING_INTERVAL_LABELS } from "@/lib/constants";
 
 const INTERVALS: BillingInterval[] = [
   "MONTHLY",
@@ -19,6 +19,8 @@ const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
 
 /** Collapsible create-plan form. POSTs to /api/payment-plans, then refreshes. */
 export function NewPlanForm() {
+  const t = useTranslations("Payments");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -50,12 +52,12 @@ export function NewPlanForm() {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Could not create the plan.");
+      if (!res.ok) throw new Error(data.error ?? t("form.createError"));
       setForm({ name: "", amount: "", interval: "MONTHLY", description: "" });
       setOpen(false);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Could not create the plan.");
+      setError(err instanceof Error ? err.message : t("form.createError"));
     } finally {
       setLoading(false);
     }
@@ -69,7 +71,7 @@ export function NewPlanForm() {
         className="inline-flex items-center gap-1.5 rounded-lg bg-brand-teal px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
       >
         <Plus size={15} />
-        Add plan
+        {t("form.addPlan")}
       </button>
     );
   }
@@ -82,17 +84,17 @@ export function NewPlanForm() {
         className="inline-flex items-center gap-1.5 rounded-lg bg-brand-teal/80 px-3 py-1.5 text-sm font-semibold text-white"
       >
         <Plus size={15} />
-        Add plan
+        {t("form.addPlan")}
       </button>
       <form
         onSubmit={handleSubmit}
         className="absolute right-0 z-10 mt-2 w-80 space-y-3 rounded-xl border border-border bg-card p-4 shadow-lg"
       >
       <div className="flex items-center justify-between">
-        <p className="text-sm font-semibold text-brand-navy">New plan</p>
+        <p className="text-sm font-semibold text-brand-navy">{t("newPlan")}</p>
         <button
           type="button"
-          aria-label="Close"
+          aria-label={tc("close")}
           onClick={() => setOpen(false)}
           className="rounded-md p-1 text-muted-foreground hover:bg-muted"
         >
@@ -105,11 +107,11 @@ export function NewPlanForm() {
         </div>
       )}
       <div>
-        <label className={labelClass}>Plan name</label>
+        <label className={labelClass}>{t("form.planName")}</label>
         <input
           type="text"
           required
-          placeholder="Adults Unlimited"
+          placeholder={t("form.planNamePlaceholder")}
           value={form.name}
           onChange={(e) => update("name", e.target.value)}
           className={inputClass}
@@ -117,7 +119,7 @@ export function NewPlanForm() {
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className={labelClass}>Price</label>
+          <label className={labelClass}>{t("form.price")}</label>
           <input
             type="number"
             min={0}
@@ -130,7 +132,7 @@ export function NewPlanForm() {
           />
         </div>
         <div>
-          <label className={labelClass}>Billing</label>
+          <label className={labelClass}>{t("form.billing")}</label>
           <select
             value={form.interval}
             onChange={(e) => update("interval", e.target.value)}
@@ -138,17 +140,17 @@ export function NewPlanForm() {
           >
             {INTERVALS.map((i) => (
               <option key={i} value={i}>
-                {BILLING_INTERVAL_LABELS[i].label}
+                {t(`interval.${i}`)}
               </option>
             ))}
           </select>
         </div>
       </div>
       <div>
-        <label className={labelClass}>Description</label>
+        <label className={labelClass}>{t("form.description")}</label>
         <input
           type="text"
-          placeholder="Optional"
+          placeholder={tc("optional")}
           value={form.description}
           onChange={(e) => update("description", e.target.value)}
           className={inputClass}
@@ -160,7 +162,7 @@ export function NewPlanForm() {
         className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50"
       >
         {loading && <Loader2 size={15} className="animate-spin" />}
-        {loading ? "Saving…" : "Create plan"}
+        {loading ? tc("saving") : t("form.createPlan")}
       </button>
       </form>
     </div>
