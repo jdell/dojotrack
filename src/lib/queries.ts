@@ -48,6 +48,8 @@ export interface ClubSummary {
   slug: string;
   beltSystemId: string | null;
   disciplines: string[];
+  /** Club's preferred language for outbound email (en/es/gl), or null. */
+  locale: string | null;
 }
 
 export interface StudentRow {
@@ -113,6 +115,7 @@ export async function getCurrentClub(): Promise<ClubSummary | null> {
     slug: club.slug,
     beltSystemId: club.beltSystemId,
     disciplines: club.disciplines,
+    locale: club.locale,
   };
 }
 

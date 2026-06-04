@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-context";
 
+/** Languages we render emails in; anything else is stored as English. */
+const SUPPORTED_LOCALES = ["en", "es", "gl"];
+
 /**
  * POST /api/auth/register — provision a club + owner for a freshly verified user.
  *
@@ -24,6 +27,8 @@ interface RegisterBody {
   phone?: string;
   ownerName?: string;
   martialArt?: string;
+  /** UI locale the owner registered in — used for the club's emails. */
+  locale?: string;
 }
 
 /** Turn a club name into a URL-safe, reasonably short slug. */
@@ -99,6 +104,11 @@ export async function POST(request: Request) {
   const martialArt = body.martialArt?.trim() || null;
   const phone = body.phone?.trim() || authUser.phone || null;
 
+  // Remember the language the owner registered in so their club's emails match.
+  const locale = SUPPORTED_LOCALES.includes(body.locale ?? "")
+    ? body.locale
+    : "en";
+
   try {
     const slug = await uniqueSlug(clubName);
     const result = await prisma.$transaction(async (tx) => {
@@ -109,6 +119,7 @@ export async function POST(request: Request) {
           phone,
           disciplines: martialArt ? [martialArt] : [],
           beltSystemId: martialArt,
+          locale,
         },
       });
       // Upsert handles the edge case of a User row that exists without a club.

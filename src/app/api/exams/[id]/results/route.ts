@@ -175,6 +175,7 @@ export async function POST(request: Request, { params }: RouteContext) {
               beltName: exam.targetBeltRank.name,
               passed: true,
               examDate: exam.date.toISOString(),
+              locale: club.locale,
             }),
           ),
       );

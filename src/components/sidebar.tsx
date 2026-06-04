@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   Award,
   Calendar,
@@ -16,11 +15,14 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
+import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
+import { LanguageSwitcher } from "./language-switcher";
 
 interface NavItem {
-  label: string;
+  /** Key under the `Nav` message namespace. */
+  key: string;
   href: string;
   icon: LucideIcon;
   matches: (pathname: string) => boolean;
@@ -28,49 +30,49 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   {
-    label: "Dashboard",
+    key: "dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     matches: (p) => p === "/" || p.startsWith("/dashboard"),
   },
   {
-    label: "Students",
+    key: "students",
     href: "/students",
     icon: Users,
     matches: (p) => p.startsWith("/students"),
   },
   {
-    label: "Classes",
+    key: "classes",
     href: "/classes",
     icon: Calendar,
     matches: (p) => p.startsWith("/classes"),
   },
   {
-    label: "Belts",
+    key: "belts",
     href: "/belts",
     icon: Award,
     matches: (p) => p.startsWith("/belts"),
   },
   {
-    label: "Payments",
+    key: "payments",
     href: "/payments",
     icon: CreditCard,
     matches: (p) => p.startsWith("/payments"),
   },
   {
-    label: "Competitions",
+    key: "competitions",
     href: "/competitions",
     icon: Trophy,
     matches: (p) => p.startsWith("/competitions"),
   },
   {
-    label: "Sparring",
+    key: "sparring",
     href: "/sparring",
     icon: Swords,
     matches: (p) => p.startsWith("/sparring"),
   },
   {
-    label: "Settings",
+    key: "settings",
     href: "/settings",
     icon: Settings,
     matches: (p) => p.startsWith("/settings"),
@@ -87,6 +89,7 @@ export function Sidebar({
   userName = "Instructor",
 }: SidebarProps) {
   const pathname = usePathname();
+  const t = useTranslations("Nav");
   const [collapsed, setCollapsed] = useState(false);
 
   return (
@@ -115,7 +118,7 @@ export function Sidebar({
       {!collapsed && (
         <div className="px-4 pt-3 pb-1">
           <p className="text-[0.65rem] font-semibold uppercase tracking-widest text-muted-foreground">
-            Club
+            {t("club")}
           </p>
           <p className="truncate text-sm font-semibold text-brand-navy">
             {clubName}
@@ -128,6 +131,7 @@ export function Sidebar({
           {NAV_ITEMS.map((item) => {
             const Icon = item.icon;
             const active = item.matches(pathname);
+            const label = t(item.key);
             return (
               <li key={item.href}>
                 <Link
@@ -139,11 +143,11 @@ export function Sidebar({
                       : "text-brand-navy hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                     collapsed && "justify-center px-2",
                   )}
-                  title={collapsed ? item.label : undefined}
+                  title={collapsed ? label : undefined}
                   aria-current={active ? "page" : undefined}
                 >
                   <Icon size={18} className="shrink-0" />
-                  {!collapsed && <span>{item.label}</span>}
+                  {!collapsed && <span>{label}</span>}
                 </Link>
               </li>
             );
@@ -151,13 +155,19 @@ export function Sidebar({
         </ul>
       </nav>
 
+      {!collapsed && (
+        <div className="border-t border-sidebar-border px-2 py-2">
+          <LanguageSwitcher variant="dark" />
+        </div>
+      )}
+
       <div
         className={cn(
           "border-t border-sidebar-border p-3 text-xs text-muted-foreground",
           collapsed && "text-center",
         )}
       >
-        {collapsed ? "·" : `Signed in as ${userName}`}
+        {collapsed ? "·" : t("signedInAs", { name: userName })}
       </div>
     </aside>
   );

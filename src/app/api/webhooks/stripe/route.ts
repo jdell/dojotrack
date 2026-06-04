@@ -172,7 +172,7 @@ async function emailReceipt(args: {
     }),
     prisma.club.findUnique({
       where: { id: args.clubId },
-      select: { name: true },
+      select: { name: true, locale: true },
     }),
   ]);
   if (!student?.email || !club) return;
@@ -184,6 +184,7 @@ async function emailReceipt(args: {
     currency: args.currency,
     description: args.description,
     paidAt: new Date().toISOString(),
+    locale: club.locale,
   });
 }
 

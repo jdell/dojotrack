@@ -87,6 +87,7 @@ export async function POST(request: Request) {
         clubName: club.name,
         inviteLink: inviteLink(invitation.token),
         recipientName,
+        locale: club.locale,
       });
       emailed = true;
     }

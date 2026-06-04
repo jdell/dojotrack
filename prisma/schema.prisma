@@ -150,6 +150,9 @@ model Club {
   youtubeUrl   String?  @map("youtube_url")
   /// IANA timezone (e.g. "America/New_York"). Drives class reminder timing.
   timezone     String?
+  /// The club's preferred language (en/es/gl) for outbound emails. Captured at
+  /// registration from the UI locale; falls back to "en" when unset.
+  locale       String?
   disciplines  String[]
   beltSystemId String?  @map("belt_system_id")
   createdAt    DateTime @default(now()) @map("created_at")

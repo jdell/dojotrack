@@ -5,17 +5,28 @@
  * only actually delivered when `RESEND_API_KEY` is set. When it isn't, every
  * send logs the rendered subject/recipient to the server console instead — the
  * same fallback pattern as WhatsApp (`src/lib/notify.ts`), so the surrounding
- * flows stay wired end-to-end and observable without an API key.
+ * flows stay wired and observable without an API key.
+ *
+ * Localised: every template is rendered in the club's preferred language
+ * (`Club.locale`, captured at registration — falls back to English). The copy
+ * comes from the `Email` namespace in `messages/<locale>.json` via next-intl's
+ * `getTranslations`, which works in route handlers with an explicit locale.
  *
  * NOTE: import this only from server code (route handlers / server actions).
  */
 import { Resend } from "resend";
+import { getTranslations } from "next-intl/server";
 import { BRAND, COLORS } from "./constants";
 import { formatMoney } from "./utils";
 
 /** True when a Resend API key is present in the environment. */
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
+}
+
+/** Normalise a possibly-null locale to a supported one (defaults to English). */
+function resolveLocale(locale: string | null | undefined): string {
+  return locale === "es" || locale === "gl" ? locale : "en";
 }
 
 /** From address for outbound mail. Override with `RESEND_FROM`. */
@@ -108,6 +119,8 @@ interface InvitationEmailArgs {
   clubName: string;
   inviteLink: string;
   recipientName?: string | null;
+  /** The club's preferred language; defaults to English. */
+  locale?: string | null;
 }
 
 /** Invite someone to join a club. */
@@ -115,21 +128,29 @@ export async function sendInvitationEmail(
   args: InvitationEmailArgs,
 ): Promise<void> {
   const { to, clubName, inviteLink, recipientName } = args;
-  const greeting = recipientName ? `Hi ${escapeHtml(recipientName)},` : "Hi there,";
+  const t = await getTranslations({
+    locale: resolveLocale(args.locale),
+    namespace: "Email",
+  });
   const club = escapeHtml(clubName);
-  const html = layout(`You're invited to join ${club}`, `
+  const greeting = recipientName
+    ? t("invitationGreetingNamed", { name: escapeHtml(recipientName) })
+    : t("invitationGreeting");
+  const html = layout(t("invitationHeading", { club }), `
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">${greeting}</p>
     <p style="margin:0 0 20px;font-size:15px;line-height:1.6;">
-      <strong>${club}</strong> uses ${BRAND.name} to manage classes, belt
-      progression and payments. Tap below to set up your student profile — it
-      only takes a minute.
+      ${t("invitationBody", { club: `<strong>${club}</strong>` })}
     </p>
-    <p style="margin:0 0 24px;">${button(inviteLink, "Join the club")}</p>
+    <p style="margin:0 0 24px;">${button(inviteLink, t("invitationButton"))}</p>
     <p style="margin:0;font-size:13px;color:#64748b;">
-      Or paste this link into your browser:<br/>
+      ${t("invitationOrPaste")}<br/>
       <a href="${inviteLink}" style="color:${COLORS.teal};word-break:break-all;">${inviteLink}</a>
     </p>`);
-  await sendEmail({ to, subject: `Join ${clubName} on ${BRAND.name}`, html });
+  await sendEmail({
+    to,
+    subject: t("invitationSubject", { club: clubName }),
+    html,
+  });
 }
 
 interface PaymentReceiptEmailArgs {
@@ -141,6 +162,7 @@ interface PaymentReceiptEmailArgs {
   description?: string | null;
   /** ISO date the payment was made. */
   paidAt?: string | null;
+  locale?: string | null;
 }
 
 /** Confirm a successful payment. */
@@ -149,32 +171,33 @@ export async function sendPaymentReceiptEmail(
 ): Promise<void> {
   const { to, clubName, studentName, amount, currency, description, paidAt } =
     args;
+  const locale = resolveLocale(args.locale);
+  const t = await getTranslations({ locale, namespace: "Email" });
   const club = escapeHtml(clubName);
   const money = formatMoney(amount, currency ?? "usd");
   const when = paidAt
-    ? new Date(paidAt).toLocaleDateString("en-US", {
+    ? new Date(paidAt).toLocaleDateString(locale, {
         year: "numeric",
         month: "long",
         day: "numeric",
       })
     : "—";
-  const html = layout("Payment received", `
+  const html = layout(t("receiptHeading"), `
     <p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
-      Thanks, ${escapeHtml(studentName)} — we've received your payment to
-      <strong>${club}</strong>.
+      ${t("receiptBody", { name: escapeHtml(studentName), club: `<strong>${club}</strong>` })}
     </p>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:0 0 20px;border:1px solid #e2e8f0;border-radius:10px;">
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">Amount</td>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">${t("receiptAmount")}</td>
           <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;font-weight:600;text-align:right;">${money}</td></tr>
-      <tr><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">Description</td>
+      <tr><td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;color:#64748b;">${t("receiptDescription")}</td>
           <td style="padding:12px 16px;border-bottom:1px solid #f1f5f9;font-size:14px;text-align:right;">${escapeHtml(description ?? "Membership")}</td></tr>
-      <tr><td style="padding:12px 16px;font-size:14px;color:#64748b;">Date</td>
+      <tr><td style="padding:12px 16px;font-size:14px;color:#64748b;">${t("receiptDate")}</td>
           <td style="padding:12px 16px;font-size:14px;text-align:right;">${when}</td></tr>
     </table>
-    <p style="margin:0;font-size:13px;color:#64748b;">Keep this email as your receipt.</p>`);
+    <p style="margin:0;font-size:13px;color:#64748b;">${t("receiptKeep")}</p>`);
   await sendEmail({
     to,
-    subject: `Your ${clubName} payment receipt — ${money}`,
+    subject: t("receiptSubject", { club: clubName, amount: money }),
     html,
   });
 }
@@ -187,6 +210,7 @@ interface ExamResultEmailArgs {
   passed: boolean;
   /** ISO date of the grading exam. */
   examDate?: string | null;
+  locale?: string | null;
 }
 
 /** Notify a candidate of their grading exam result. */
@@ -194,34 +218,31 @@ export async function sendExamResultEmail(
   args: ExamResultEmailArgs,
 ): Promise<void> {
   const { to, clubName, studentName, beltName, passed } = args;
+  const t = await getTranslations({
+    locale: resolveLocale(args.locale),
+    namespace: "Email",
+  });
   const club = escapeHtml(clubName);
   const belt = escapeHtml(beltName);
-  const headline = passed
-    ? `Congratulations — you passed!`
-    : `Your grading result`;
+  const name = escapeHtml(studentName);
   const body = passed
     ? `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
-         Congratulations, ${escapeHtml(studentName)}! You've been promoted to
-         <strong>${belt}</strong> at ${club}. 🥋
+         ${t("examPassedBody", { name, belt: `<strong>${belt}</strong>`, club })}
        </p>
-       <p style="margin:0;font-size:15px;line-height:1.6;">
-         Your instructors are proud of the work you put in — keep it up.
-       </p>`
+       <p style="margin:0;font-size:15px;line-height:1.6;">${t("examPassedBody2")}</p>`
     : `<p style="margin:0 0 16px;font-size:15px;line-height:1.6;">
-         Hi ${escapeHtml(studentName)}, thanks for testing for <strong>${belt}</strong>
-         at ${club}. You didn't pass this time, but every grading is a step
-         forward.
+         ${t("examFailBody", { name, belt: `<strong>${belt}</strong>`, club })}
        </p>
-       <p style="margin:0;font-size:15px;line-height:1.6;">
-         Your instructors will share feedback and the areas to focus on before
-         your next attempt.
-       </p>`;
-  const html = layout(headline, body);
+       <p style="margin:0;font-size:15px;line-height:1.6;">${t("examFailBody2")}</p>`;
+  const html = layout(
+    passed ? t("examPassedHeading") : t("examResultHeading"),
+    body,
+  );
   await sendEmail({
     to,
     subject: passed
-      ? `You passed — welcome to ${beltName}!`
-      : `Your ${clubName} grading result`,
+      ? t("examPassedSubject", { belt: beltName })
+      : t("examResultSubject", { club: clubName }),
     html,
   });
 }
