@@ -41,6 +41,15 @@ export function LanguageSwitcher({
       ? "text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
       : "text-muted-foreground hover:bg-muted hover:text-foreground";
 
+  // The sidebar switcher sits at the bottom of a tall nav, so its menu opens
+  // upward + left-aligned. The header switcher sits at the top-right of the
+  // page; opening upward would clip it above the viewport and left-aligning
+  // would push it off the right edge — so it opens downward + right-aligned.
+  const menuPosition =
+    variant === "dark"
+      ? "bottom-full left-0 mb-1"
+      : "top-full right-0 mt-1";
+
   return (
     <div className={cn("relative", className)}>
       <button
@@ -69,7 +78,10 @@ export function LanguageSwitcher({
           />
           <ul
             role="listbox"
-            className="absolute bottom-full left-0 z-50 mb-1 min-w-[10rem] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-lg"
+            className={cn(
+              "absolute z-50 min-w-[10rem] overflow-hidden rounded-lg border border-border bg-popover py-1 shadow-lg",
+              menuPosition,
+            )}
           >
             {routing.locales.map((l) => (
               <li key={l}>
