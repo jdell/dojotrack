@@ -2,9 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-context";
-
-/** Languages we render emails in; anything else is stored as English. */
-const SUPPORTED_LOCALES = ["en", "es", "gl"];
+import { routing } from "@/i18n/routing";
 
 /**
  * POST /api/auth/register — provision a club + owner for a freshly verified user.
@@ -105,9 +103,10 @@ export async function POST(request: Request) {
   const phone = body.phone?.trim() || authUser.phone || null;
 
   // Remember the language the owner registered in so their club's emails match.
-  const locale = SUPPORTED_LOCALES.includes(body.locale ?? "")
-    ? body.locale
-    : "en";
+  const locale =
+    body.locale && (routing.locales as readonly string[]).includes(body.locale)
+      ? body.locale
+      : routing.defaultLocale;
 
   try {
     const slug = await uniqueSlug(clubName);

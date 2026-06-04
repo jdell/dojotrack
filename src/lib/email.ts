@@ -18,15 +18,18 @@ import { Resend } from "resend";
 import { getTranslations } from "next-intl/server";
 import { BRAND, COLORS } from "./constants";
 import { formatMoney } from "./utils";
+import { routing } from "@/i18n/routing";
 
 /** True when a Resend API key is present in the environment. */
 export function isEmailConfigured(): boolean {
   return Boolean(process.env.RESEND_API_KEY);
 }
 
-/** Normalise a possibly-null locale to a supported one (defaults to English). */
+/** Normalise a possibly-null locale to a supported one (defaults per routing). */
 function resolveLocale(locale: string | null | undefined): string {
-  return locale === "es" || locale === "gl" ? locale : "en";
+  return locale && (routing.locales as readonly string[]).includes(locale)
+    ? locale
+    : routing.defaultLocale;
 }
 
 /** From address for outbound mail. Override with `RESEND_FROM`. */

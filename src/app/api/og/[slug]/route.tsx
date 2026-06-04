@@ -1,6 +1,7 @@
 import { ImageResponse } from "next/og";
 import { getTranslations } from "next-intl/server";
 import { getClubBySlug } from "@/lib/queries";
+import { routing } from "@/i18n/routing";
 
 /**
  * GET /api/og/[slug] — a dynamic 1200×630 OpenGraph image for a club's public
@@ -35,7 +36,10 @@ export async function GET(request: Request, { params }: RouteContext) {
 
   // Localize the CTA from the `?lang=` hint the club page appends (en/es/gl).
   const langParam = new URL(request.url).searchParams.get("lang");
-  const locale = langParam === "es" || langParam === "gl" ? langParam : "en";
+  const locale =
+    langParam && (routing.locales as readonly string[]).includes(langParam)
+      ? langParam
+      : routing.defaultLocale;
   const t = await getTranslations({ locale, namespace: "Club" });
   const ctaText = t("ogCta");
 

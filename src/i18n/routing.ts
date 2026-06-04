@@ -9,12 +9,15 @@ import { defineRouting } from "next-intl/routing";
  *   redirected by the middleware (see `src/proxy.ts`) to the resolved locale.
  * - Locale detection order (handled by next-intl's middleware): the `locale`
  *   cookie (set when a user picks a language) → the `Accept-Language` header →
- *   `defaultLocale` (en).
+ *   `defaultLocale` (Spanish). When neither the cookie nor Accept-Language
+ *   matches a supported locale, the app falls back to Spanish (`es`), not
+ *   English. This is the single source of truth for the default — server
+ *   fallbacks (email, OG image, registration) all read `routing.defaultLocale`.
  * - The choice is persisted in a cookie named `locale` so it survives reloads.
  */
 export const routing = defineRouting({
   locales: ["en", "es", "gl"],
-  defaultLocale: "en",
+  defaultLocale: "es",
   localePrefix: "always",
   localeCookie: {
     name: "locale",
