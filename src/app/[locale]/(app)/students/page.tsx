@@ -13,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Students" });
-  return { title: `${t("title")} — DojoTrack` };
+  return { title: `${t("title")} — EntrenaDojo` };
 }
 
 // Roster is per-request, DB-backed — never statically pre-rendered at build.

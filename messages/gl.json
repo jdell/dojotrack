@@ -1,6 +1,6 @@
 {
   "Common": {
-    "appName": "DojoTrack",
+    "appName": "EntrenaDojo",
     "tagline": "Xestión de clubes de artes marciais, simplificada.",
     "save": "Gardar cambios",
     "saving": "Gardando…",
@@ -45,7 +45,7 @@
     "closeMenu": "Pechar menú de idioma"
   },
   "Landing": {
-    "metaTitle": "DojoTrack — Xestiona o teu dojo, non as túas follas de cálculo",
+    "metaTitle": "EntrenaDojo — Xestiona o teu dojo, non as túas follas de cálculo",
     "metaDescription": "Xestión integral de clubes de artes marciais: lista de alumnado, progresión de cintos, horarios de clases, rexistro con QR, pagamentos con Stripe, competicións e emparellamento de sparring. Comeza de balde.",
     "navFeatures": "Funcións",
     "navPricing": "Prezos",
@@ -53,7 +53,7 @@
     "heroEyebrow": "Para clubes de artes marciais",
     "heroTitleLead": "Xestiona o teu dojo,",
     "heroTitleAccent": "non as túas follas de cálculo",
-    "heroSubtitle": "DojoTrack reúne a túa lista de alumnado, a progresión de cintos, os horarios e os pagamentos nun único lugar pensado para o móbil, para que dediques menos tempo á administración e máis ao tatami.",
+    "heroSubtitle": "EntrenaDojo reúne a túa lista de alumnado, a progresión de cintos, os horarios e os pagamentos nun único lugar pensado para o móbil, para que dediques menos tempo á administración e máis ao tatami.",
     "heroCtaPrimary": "Comeza de balde",
     "heroCtaSecondary": "Ver funcións",
     "heroNote": "Sen tarxeta de crédito · De balde ata 30 alumnos",
@@ -130,7 +130,7 @@
         "role": "Propietaria, Crescent Karate Dojo"
       },
       {
-        "quote": "Organizar os exames era unha fin de semana de papelame. DojoTrack controla cada requisito por alumno e imprime os certificados. Págase só.",
+        "quote": "Organizar os exames era unha fin de semana de papelame. EntrenaDojo controla cada requisito por alumno e imprime os certificados. Págase só.",
         "name": "Kenji Watanabe",
         "role": "Sensei, North Shore Judo Club"
       }
@@ -146,7 +146,7 @@
     "footerAbout": "Sobre nós",
     "footerContact": "Contacto",
     "footerPrivacy": "Privacidade",
-    "footerRights": "© 2026 DojoTrack. Todos os dereitos reservados.",
+    "footerRights": "© 2026 EntrenaDojo. Todos os dereitos reservados.",
     "footerSupports": "Compatible con BJJ, kárate, judo, taekwondo e sistemas de cintos personalizados."
   },
   "Auth": {
@@ -469,7 +469,7 @@
     "metaRank": "Grao de cinto",
     "metaExam": "Exame",
     "settingUp": "Configurando a túa escala de cintos… actualiza nun momento.",
-    "builtInPreviewHint": "Conecta unha base de datos para configurar os requisitos e avaliar o alumnado. Estas son as escalas que DojoTrack inclúe.",
+    "builtInPreviewHint": "Conecta unha base de datos para configurar os requisitos e avaliar o alumnado. Estas son as escalas que EntrenaDojo inclúe.",
     "rankCount": "{count, plural, one {# grao} other {# graos}}",
     "studentCount": "{count, plural, one {# alumno} other {# alumnos}}",
     "requirementCount": "{count, plural, one {# requisito} other {# requisitos}}",
@@ -797,17 +797,17 @@
     "locationSoon": "Localización en breve",
     "comingSoonTitle": "Esta páxina do club estará dispoñible en breve",
     "comingSoonBody": "Os horarios de clase, as disciplinas e un formulario de inscrición aparecerán aquí cando {name} remate de configurar o seu perfil público.",
-    "runYourOwn": "Xestiona o teu propio club con DojoTrack",
-    "poweredBy": "Con tecnoloxía de DojoTrack",
-    "ogCta": "Reserva unha clase de proba gratuíta en DojoTrack",
-    "metaDescription": "{name} — horarios de clases, disciplinas e reserva dunha clase de proba gratuíta en DojoTrack."
+    "runYourOwn": "Xestiona o teu propio club con EntrenaDojo",
+    "poweredBy": "Con tecnoloxía de EntrenaDojo",
+    "ogCta": "Reserva unha clase de proba gratuíta en EntrenaDojo",
+    "metaDescription": "{name} — horarios de clases, disciplinas e reserva dunha clase de proba gratuíta en EntrenaDojo."
   },
   "Email": {
-    "invitationSubject": "Únete a {club} en DojoTrack",
+    "invitationSubject": "Únete a {club} en EntrenaDojo",
     "invitationHeading": "Convidáronte a unirte a {club}",
     "invitationGreetingNamed": "Ola {name}:",
     "invitationGreeting": "Ola:",
-    "invitationBody": "{club} usa DojoTrack para xestionar as clases, a progresión de cintos e os pagamentos. Preme abaixo para crear o teu perfil de alumno; só leva un minuto.",
+    "invitationBody": "{club} usa EntrenaDojo para xestionar as clases, a progresión de cintos e os pagamentos. Preme abaixo para crear o teu perfil de alumno; só leva un minuto.",
     "invitationButton": "Unirme ao club",
     "invitationOrPaste": "Ou pega esta ligazón no teu navegador:",
     "receiptSubject": "O teu recibo de pagamento de {club} — {amount}",
@@ -828,7 +828,7 @@
   },
   "Public": {
     "join": {
-      "metaTitle": "Únete a un club — DojoTrack",
+      "metaTitle": "Únete a un club — EntrenaDojo",
       "eyebrow": "Estás convidado",
       "heading": "Únete a {club}",
       "fallbackClub": "o club",
@@ -845,8 +845,8 @@
       "successBody": "Grazas, {name}. {club} xa ten os teus datos: poñeranse en contacto contigo sobre a túa primeira clase.",
       "errorComplete": "Non se puido completar o rexistro.",
       "errorSignUp": "Non se puido completar o rexistro.",
-      "poweredBy": "Con tecnoloxía de DojoTrack",
-      "goToDojoTrack": "Ir a DojoTrack",
+      "poweredBy": "Con tecnoloxía de EntrenaDojo",
+      "goToEntrenaDojo": "Ir a EntrenaDojo",
       "problem": {
         "accepted": {
           "title": "Esta invitación xa foi utilizada",
@@ -862,12 +862,12 @@
         },
         "unavailable": {
           "title": "As invitacións aínda non están dispoñibles",
-          "body": "Esta instancia de DojoTrack aínda non está conectada a unha base de datos, así que as invitacións non se poden validar."
+          "body": "Esta instancia de EntrenaDojo aínda non está conectada a unha base de datos, así que as invitacións non se poden validar."
         }
       }
     },
     "checkin": {
-      "metaTitle": "Rexistro — DojoTrack",
+      "metaTitle": "Rexistro — EntrenaDojo",
       "prompt": "{date} — toca o teu nome para rexistrarte.",
       "notAvailableTitle": "Rexistro non dispoñible",
       "notAvailableBody": "Non puidemos atopar esta sesión de clase. Comproba o código QR ou a ligazón, ou pídelle axuda ao teu instrutor.",
@@ -880,11 +880,11 @@
       "tapToCheckIn": "Toca para rexistrarte",
       "errorCheckYouIn": "Non se puido rexistrar a túa asistencia.",
       "errorCheckIn": "Non se puido rexistrar a asistencia.",
-      "poweredBy": "Con tecnoloxía de DojoTrack",
-      "goToDojoTrack": "Ir a DojoTrack"
+      "poweredBy": "Con tecnoloxía de EntrenaDojo",
+      "goToEntrenaDojo": "Ir a EntrenaDojo"
     },
     "certificate": {
-      "metaTitle": "Certificado — DojoTrack",
+      "metaTitle": "Certificado — EntrenaDojo",
       "unavailableTitle": "Non hai certificado dispoñible",
       "unavailableBody": "O certificado emítese unha vez que o candidato aproba o seu exame de grao.",
       "backToExams": "Volver aos exames",

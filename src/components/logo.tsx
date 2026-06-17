@@ -3,14 +3,14 @@ import { cn } from "@/lib/utils";
 interface LogoProps {
   /** Size of the square mark in pixels. */
   size?: number;
-  /** Show the "DojoTrack" wordmark next to the mark. */
+  /** Show the "EntrenaDojo" wordmark next to the mark. */
   showWordmark?: boolean;
   /** Render the wordmark in white, for use on dark/coloured backgrounds. */
   inverted?: boolean;
   className?: string;
 }
 
-/** DojoTrack logo — a teal belt-knot mark with an optional wordmark. */
+/** EntrenaDojo logo — a teal belt-knot mark with an optional wordmark. */
 export function Logo({
   size = 32,
   showWordmark = true,
@@ -51,9 +51,9 @@ export function Logo({
             inverted ? "text-white" : "text-brand-navy",
           )}
         >
-          Dojo
+          Entrena
           <span className={inverted ? "text-brand-gold" : "text-brand-teal"}>
-            Track
+            Dojo
           </span>
         </span>
       )}

@@ -1,6 +1,6 @@
 {
   "Common": {
-    "appName": "DojoTrack",
+    "appName": "EntrenaDojo",
     "tagline": "Martial arts club management, simplified.",
     "save": "Save changes",
     "saving": "Saving…",
@@ -45,7 +45,7 @@
     "closeMenu": "Close language menu"
   },
   "Landing": {
-    "metaTitle": "DojoTrack — Run your dojo, not your spreadsheets",
+    "metaTitle": "EntrenaDojo — Run your dojo, not your spreadsheets",
     "metaDescription": "All-in-one martial arts club management: student roster, belt progression, class scheduling, QR check-in, Stripe payments, competitions, and sparring pairing. Start free.",
     "navFeatures": "Features",
     "navPricing": "Pricing",
@@ -53,7 +53,7 @@
     "heroEyebrow": "For martial arts clubs",
     "heroTitleLead": "Run your dojo,",
     "heroTitleAccent": "not your spreadsheets",
-    "heroSubtitle": "DojoTrack brings your roster, belt progression, scheduling, and payments into one mobile-first place — so you can spend less time on admin and more time on the mats.",
+    "heroSubtitle": "EntrenaDojo brings your roster, belt progression, scheduling, and payments into one mobile-first place — so you can spend less time on admin and more time on the mats.",
     "heroCtaPrimary": "Start free",
     "heroCtaSecondary": "See features",
     "heroNote": "No credit card required · Free for up to 30 students",
@@ -117,7 +117,7 @@
       "Email & WhatsApp notifications"
     ],
     "testimonialsEyebrow": "Loved by instructors",
-    "testimonialsTitle": "Dojo owners run leaner with DojoTrack",
+    "testimonialsTitle": "Dojo owners run leaner with EntrenaDojo",
     "testimonials": [
       {
         "quote": "We moved off three different spreadsheets and a group chat. Now belt requirements, attendance, and payments all live in one place — onboarding a new student takes a minute.",
@@ -130,7 +130,7 @@
         "role": "Owner, Crescent Karate Dojo"
       },
       {
-        "quote": "Running gradings used to be a paperwork weekend. DojoTrack tracks every requirement per student and prints the certificates. It pays for itself.",
+        "quote": "Running gradings used to be a paperwork weekend. EntrenaDojo tracks every requirement per student and prints the certificates. It pays for itself.",
         "name": "Kenji Watanabe",
         "role": "Sensei, North Shore Judo Club"
       }
@@ -146,7 +146,7 @@
     "footerAbout": "About",
     "footerContact": "Contact",
     "footerPrivacy": "Privacy",
-    "footerRights": "© 2026 DojoTrack. All rights reserved.",
+    "footerRights": "© 2026 EntrenaDojo. All rights reserved.",
     "footerSupports": "Supports BJJ, Karate, Judo, Taekwondo & custom belt systems."
   },
   "Auth": {
@@ -469,7 +469,7 @@
     "metaRank": "Belt rank",
     "metaExam": "Exam",
     "settingUp": "Setting up your belt ladder… refresh in a moment.",
-    "builtInPreviewHint": "Connect a database to configure requirements and grade students. These are the ladders DojoTrack ships with.",
+    "builtInPreviewHint": "Connect a database to configure requirements and grade students. These are the ladders EntrenaDojo ships with.",
     "rankCount": "{count, plural, one {# rank} other {# ranks}}",
     "studentCount": "{count, plural, one {# student} other {# students}}",
     "requirementCount": "{count, plural, one {# requirement} other {# requirements}}",
@@ -797,17 +797,17 @@
     "locationSoon": "Location coming soon",
     "comingSoonTitle": "This club page is coming soon",
     "comingSoonBody": "Class schedules, disciplines, and a sign-up form will live here once {name} finishes setting up its public profile.",
-    "runYourOwn": "Run your own club on DojoTrack",
-    "poweredBy": "Powered by DojoTrack",
-    "ogCta": "Book a free trial class on DojoTrack",
-    "metaDescription": "{name} — class schedules, disciplines, and a free trial booking on DojoTrack."
+    "runYourOwn": "Run your own club on EntrenaDojo",
+    "poweredBy": "Powered by EntrenaDojo",
+    "ogCta": "Book a free trial class on EntrenaDojo",
+    "metaDescription": "{name} — class schedules, disciplines, and a free trial booking on EntrenaDojo."
   },
   "Email": {
-    "invitationSubject": "Join {club} on DojoTrack",
+    "invitationSubject": "Join {club} on EntrenaDojo",
     "invitationHeading": "You're invited to join {club}",
     "invitationGreetingNamed": "Hi {name},",
     "invitationGreeting": "Hi there,",
-    "invitationBody": "{club} uses DojoTrack to manage classes, belt progression and payments. Tap below to set up your student profile — it only takes a minute.",
+    "invitationBody": "{club} uses EntrenaDojo to manage classes, belt progression and payments. Tap below to set up your student profile — it only takes a minute.",
     "invitationButton": "Join the club",
     "invitationOrPaste": "Or paste this link into your browser:",
     "receiptSubject": "Your {club} payment receipt — {amount}",
@@ -828,7 +828,7 @@
   },
   "Public": {
     "join": {
-      "metaTitle": "Join a club — DojoTrack",
+      "metaTitle": "Join a club — EntrenaDojo",
       "eyebrow": "You're invited",
       "heading": "Join {club}",
       "fallbackClub": "the club",
@@ -845,8 +845,8 @@
       "successBody": "Thanks, {name}. {club} has your details — they'll be in touch about your first class.",
       "errorComplete": "Could not complete sign-up.",
       "errorSignUp": "Could not sign up.",
-      "poweredBy": "Powered by DojoTrack",
-      "goToDojoTrack": "Go to DojoTrack",
+      "poweredBy": "Powered by EntrenaDojo",
+      "goToEntrenaDojo": "Go to EntrenaDojo",
       "problem": {
         "accepted": {
           "title": "This invite has been used",
@@ -862,12 +862,12 @@
         },
         "unavailable": {
           "title": "Invites aren't available yet",
-          "body": "This DojoTrack instance isn't connected to a database yet, so invites can't be validated."
+          "body": "This EntrenaDojo instance isn't connected to a database yet, so invites can't be validated."
         }
       }
     },
     "checkin": {
-      "metaTitle": "Check in — DojoTrack",
+      "metaTitle": "Check in — EntrenaDojo",
       "prompt": "{date} — tap your name to check in.",
       "notAvailableTitle": "Check-in not available",
       "notAvailableBody": "We couldn't find this class session. Double-check the QR code or link, or ask your instructor for help.",
@@ -880,11 +880,11 @@
       "tapToCheckIn": "Tap to check in",
       "errorCheckYouIn": "Could not check you in.",
       "errorCheckIn": "Could not check in.",
-      "poweredBy": "Powered by DojoTrack",
-      "goToDojoTrack": "Go to DojoTrack"
+      "poweredBy": "Powered by EntrenaDojo",
+      "goToEntrenaDojo": "Go to EntrenaDojo"
     },
     "certificate": {
-      "metaTitle": "Certificate — DojoTrack",
+      "metaTitle": "Certificate — EntrenaDojo",
       "unavailableTitle": "No certificate available",
       "unavailableBody": "A certificate is issued once the candidate passes their grading.",
       "backToExams": "Back to exams",

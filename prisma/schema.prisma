@@ -1,4 +1,4 @@
-// DojoTrack database schema.
+// EntrenaDojo database schema.
 //
 // PostgreSQL on Supabase. Follows the mensajeras reference convention:
 // a driver adapter (`@prisma/adapter-pg`) supplies the runtime connection, so

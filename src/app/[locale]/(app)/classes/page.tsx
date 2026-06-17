@@ -16,7 +16,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Classes" });
-  return { title: `${t("title")} — DojoTrack` };
+  return { title: `${t("title")} — EntrenaDojo` };
 }
 
 // Schedule + enrolment counts are per-request, DB-backed — never pre-rendered.

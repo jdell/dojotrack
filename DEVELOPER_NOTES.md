@@ -1,10 +1,10 @@
-# DojoTrack — Developer Notes
+# EntrenaDojo — Developer Notes
 
-> Onboarding + production-readiness notes for the DojoTrack codebase as of **Sprint 5**
+> Onboarding + production-readiness notes for the EntrenaDojo codebase as of **Sprint 5**
 > (commit `9cea2f9`). If you just cloned this repo, start at
 > [Post-clone setup](#post-clone-setup).
 
-DojoTrack is a martial-arts club management app (classes, belt progression,
+EntrenaDojo is a martial-arts club management app (classes, belt progression,
 payments, competitions, sparring). It is **demo-grade**: every external
 dependency (database, Stripe, Supabase auth) is gated so the app stays buildable
 and browsable with **no configuration at all** — unconfigured services render

@@ -13,7 +13,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Settings" });
-  return { title: `${t("title")} — DojoTrack` };
+  return { title: `${t("title")} — EntrenaDojo` };
 }
 
 export const dynamic = "force-dynamic";
@@ -23,7 +23,7 @@ function publicHost(): string {
   try {
     return new URL(BRAND.url).host;
   } catch {
-    return "dojotrack.app";
+    return "entrenadojo.app";
   }
 }
 

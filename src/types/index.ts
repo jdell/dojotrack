@@ -1,5 +1,5 @@
 /**
- * Core domain types for DojoTrack.
+ * Core domain types for EntrenaDojo.
  *
  * These mirror the eventual Supabase/Postgres schema but are kept framework-agnostic
  * so they can be shared between client and server code. Timestamps are ISO strings.

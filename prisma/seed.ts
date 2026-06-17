@@ -1,5 +1,5 @@
 /**
- * Development seed for DojoTrack.
+ * Development seed for EntrenaDojo.
  *
  * Creates one fully-populated club ("Tokyo Dojo") so a freshly pushed database
  * has something to look at: an owner, a handful of students across BJJ / Karate

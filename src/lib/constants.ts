@@ -1,10 +1,10 @@
 import type { BeltRank, BeltSystem, Discipline } from "@/types";
 
 export const BRAND = {
-  name: "DojoTrack",
+  name: "EntrenaDojo",
   tagline: "Martial arts club management, simplified.",
-  email: "hello@dojotrack.app",
-  url: "https://dojotrack.app",
+  email: "hello@entrenadojo.app",
+  url: "https://entrenadojo.app",
 } as const;
 
 /** Brand palette. Teal is the primary brand colour; navy is used for text/headings. */
@@ -340,7 +340,7 @@ export const DISCIPLINES: {
 
 /**
  * A curated set of IANA timezones for the club settings dropdown. Not
- * exhaustive — covers the regions DojoTrack is most likely to serve. Stored on
+ * exhaustive — covers the regions EntrenaDojo is most likely to serve. Stored on
  * `Club.timezone` and used to time class reminders.
  */
 export const TIMEZONES = [

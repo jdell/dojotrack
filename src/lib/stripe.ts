@@ -41,7 +41,7 @@ export function getStripe(): Stripe | null {
     globalForStripe.stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
       apiVersion: "2026-05-27.dahlia",
       typescript: true,
-      appInfo: { name: "DojoTrack", url: "https://dojotrack.app" },
+      appInfo: { name: "EntrenaDojo", url: "https://entrenadojo.app" },
     });
   }
   return globalForStripe.stripe;

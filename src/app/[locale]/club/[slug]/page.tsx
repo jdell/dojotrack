@@ -39,7 +39,7 @@ export async function generateMetadata({
   const ogImage = `${baseUrl()}/api/og/${slug}?lang=${locale}`;
 
   return {
-    title: `${name} — DojoTrack`,
+    title: `${name} — EntrenaDojo`,
     description,
     alternates: { canonical: url },
     openGraph: {
@@ -47,7 +47,7 @@ export async function generateMetadata({
       description,
       url,
       type: "website",
-      siteName: "DojoTrack",
+      siteName: "EntrenaDojo",
       images: [{ url: ogImage, width: 1200, height: 630, alt: name }],
     },
     twitter: {

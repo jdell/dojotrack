@@ -43,7 +43,7 @@ export async function GET(request: Request, { params }: RouteContext) {
   const t = await getTranslations({ locale, namespace: "Club" });
   const ctaText = t("ogCta");
 
-  const name = club?.name ?? humanize(slug) ?? "DojoTrack Club";
+  const name = club?.name ?? humanize(slug) ?? "EntrenaDojo Club";
   const location =
     [club?.city, club?.country].filter(Boolean).join(", ") || null;
   const disciplines = (club?.disciplines ?? []).map((d) => d.label).slice(0, 4);
@@ -64,8 +64,8 @@ export async function GET(request: Request, { params }: RouteContext) {
       >
         {/* Brand wordmark */}
         <div style={{ display: "flex", alignItems: "center", fontSize: 34, fontWeight: 700 }}>
-          <span style={{ color: "#ffffff" }}>Dojo</span>
-          <span style={{ color: GOLD }}>Track</span>
+          <span style={{ color: "#ffffff" }}>Entrena</span>
+          <span style={{ color: GOLD }}>Dojo</span>
         </div>
 
         {/* Club name + location */}

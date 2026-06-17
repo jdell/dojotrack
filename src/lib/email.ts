@@ -77,7 +77,7 @@ export async function sendEmail({ to, subject, html }: SendArgs): Promise<void> 
 // ─── Templates ───────────────────────────────────────────────────────────────
 // Plain, inline-styled HTML so it renders consistently across mail clients.
 
-/** Wrap body content in the branded DojoTrack email shell. */
+/** Wrap body content in the branded EntrenaDojo email shell. */
 function layout(heading: string, bodyHtml: string): string {
   return `<!doctype html>
 <html>
@@ -86,7 +86,7 @@ function layout(heading: string, bodyHtml: string): string {
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:520px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e2e8f0;">
           <tr><td style="background:${COLORS.navy};padding:24px 28px;">
-            <span style="font-size:20px;font-weight:700;color:#ffffff;">Dojo<span style="color:${COLORS.gold};">Track</span></span>
+            <span style="font-size:20px;font-weight:700;color:#ffffff;">Entrena<span style="color:${COLORS.gold};">Dojo</span></span>
           </td></tr>
           <tr><td style="padding:28px;">
             <h1 style="margin:0 0 16px;font-size:20px;color:${COLORS.navy};">${heading}</h1>

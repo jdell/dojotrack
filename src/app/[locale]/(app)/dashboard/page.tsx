@@ -21,7 +21,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "Dashboard" });
-  return { title: `${t("title")} — DojoTrack` };
+  return { title: `${t("title")} — EntrenaDojo` };
 }
 
 export const dynamic = "force-dynamic";

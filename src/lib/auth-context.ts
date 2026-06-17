@@ -1,7 +1,7 @@
 /**
  * Authenticated request context.
  *
- * Resolves the signed-in Supabase user to their DojoTrack `User` + `Club` rows
+ * Resolves the signed-in Supabase user to their EntrenaDojo `User` + `Club` rows
  * so route handlers and server components can scope every query to the caller's
  * club. The session is read from the request cookies via the Supabase SSR
  * server client (`@/lib/supabase/server`), so callers don't pass a cookie store
@@ -36,7 +36,7 @@ function supabaseConfigured(): boolean {
 /**
  * The Supabase auth user for the current request, or `null`. Validates the JWT
  * with Supabase (`getUser()` — a network call), not just the cookie. Used by
- * the registration endpoint, where the DojoTrack `User`/`Club` rows don't exist
+ * the registration endpoint, where the EntrenaDojo `User`/`Club` rows don't exist
  * yet. Memoised per request.
  */
 export const getAuthUser = cache(async (): Promise<SupabaseUser | null> => {

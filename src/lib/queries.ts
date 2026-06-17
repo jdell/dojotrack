@@ -1,5 +1,5 @@
 /**
- * Server-side data access for DojoTrack.
+ * Server-side data access for EntrenaDojo.
  *
  * Every function gates on `isDbConfigured()` and swallows connection errors,
  * returning empty/null results so pages render an empty state rather than
@@ -119,7 +119,7 @@ export async function getCurrentClub(): Promise<ClubSummary | null> {
   };
 }
 
-/** The signed-in user's DojoTrack account, or null when not authenticated. */
+/** The signed-in user's EntrenaDojo account, or null when not authenticated. */
 export interface CurrentUser {
   id: string;
   name: string;
@@ -128,7 +128,7 @@ export interface CurrentUser {
 }
 
 /**
- * The signed-in user's DojoTrack account (owner / instructor / student),
+ * The signed-in user's EntrenaDojo account (owner / instructor / student),
  * resolved from the authenticated request. Returns null when there's no
  * session or the user isn't linked to a club.
  */

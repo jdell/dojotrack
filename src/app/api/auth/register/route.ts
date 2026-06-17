@@ -8,7 +8,7 @@ import { routing } from "@/i18n/routing";
  * POST /api/auth/register — provision a club + owner for a freshly verified user.
  *
  * Called by the registration page right after the Supabase phone-OTP step
- * succeeds: at that point the Supabase auth user exists, but the DojoTrack
+ * succeeds: at that point the Supabase auth user exists, but the EntrenaDojo
  * `Club`/`User` rows don't. We read the verified user from the session (so this
  * can't be called anonymously — that's why `/api/auth/*` is exempt from the
  * `requireAuth` guard, which would 401 before these rows exist) and create:

@@ -1,4 +1,4 @@
-# DojoTrack
+# EntrenaDojo
 
 Martial arts club management, simplified. Classes, belt progression, payments — mobile-first.
 

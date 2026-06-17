@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "DojoTrack — Martial arts club management, simplified",
+  title: "EntrenaDojo — Martial arts club management, simplified",
   description:
     "Classes, belt progression, and payments for martial arts clubs. Mobile-first.",
 };

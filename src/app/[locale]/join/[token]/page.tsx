@@ -111,7 +111,7 @@ async function InviteProblem({
         href="/"
         className="mt-6 inline-flex rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
       >
-        {t("goToDojoTrack")}
+        {t("goToEntrenaDojo")}
       </Link>
     </div>
   );
