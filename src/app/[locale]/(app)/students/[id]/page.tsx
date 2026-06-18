@@ -7,6 +7,7 @@ import {
   Award,
   CalendarDays,
   Flame,
+  Pencil,
   QrCode,
   Trophy,
 } from "lucide-react";
@@ -69,13 +70,22 @@ export default async function StudentProfilePage({
               )}
             </div>
           </div>
-          <Link
-            href={`/students/${id}/belt`}
-            className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
-          >
-            <Award size={16} />
-            {t("beltProgress")}
-          </Link>
+          <div className="flex flex-wrap items-center gap-2">
+            <Link
+              href={`/students/${id}/edit`}
+              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-sm font-semibold text-brand-navy transition-colors hover:bg-muted/50"
+            >
+              <Pencil size={16} />
+              {t("edit")}
+            </Link>
+            <Link
+              href={`/students/${id}/belt`}
+              className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+            >
+              <Award size={16} />
+              {t("beltProgress")}
+            </Link>
+          </div>
         </div>
       </div>
 

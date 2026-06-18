@@ -810,6 +810,69 @@ export async function getStudentProfile(
   }
 }
 
+/** The editable fields of a student, for the edit form. */
+export interface StudentEditData {
+  id: string;
+  fullName: string;
+  phone: string | null;
+  email: string | null;
+  /** `yyyy-mm-dd` for a native date input, or null. */
+  dateOfBirth: string | null;
+  beltRankId: string | null;
+  weight: number | null;
+  medicalNotes: string | null;
+  emergencyContact: string | null;
+  emergencyPhone: string | null;
+  familyId: string | null;
+  active: boolean;
+}
+
+/** Load a single student's editable fields, scoped to the club, or null. */
+export async function getStudentForEdit(
+  id: string,
+  clubId: string,
+): Promise<StudentEditData | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const s = await prisma.student.findFirst({
+      where: { id, clubId },
+      select: {
+        id: true,
+        fullName: true,
+        phone: true,
+        email: true,
+        dateOfBirth: true,
+        beltRankId: true,
+        weight: true,
+        medicalNotes: true,
+        emergencyContact: true,
+        emergencyPhone: true,
+        familyId: true,
+        active: true,
+      },
+    });
+    if (!s) return null;
+    return {
+      id: s.id,
+      fullName: s.fullName,
+      phone: s.phone,
+      email: s.email,
+      dateOfBirth: s.dateOfBirth
+        ? s.dateOfBirth.toISOString().slice(0, 10)
+        : null,
+      beltRankId: s.beltRankId,
+      weight: s.weight,
+      medicalNotes: s.medicalNotes,
+      emergencyContact: s.emergencyContact,
+      emergencyPhone: s.emergencyPhone,
+      familyId: s.familyId,
+      active: s.active,
+    };
+  } catch {
+    return null;
+  }
+}
+
 export interface DashboardTodayClass {
   id: string;
   name: string;

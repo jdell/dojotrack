@@ -3,10 +3,12 @@ import { Sidebar } from "@/components/sidebar";
 import { Logo } from "@/components/logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentClub } from "@/lib/queries";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
-  // Best-effort display of the signed-in user. Route protection itself lives in
-  // middleware (which redirects to /login when Supabase is configured).
+  // Best-effort display of the signed-in user and club name. Route protection
+  // itself lives in middleware (which redirects to /login when Supabase is
+  // configured).
   let userName = "Instructor";
   if (process.env.NEXT_PUBLIC_SUPABASE_URL?.startsWith("http")) {
     try {
@@ -24,9 +26,11 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     }
   }
 
+  const club = await getCurrentClub();
+
   return (
     <div className="flex min-h-screen bg-muted/30">
-      <Sidebar userName={userName} />
+      <Sidebar clubName={club?.name} userName={userName} />
       <div className="flex flex-1 flex-col min-w-0">
         <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background px-4">
           <Logo size={26} />
