@@ -96,6 +96,17 @@ export interface PublicClub {
   facebookUrl: string | null;
   youtubeUrl: string | null;
   instructors: { id: string; name: string; role: string }[];
+  classSchedules: {
+    id: string;
+    name: string;
+    discipline: string;
+    dayOfWeek: string;
+    startTime: string;
+    endTime: string;
+    level: string;
+    location: string | null;
+    instructorName: string | null;
+  }[];
 }
 
 /**
@@ -296,6 +307,13 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
           where: { role: { in: ["OWNER", "INSTRUCTOR"] } },
           select: { id: true, fullName: true, role: true },
         },
+        classSchedules: {
+          where: { active: true },
+          orderBy: [{ startTime: "asc" }],
+          include: {
+            instructor: { select: { fullName: true } },
+          },
+        },
       },
     });
     if (!club) return null;
@@ -319,6 +337,17 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
         id: u.id,
         name: u.fullName ?? "Instructor",
         role: u.role,
+      })),
+      classSchedules: club.classSchedules.map((cs) => ({
+        id: cs.id,
+        name: cs.name,
+        discipline: cs.discipline,
+        dayOfWeek: cs.dayOfWeek,
+        startTime: cs.startTime,
+        endTime: cs.endTime,
+        level: cs.level,
+        location: cs.location,
+        instructorName: cs.instructor?.fullName ?? null,
       })),
     };
   } catch {
