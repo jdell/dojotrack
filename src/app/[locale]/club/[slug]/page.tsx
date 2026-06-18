@@ -1,7 +1,15 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { CalendarDays, MapPin, Users } from "lucide-react";
+import {
+  CalendarDays,
+  Globe,
+  ExternalLink,
+  MapPin,
+  Mail,
+  Phone,
+  Users,
+} from "lucide-react";
 import { Logo } from "@/components/logo";
 import { getClubBySlug, type PublicClub } from "@/lib/queries";
 import { baseUrl } from "@/lib/invite";
@@ -134,9 +142,18 @@ export default async function ClubPublicPage({
       <header className="border-b border-slate-200 bg-white">
         <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="flex items-center gap-4">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
-              {initials(club.name) || club.name.charAt(0)}
-            </div>
+            {club.logoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={club.logoUrl}
+                alt={club.name}
+                className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 object-cover"
+              />
+            ) : (
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
+                {initials(club.name) || club.name.charAt(0)}
+              </div>
+            )}
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-brand-navy">
                 {club.name}
@@ -147,8 +164,42 @@ export default async function ClubPublicPage({
             </div>
           </div>
 
+          {/* Contact & social links */}
+          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4">
+            {club.phone && (
+              <a href={`tel:${club.phone}`} className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <Phone size={14} /> {club.phone}
+              </a>
+            )}
+            {club.email && (
+              <a href={`mailto:${club.email}`} className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <Mail size={14} /> {club.email}
+              </a>
+            )}
+            {club.websiteUrl && (
+              <a href={club.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <Globe size={14} /> {t("website")}
+              </a>
+            )}
+            {club.instagramUrl && (
+              <a href={club.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <ExternalLink size={14} /> Instagram
+              </a>
+            )}
+            {club.facebookUrl && (
+              <a href={club.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <ExternalLink size={14} /> Facebook
+              </a>
+            )}
+            {club.youtubeUrl && (
+              <a href={club.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+                <ExternalLink size={14} /> YouTube
+              </a>
+            )}
+          </div>
+
           {club.disciplines.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-2">
+            <div className="mt-4 flex flex-wrap gap-2">
               {club.disciplines.map((d) => (
                 <span
                   key={d.value}
@@ -172,12 +223,27 @@ export default async function ClubPublicPage({
               {t("tryClassSubtitle", { club: club.name })}
             </p>
           </div>
-          <button
-            type="button"
-            className="shrink-0 rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-semibold text-brand-navy transition-opacity hover:opacity-90"
-          >
-            {t("bookTrial")}
-          </button>
+          {club.email ? (
+            <a
+              href={`mailto:${club.email}?subject=${encodeURIComponent(t("trialEmailSubject", { club: club.name }))}&body=${encodeURIComponent(t("trialEmailBody", { club: club.name }))}`}
+              className="shrink-0 rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-semibold text-brand-navy transition-opacity hover:opacity-90"
+            >
+              {t("bookTrial")}
+            </a>
+          ) : club.phone ? (
+            <a
+              href={`https://wa.me/${club.phone.replace(/\D/g, "")}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 rounded-lg bg-brand-gold px-5 py-2.5 text-sm font-semibold text-brand-navy transition-opacity hover:opacity-90"
+            >
+              {t("bookTrial")}
+            </a>
+          ) : (
+            <span className="shrink-0 rounded-lg bg-brand-gold/50 px-5 py-2.5 text-sm font-semibold text-brand-navy/50 cursor-not-allowed">
+              {t("bookTrial")}
+            </span>
+          )}
         </section>
 
         {club.description && (
