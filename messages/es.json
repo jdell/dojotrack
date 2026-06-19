@@ -46,7 +46,7 @@
   },
   "Landing": {
     "metaTitle": "EntrenaDojo — Gestiona tu dojo, no tus hojas de cálculo",
-    "metaDescription": "Gestión integral de clubes de artes marciales: lista de alumnos, progresión de cinturones, horarios de clases, registro con QR, pagos con Stripe, competiciones y emparejamiento de sparring. Empieza gratis.",
+    "metaDescription": "Gestión integral de clubes de artes marciales: lista de alumnos, progresión de cinturones, horarios de clases, registro con QR, pagos flexibles (Stripe, efectivo, Bizum), competiciones y emparejamiento de sparring. Empieza gratis.",
     "navFeatures": "Funciones",
     "navPricing": "Precios",
     "navTestimonials": "Testimonios",
@@ -78,8 +78,8 @@
         "desc": "Los alumnos escanean un código en la pared para registrar su asistencia. Sin papeles."
       },
       {
-        "title": "Pagos con Stripe",
-        "desc": "Cuotas, clases sueltas y tasas de examen, cobradas y conciliadas automáticamente con Stripe."
+        "title": "Pagos flexibles",
+        "desc": "Acepta tarjeta en línea con Stripe Connect o registra pagos en efectivo, Bizum y transferencia. Cada club conecta su propio Stripe y cobra directamente."
       },
       {
         "title": "Seguimiento de competiciones",
@@ -111,7 +111,7 @@
     "planProCta": "Prueba gratis",
     "planProFeatures": [
       "Alumnos ilimitados",
-      "Pagos y cuotas con Stripe",
+      "Pagos en línea (Stripe Connect) + registro de efectivo/Bizum",
       "Exámenes de grado y certificados",
       "Herramientas de competición y sparring",
       "Notificaciones por email y WhatsApp"

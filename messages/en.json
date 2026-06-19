@@ -46,7 +46,7 @@
   },
   "Landing": {
     "metaTitle": "EntrenaDojo — Run your dojo, not your spreadsheets",
-    "metaDescription": "All-in-one martial arts club management: student roster, belt progression, class scheduling, QR check-in, Stripe payments, competitions, and sparring pairing. Start free.",
+    "metaDescription": "All-in-one martial arts club management: student roster, belt progression, class scheduling, QR check-in, flexible payments (Stripe, cash, Bizum), competitions, and sparring pairing. Start free.",
     "navFeatures": "Features",
     "navPricing": "Pricing",
     "navTestimonials": "Testimonials",
@@ -78,8 +78,8 @@
         "desc": "Students scan a code on the wall to check themselves into class. No clipboard required."
       },
       {
-        "title": "Stripe payments",
-        "desc": "Memberships, drop-ins, and exam fees — billed and reconciled automatically via Stripe."
+        "title": "Flexible payments",
+        "desc": "Accept cards online via Stripe Connect or track cash, Bizum, and bank transfers manually. Each club connects their own Stripe — you get paid directly."
       },
       {
         "title": "Competition tracking",
@@ -111,7 +111,7 @@
     "planProCta": "Start free trial",
     "planProFeatures": [
       "Unlimited students",
-      "Stripe payments & memberships",
+      "Online payments (Stripe Connect) + cash/Bizum tracking",
       "Grading exams & certificates",
       "Competitions & sparring tools",
       "Email & WhatsApp notifications"

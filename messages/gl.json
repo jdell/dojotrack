@@ -46,7 +46,7 @@
   },
   "Landing": {
     "metaTitle": "EntrenaDojo — Xestiona o teu dojo, non as túas follas de cálculo",
-    "metaDescription": "Xestión integral de clubes de artes marciais: lista de alumnado, progresión de cintos, horarios de clases, rexistro con QR, pagamentos con Stripe, competicións e emparellamento de sparring. Comeza de balde.",
+    "metaDescription": "Xestión integral de clubes de artes marciais: lista de alumnado, progresión de cintos, horarios de clases, rexistro con QR, pagamentos flexibles (Stripe, efectivo, Bizum), competicións e emparellamento de sparring. Comeza de balde.",
     "navFeatures": "Funcións",
     "navPricing": "Prezos",
     "navTestimonials": "Testemuños",
@@ -78,8 +78,8 @@
         "desc": "O alumnado escanea un código na parede para rexistrar a súa asistencia. Sen papeis."
       },
       {
-        "title": "Pagamentos con Stripe",
-        "desc": "Cotas, clases soltas e taxas de exame, cobradas e conciliadas automaticamente con Stripe."
+        "title": "Pagamentos flexibles",
+        "desc": "Acepta tarxeta en liña con Stripe Connect ou rexistra pagamentos en efectivo, Bizum e transferencia. Cada club conecta o seu propio Stripe e cobra directamente."
       },
       {
         "title": "Seguimento de competicións",
@@ -111,7 +111,7 @@
     "planProCta": "Proba de balde",
     "planProFeatures": [
       "Alumnado ilimitado",
-      "Pagamentos e cotas con Stripe",
+      "Pagamentos en liña (Stripe Connect) + rexistro de efectivo/Bizum",
       "Exames de grao e certificados",
       "Ferramentas de competición e sparring",
       "Notificacións por correo e WhatsApp"
