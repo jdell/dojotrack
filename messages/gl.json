@@ -617,6 +617,13 @@
     "stripeNotConfigured": "Stripe aínda non está configurado. Engade <code>STRIPE_SECRET_KEY</code> para activar o pagamento en directo. Aínda podes crear plans a continuación.",
     "plansHeading": "Plans",
     "plansEmpty": "Aínda non hai plans. Engade un plan de subscrición para comezar a facturar aos membros.",
+    "editPlan": "Editar plan",
+    "updatePlan": "Actualizar plan",
+    "deactivatePlan": "Desactivar plan",
+    "activatePlan": "Activar plan",
+    "planUpdated": "Plan actualizado",
+    "planActive": "Activo",
+    "planInactive": "Inactivo",
     "inactive": "Inactivo",
     "memberCount": "{count, plural, one {# membro} other {# membros}}",
     "chargeMember": "Cobrar a un membro",
@@ -664,7 +671,8 @@
       "billing": "Facturación",
       "description": "Descrición",
       "createPlan": "Crear plan",
-      "createError": "Non se puido crear o plan."
+      "createError": "Non se puido crear o plan.",
+      "updateError": "Non se puido actualizar o plan."
     },
     "interval": {
       "MONTHLY": "Mensual",

@@ -617,6 +617,13 @@
     "stripeNotConfigured": "Stripe isn't configured yet. Add <code>STRIPE_SECRET_KEY</code> to enable live checkout. You can still set up plans below.",
     "plansHeading": "Plans",
     "plansEmpty": "No plans yet. Add a membership plan to start billing members.",
+    "editPlan": "Edit plan",
+    "updatePlan": "Update plan",
+    "deactivatePlan": "Deactivate plan",
+    "activatePlan": "Activate plan",
+    "planUpdated": "Plan updated",
+    "planActive": "Active",
+    "planInactive": "Inactive",
     "inactive": "Inactive",
     "memberCount": "{count, plural, one {# member} other {# members}}",
     "chargeMember": "Charge a member",
@@ -664,7 +671,8 @@
       "billing": "Billing",
       "description": "Description",
       "createPlan": "Create plan",
-      "createError": "Could not create the plan."
+      "createError": "Could not create the plan.",
+      "updateError": "Could not update the plan."
     },
     "interval": {
       "MONTHLY": "Monthly",

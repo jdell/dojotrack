@@ -19,6 +19,7 @@ import {
 import { isDbConfigured } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { NewPlanForm } from "./new-plan-form";
+import { PlanRow } from "./plan-row";
 import { CheckoutPanel } from "./checkout-panel";
 import { ManualPaymentForm } from "./manual-payment-form";
 
@@ -166,43 +167,9 @@ export default async function PaymentsPage({
                 </p>
               ) : (
                 <ul className="space-y-2">
-                  {(data?.plans ?? []).map((plan) => {
-                    return (
-                      <li
-                        key={plan.id}
-                        className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm"
-                      >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-teal/10 text-brand-teal">
-                          <CreditCard size={18} />
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-brand-navy">
-                            {plan.name}
-                            {!plan.active && (
-                              <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-[0.65rem] font-semibold text-slate-600">
-                                {t("inactive")}
-                              </span>
-                            )}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {t("memberCount", { count: plan.activeMembers })}
-                            {plan.description ? ` · ${plan.description}` : ""}
-                          </p>
-                        </div>
-                        <div className="shrink-0 text-right">
-                          <p className="font-bold text-brand-navy">
-                            {formatMoney(plan.amount, plan.currency)}
-                            <span className="text-xs font-normal text-muted-foreground">
-                              {t(`intervalShort.${plan.interval}`)}
-                            </span>
-                          </p>
-                          <p className="text-[0.65rem] uppercase tracking-wide text-muted-foreground">
-                            {t(`interval.${plan.interval}`)}
-                          </p>
-                        </div>
-                      </li>
-                    );
-                  })}
+                  {(data?.plans ?? []).map((plan) => (
+                    <PlanRow key={plan.id} plan={plan} />
+                  ))}
                 </ul>
               )}
             </div>
