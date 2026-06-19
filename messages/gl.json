@@ -273,6 +273,8 @@
     "colStudent": "Alumno",
     "colJoined": "Alta",
     "colFamily": "Familia",
+    "attendanceCount": "{count, plural, one {# clase} other {# clases}}",
+    "membershipNone": "Ningunha",
     "paymentPending": "Pendente",
     "backToRoster": "Volver á lista",
     "backToProfile": "Volver ao perfil",
@@ -416,6 +418,9 @@
     "qrAppearsLater": "O código QR aparece cando se programa unha próxima sesión.",
     "notConfiguredTitle": "Os detalles da clase aínda non están dispoñibles",
     "notConfiguredBody": "Conecta unha base de datos para ver as sesións, rexistrar os alumnos e facer o seguimento da asistencia.",
+    "editClass": "Editar clase",
+    "updateClass": "Actualizar clase",
+    "errorUpdateClass": "Non se puido actualizar a clase.",
     "delete": "Eliminar",
     "deleteConfirm": "Eliminar a clase?",
     "deleteError": "Non se puido eliminar a clase.",
@@ -510,6 +515,10 @@
     "errSave": "Non se puido gardar.",
     "errDelete": "Non se puido eliminar.",
     "errReorder": "Non se puido reordenar.",
+    "deleteRank": "Eliminar grao",
+    "confirmDeleteRank": "Eliminar este grao?",
+    "cannotDeleteAssigned": "Non se pode eliminar un grao que ten alumnos asignados.",
+    "rankDeleted": "Grao eliminado.",
     "backToBelts": "Volver aos cintos",
     "backToExams": "Volver aos exames",
     "requirementsToEarn": "Requisitos para obtelo",
@@ -772,6 +781,11 @@
     "locationPlaceholder": "Palacio de Congresos da cidade",
     "notesLabel": "Notas",
     "notesPlaceholder": "Detalles de inscrición, divisións, etc. (opcional)",
+    "editCompetition": "Editar",
+    "deleteCompetition": "Eliminar",
+    "confirmDelete": "Eliminar esta competicion?",
+    "updateCompetition": "Actualizar competicion",
+    "errorUpdateCompetition": "Non se puido actualizar a competicion.",
     "errorAdd": "Non se puido engadir a competición.",
     "statusLabel": "Estado",
     "enterStudent": "Inscribir un alumno",
@@ -849,7 +863,13 @@
     "pairing": "Emparellando…",
     "generatePairings": "Xerar emparellamentos",
     "minTwoStudents": "Selecciona polo menos dous alumnos.",
-    "createError": "Non se puido crear a sesión."
+    "createError": "Non se puido crear a sesión.",
+    "editSession": "Editar sesión",
+    "updateSession": "Actualizar sesión",
+    "confirmDeleteSession": "Eliminar esta sesión de sparring?",
+    "errorUpdateSession": "Non se puido actualizar a sesión.",
+    "notes": "Notas",
+    "notesPlaceholder": "Calquera detalle sobre esta sesión (opcional)"
   },
   "Club": {
     "tryClassTitle": "Proba unha clase connosco",
@@ -868,6 +888,15 @@
     "comingSoonBody": "Os horarios de clase, as disciplinas e un formulario de inscrición aparecerán aquí cando {name} remate de configurar o seu perfil público.",
     "runYourOwn": "Xestiona o teu propio club con EntrenaDojo",
     "poweredBy": "Con tecnoloxía de EntrenaDojo",
+    "dayShort": {
+      "MON": "Lun",
+      "TUE": "Mar",
+      "WED": "Mér",
+      "THU": "Xov",
+      "FRI": "Ven",
+      "SAT": "Sáb",
+      "SUN": "Dom"
+    },
     "ogCta": "Reserva unha clase de proba gratuíta en EntrenaDojo",
     "metaDescription": "{name} — horarios de clases, disciplinas e reserva dunha clase de proba gratuíta en EntrenaDojo."
   },
@@ -981,5 +1010,17 @@
       "issuedVia": "Emitido a través de {brand}",
       "printButton": "Imprimir / Gardar como PDF"
     }
+  },
+  "Privacy": {
+    "privacyTitle": "Politica de privacidade",
+    "privacyIntro": "EntrenaDojo comprometese a protexer a privacidade dos propietarios de clubs, instrutores e alumnado que usan a nosa plataforma. Esta paxina explica que datos recollemos, como os usamos e os teus dereitos.",
+    "privacyDataCollection": "Datos que recollemos",
+    "privacyDataCollectionBody": "Recollemos a informacion que proporcionas ao rexistrar un club ou unha conta de alumno: nomes, numeros de telefono, enderezos de correo electronico e datos de cintos. Os rexistros de asistencia almacenanse cando o alumnado se rexistra nas clases. Non rastrexamos a tua actividade de navegacion, non usamos cookies publicitarias nin vendemos os teus datos a terceiros.",
+    "privacyAuth": "Autenticacion",
+    "privacyAuthBody": "EntrenaDojo usa Supabase para a autenticacion. Cando inicias sesion co teu numero de telefono, enviase un codigo de verificacion unico por SMS. As tuas credenciais de autenticacion son xestionadas de forma segura por Supabase e nunca se almacenan na base de datos da nosa aplicacion.",
+    "privacyPayments": "Pagamentos",
+    "privacyPaymentsBody": "Os pagamentos en lina procesanse a traves de Stripe. EntrenaDojo nunca ve nin almacena os datos completos da tua tarxeta. Cada club conecta a sua propia conta de Stripe para recibir pagamentos directamente. Os rexistros de pagamentos (importes, datas, nomes de plans) almacenanse na nosa base de datos para o historial de facturacion.",
+    "privacyContact": "Contacto",
+    "privacyContactBody": "Se tes preguntas sobre os teus datos ou desexas solicitar a eliminacion da tua conta, contacta connosco en hello@entrenadojo.app."
   }
 }

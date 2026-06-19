@@ -13,6 +13,7 @@ import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { CompetitionStatusBadge } from "../page";
 import { CompetitionResults } from "./competition-results";
+import { CompetitionActions } from "./competition-actions";
 
 export async function generateMetadata({
   params,
@@ -85,7 +86,10 @@ export default async function CompetitionDetailPage({
               )}
             </p>
           </div>
-          <CompetitionStatusBadge status={competition.status} />
+          <div className="flex flex-wrap items-center gap-2">
+            <CompetitionStatusBadge status={competition.status} />
+            <CompetitionActions competitionId={competition.id} />
+          </div>
         </div>
         {competition.description && (
           <p className="mt-3 rounded-lg border border-border bg-card p-3 text-sm text-muted-foreground">

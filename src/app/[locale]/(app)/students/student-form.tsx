@@ -15,8 +15,8 @@ interface StudentFormProps {
 const NEW_FAMILY = "__new__";
 
 const inputClass =
-  "w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
-const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+  "w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
+const labelClass = "mb-1.5 block text-sm font-medium text-foreground";
 
 /**
  * Create-student form. Submits to POST /api/students, including either an
@@ -147,7 +147,7 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
             <select
               value={form.beltRankId}
               onChange={(e) => update("beltRankId", e.target.value)}
-              className={`${inputClass} bg-white`}
+              className={`${inputClass} bg-background`}
             >
               <option value="">{t("optionNoBeltYet")}</option>
               {beltOptions.map((b) => (
@@ -170,7 +170,7 @@ export function StudentForm({ beltOptions, families }: StudentFormProps) {
           <select
             value={familyChoice}
             onChange={(e) => setFamilyChoice(e.target.value)}
-            className={`${inputClass} bg-white`}
+            className={`${inputClass} bg-background`}
           >
             <option value="">{t("optionNoFamily")}</option>
             {families.map((f) => (

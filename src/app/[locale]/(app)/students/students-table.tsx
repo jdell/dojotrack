@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Search, Users } from "lucide-react";
+import type { MembershipStatus } from "@prisma/client";
 import type { StudentRow } from "@/lib/queries";
 import { BeltBadge } from "@/components/belt-badge";
 import { formatDate } from "@/lib/utils";
@@ -14,7 +15,7 @@ interface StudentsTableProps {
 
 /**
  * Roster table with name search and an optional "group by family" view.
- * Attendance and payment columns are placeholders until those subsystems land.
+ * Attendance count and membership status are wired to real data.
  */
 export function StudentsTable({ students }: StudentsTableProps) {
   const t = useTranslations("Students");
@@ -137,12 +138,16 @@ function RosterTable({
                 {formatDate(s.joinDate) || "—"}
               </td>
               <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
-                —
+                {s.attendanceCount > 0 ? (
+                  <span className="font-medium text-brand-navy">
+                    {t("attendanceCount", { count: s.attendanceCount })}
+                  </span>
+                ) : (
+                  "—"
+                )}
               </td>
               <td className="px-4 py-3">
-                <span className="inline-flex items-center rounded-full bg-amber-100 px-2.5 py-0.5 text-xs font-medium text-amber-800">
-                  {t("paymentPending")}
-                </span>
+                <MembershipBadge status={s.membershipStatus} />
               </td>
               {showFamily && (
                 <td className="hidden px-4 py-3 lg:table-cell">
@@ -168,6 +173,33 @@ interface FamilyGroup {
   familyId: string | null;
   familyName: string | null;
   rows: StudentRow[];
+}
+
+const MEMBERSHIP_STYLES: Record<string, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  TRIALING: "bg-green-100 text-green-800",
+  PAST_DUE: "bg-amber-100 text-amber-800",
+  CANCELLED: "bg-red-100 text-red-800",
+};
+
+function MembershipBadge({ status }: { status: MembershipStatus | null }) {
+  const t = useTranslations("Students");
+  const tp = useTranslations("Payments.membershipStatus");
+  if (!status) {
+    return (
+      <span className="inline-flex items-center rounded-full bg-muted px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+        {t("membershipNone")}
+      </span>
+    );
+  }
+  const style = MEMBERSHIP_STYLES[status] ?? "bg-muted text-muted-foreground";
+  return (
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${style}`}
+    >
+      {tp(status)}
+    </span>
+  );
 }
 
 /** Bucket students by family; the "no family" bucket sorts last. */

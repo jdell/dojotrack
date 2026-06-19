@@ -55,7 +55,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-900/[0.04]">
+    <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl shadow-slate-900/[0.04]">
       <div className="mb-8 lg:hidden">
         <Logo size={32} />
       </div>
@@ -63,7 +63,7 @@ export default function LoginPage() {
       <h1 className="mb-1 text-xl font-bold text-brand-navy">
         {step === "phone" ? t("loginTitle") : t("loginCodeTitle")}
       </h1>
-      <p className="mb-6 text-sm text-slate-500">
+      <p className="mb-6 text-sm text-muted-foreground">
         {step === "phone"
           ? t("loginSubtitle")
           : t("loginCodeSentTo", { phone })}
@@ -78,7 +78,7 @@ export default function LoginPage() {
       {step === "phone" ? (
         <form onSubmit={handleSendOtp} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
               {t("phoneLabel")}
             </label>
             <input
@@ -88,7 +88,7 @@ export default function LoginPage() {
               placeholder={t("phonePlaceholder")}
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
+              className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
             />
           </div>
           <button
@@ -102,7 +102,7 @@ export default function LoginPage() {
       ) : (
         <form onSubmit={handleVerifyOtp} className="space-y-4">
           <div>
-            <label className="mb-1.5 block text-sm font-medium text-slate-700">
+            <label className="mb-1.5 block text-sm font-medium text-foreground">
               {t("verificationLabel")}
             </label>
             <input
@@ -114,7 +114,7 @@ export default function LoginPage() {
               placeholder="• • • • • •"
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              className="w-full rounded-lg border border-slate-300 px-3 py-3 text-center font-mono text-xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-teal"
+              className="w-full rounded-lg border border-border px-3 py-3 text-center font-mono text-xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-teal"
             />
           </div>
           <button
@@ -131,14 +131,14 @@ export default function LoginPage() {
               setOtp("");
               setError("");
             }}
-            className="w-full py-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
+            className="w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("changeNumber")}
           </button>
         </form>
       )}
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-muted-foreground">
         {t("newClub")}{" "}
         <Link
           href="/register"

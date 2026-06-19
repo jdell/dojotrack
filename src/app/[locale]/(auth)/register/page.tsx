@@ -98,14 +98,14 @@ export default function RegisterPage() {
 
   if (step === "otp") {
     return (
-      <div className="w-full max-w-sm rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-900/[0.04]">
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl shadow-slate-900/[0.04]">
         <div className="mb-8 lg:hidden">
           <Logo size={32} />
         </div>
         <h1 className="mb-1 text-xl font-bold text-brand-navy">
           {t("registerVerifyTitle")}
         </h1>
-        <p className="mb-6 text-sm text-slate-500">
+        <p className="mb-6 text-sm text-muted-foreground">
           {t("loginCodeSentTo", { phone: form.phone })}
         </p>
         {error && (
@@ -123,7 +123,7 @@ export default function RegisterPage() {
             placeholder="• • • • • •"
             value={otp}
             onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-            className="w-full rounded-lg border border-slate-300 px-3 py-3 text-center font-mono text-xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            className="w-full rounded-lg border border-border px-3 py-3 text-center font-mono text-xl tracking-[0.5em] focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
           <button
             type="submit"
@@ -139,7 +139,7 @@ export default function RegisterPage() {
               setOtp("");
               setError("");
             }}
-            className="w-full py-2 text-sm text-slate-500 transition-colors hover:text-slate-700"
+            className="w-full py-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             {t("back")}
           </button>
@@ -149,7 +149,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-900/[0.04]">
+    <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 shadow-xl shadow-slate-900/[0.04]">
       <div className="mb-8 lg:hidden">
         <Logo size={32} />
       </div>
@@ -157,7 +157,7 @@ export default function RegisterPage() {
       <h1 className="mb-1 text-xl font-bold text-brand-navy">
         {t("registerTitle")}
       </h1>
-      <p className="mb-6 text-sm text-slate-500">{t("registerSubtitle")}</p>
+      <p className="mb-6 text-sm text-muted-foreground">{t("registerSubtitle")}</p>
 
       {error && (
         <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
@@ -167,7 +167,7 @@ export default function RegisterPage() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             {t("clubNameLabel")}
           </label>
           <input
@@ -176,12 +176,12 @@ export default function RegisterPage() {
             placeholder={t("clubNamePlaceholder")}
             value={form.clubName}
             onChange={(e) => update("clubName", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             {t("yourNameLabel")}
           </label>
           <input
@@ -190,12 +190,12 @@ export default function RegisterPage() {
             placeholder={t("yourNamePlaceholder")}
             value={form.instructorName}
             onChange={(e) => update("instructorName", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             {t("phoneLabel")}
           </label>
           <input
@@ -205,18 +205,18 @@ export default function RegisterPage() {
             placeholder={t("phonePlaceholder")}
             value={form.phone}
             onChange={(e) => update("phone", e.target.value)}
-            className="w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            className="w-full rounded-lg border border-border px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
         </div>
 
         <div>
-          <label className="mb-1.5 block text-sm font-medium text-slate-700">
+          <label className="mb-1.5 block text-sm font-medium text-foreground">
             {t("disciplineLabel")}
           </label>
           <select
             value={form.discipline}
             onChange={(e) => update("discipline", e.target.value as Discipline)}
-            className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           >
             {DISCIPLINES.map((d) => (
               <option key={d.value} value={d.value}>
@@ -235,7 +235,7 @@ export default function RegisterPage() {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-xs text-slate-400">
+      <p className="mt-6 text-center text-xs text-muted-foreground">
         {t("haveClub")}{" "}
         <Link
           href="/login"

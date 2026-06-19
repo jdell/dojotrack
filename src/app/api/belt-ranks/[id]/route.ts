@@ -8,14 +8,15 @@ import { requireAuth } from "@/lib/auth-context";
 type RouteContext = { params: Promise<{ id: string }> };
 
 interface UpdateBody {
-  name?: string | null;
-  discipline?: string | null;
-  date?: string;
-  rounds?: number | string;
-  notes?: string | null;
+  name?: string;
+  color?: string;
+  hexColor?: string;
+  order?: number;
+  minMonths?: number | null;
+  minClasses?: number | null;
 }
 
-/** PATCH /api/sparring/[id] — update sparring session fields. */
+/** PATCH /api/belt-ranks/[id] — update a belt rank's fields. */
 export async function PATCH(request: Request, { params }: RouteContext) {
   const { id } = await params;
   if (!isDbConfigured()) {
@@ -31,12 +32,12 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
   }
 
-  const session = await prisma.sparringSession.findFirst({
+  const rank = await prisma.beltRank.findFirst({
     where: { id, clubId: club.id },
     select: { id: true },
   });
-  if (!session) {
-    return NextResponse.json({ error: "Session not found." }, { status: 404 });
+  if (!rank) {
+    return NextResponse.json({ error: "Rank not found." }, { status: 404 });
   }
 
   let body: UpdateBody;
@@ -46,42 +47,36 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
 
-  const data: Prisma.SparringSessionUpdateInput = {};
-  if (body.name !== undefined) data.name = body.name?.trim() || null;
-  if (body.discipline !== undefined)
-    data.discipline = body.discipline?.trim() || null;
-  if (body.notes !== undefined) data.notes = body.notes?.trim() || null;
-  if (body.date !== undefined) {
-    const date = new Date(body.date);
-    if (Number.isNaN(date.getTime())) {
-      return NextResponse.json({ error: "Enter a valid date." }, { status: 400 });
-    }
-    data.date = date;
-  }
-  if (body.rounds !== undefined) {
-    const rounds = Number(body.rounds);
-    if (!Number.isInteger(rounds) || rounds < 1) {
+  const data: Prisma.BeltRankUpdateInput = {};
+  if (body.name !== undefined) {
+    const name = body.name.trim();
+    if (!name) {
       return NextResponse.json(
-        { error: "Rounds must be 1 or more." },
+        { error: "A rank name is required." },
         { status: 400 },
       );
     }
-    data.rounds = rounds;
+    data.name = name;
   }
+  if (body.color !== undefined) data.color = body.color;
+  if (body.hexColor !== undefined) data.hexColor = body.hexColor;
+  if (body.order !== undefined) data.order = body.order;
+  if (body.minMonths !== undefined) data.minMonths = body.minMonths;
+  if (body.minClasses !== undefined) data.minClasses = body.minClasses;
 
   try {
-    const updated = await prisma.sparringSession.update({ where: { id }, data });
-    return NextResponse.json({ session: updated });
+    const updated = await prisma.beltRank.update({ where: { id }, data });
+    return NextResponse.json({ rank: updated });
   } catch (err) {
-    console.error("PATCH /api/sparring/[id] failed", err);
+    console.error("PATCH /api/belt-ranks/[id] failed", err);
     return NextResponse.json(
-      { error: "Could not update the session." },
+      { error: "Could not update the rank." },
       { status: 500 },
     );
   }
 }
 
-/** DELETE /api/sparring/[id] — remove a sparring session and its pairs. */
+/** DELETE /api/belt-ranks/[id] — remove a rank (only if no students assigned). */
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;
   if (!isDbConfigured()) {
@@ -97,21 +92,28 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
   }
 
-  const session = await prisma.sparringSession.findFirst({
+  const rank = await prisma.beltRank.findFirst({
     where: { id, clubId: club.id },
-    select: { id: true },
+    include: { _count: { select: { students: true } } },
   });
-  if (!session) {
-    return NextResponse.json({ error: "Session not found." }, { status: 404 });
+  if (!rank) {
+    return NextResponse.json({ error: "Rank not found." }, { status: 404 });
+  }
+
+  if (rank._count.students > 0) {
+    return NextResponse.json(
+      { error: "Cannot delete a rank that has students assigned to it." },
+      { status: 409 },
+    );
   }
 
   try {
-    await prisma.sparringSession.delete({ where: { id } });
+    await prisma.beltRank.delete({ where: { id } });
     return NextResponse.json({ ok: true });
   } catch (err) {
-    console.error("DELETE /api/sparring/[id] failed", err);
+    console.error("DELETE /api/belt-ranks/[id] failed", err);
     return NextResponse.json(
-      { error: "Could not delete the session." },
+      { error: "Could not delete the rank." },
       { status: 500 },
     );
   }

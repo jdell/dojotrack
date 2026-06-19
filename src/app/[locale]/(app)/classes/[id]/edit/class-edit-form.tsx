@@ -15,7 +15,19 @@ interface DisciplineOption {
   emoji: string;
 }
 
-interface ClassFormProps {
+interface ClassEditFormProps {
+  classId: string;
+  initialData: {
+    name: string;
+    discipline: string;
+    dayOfWeek: DayOfWeek;
+    startTime: string;
+    endTime: string;
+    instructorId: string;
+    maxStudents: string;
+    location: string;
+    level: ClassLevel;
+  };
   disciplines: DisciplineOption[];
   instructors: InstructorOption[];
 }
@@ -31,23 +43,18 @@ const inputClass =
   "w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
 const labelClass = "mb-1.5 block text-sm font-medium text-foreground";
 
-/** Create-class form. Submits to POST /api/classes, then returns to schedule. */
-export function ClassForm({ disciplines, instructors }: ClassFormProps) {
+/** Edit-class form. Submits PATCH to /api/classes/[id], then returns to detail. */
+export function ClassEditForm({
+  classId,
+  initialData,
+  disciplines,
+  instructors,
+}: ClassEditFormProps) {
   const t = useTranslations("Classes");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    discipline: disciplines[0]?.value ?? "",
-    dayOfWeek: "MON" as DayOfWeek,
-    startTime: "18:00",
-    endTime: "19:00",
-    instructorId: "",
-    maxStudents: "20",
-    location: "",
-    level: "ALL_LEVELS" as ClassLevel,
-  });
+  const [form, setForm] = useState({ ...initialData });
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -58,8 +65,8 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/classes", {
-        method: "POST",
+      const res = await fetch(`/api/classes/${classId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
@@ -74,11 +81,11 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? t("addClassError"));
-      router.push("/classes");
+      if (!res.ok) throw new Error(data.error ?? t("errorUpdateClass"));
+      router.push(`/classes/${classId}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("addClassError"));
+      setError(err instanceof Error ? err.message : t("errorUpdateClass"));
       setLoading(false);
     }
   }
@@ -115,7 +122,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             <select
               value={form.discipline}
               onChange={(e) => update("discipline", e.target.value)}
-              className={`${inputClass} bg-background`}
+              className={inputClass}
             >
               {disciplines.map((d) => (
                 <option key={d.value} value={d.value}>
@@ -129,7 +136,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             <select
               value={form.level}
               onChange={(e) => update("level", e.target.value)}
-              className={`${inputClass} bg-background`}
+              className={inputClass}
             >
               {LEVEL_ORDER.map((value) => (
                 <option key={value} value={value}>
@@ -150,7 +157,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           <select
             value={form.dayOfWeek}
             onChange={(e) => update("dayOfWeek", e.target.value)}
-            className={`${inputClass} bg-background`}
+            className={inputClass}
           >
             {DAY_ORDER.map((d) => (
               <option key={d} value={d}>
@@ -206,7 +213,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
             <select
               value={form.instructorId}
               onChange={(e) => update("instructorId", e.target.value)}
-              className={`${inputClass} bg-background`}
+              className={inputClass}
             >
               <option value="">{t("unassigned")}</option>
               {instructors.map((i) => (
@@ -237,10 +244,10 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? t("saving") : t("addClass")}
+          {loading ? t("saving") : t("updateClass")}
         </button>
         <Link
-          href="/classes"
+          href={`/classes/${classId}`}
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
           {t("cancel")}

@@ -11,7 +11,7 @@ import {
   Phone,
   Users,
 } from "lucide-react";
-import { DAY_ORDER, DAY_SHORT } from "@/lib/schedule";
+import { DAY_ORDER } from "@/lib/schedule";
 import type { DayOfWeek } from "@prisma/client";
 import { Logo } from "@/components/logo";
 import { getClubBySlug, type PublicClub } from "@/lib/queries";
@@ -272,7 +272,7 @@ export default async function ClubPublicPage({
                 ).map((day) => (
                   <div key={day}>
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                      {DAY_SHORT[day]}
+                      {t(`dayShort.${day}`)}
                     </p>
                     {club.classSchedules
                       .filter((cs) => cs.dayOfWeek === day)

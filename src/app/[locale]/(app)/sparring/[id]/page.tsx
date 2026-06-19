@@ -8,6 +8,7 @@ import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { SparringBoard } from "./sparring-board";
+import { SparringActions } from "./sparring-actions";
 
 export async function generateMetadata({
   params,
@@ -55,25 +56,30 @@ export default async function SparringDetailPage({
           <ArrowLeft size={15} />
           {t("backToSparring")}
         </Link>
-        <p className="eyebrow">{t("sessionFallback")}</p>
-        <h1 className="text-2xl font-bold text-brand-navy">
-          {session.name ?? t("sessionFallback")}
-        </h1>
-        <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5">
-            <CalendarClock size={14} />
-            {formatDate(session.date)}
-          </span>
-          <span className="inline-flex items-center gap-1.5">
-            <Users size={14} />
-            {t("participantCount", { count: participants.size })}
-          </span>
-          {discipline && (
-            <span>
-              {discipline.emoji} {discipline.label}
-            </span>
-          )}
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="eyebrow">{t("sessionFallback")}</p>
+            <h1 className="text-2xl font-bold text-brand-navy">
+              {session.name ?? t("sessionFallback")}
+            </h1>
+            <p className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5">
+                <CalendarClock size={14} />
+                {formatDate(session.date)}
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Users size={14} />
+                {t("participantCount", { count: participants.size })}
+              </span>
+              {discipline && (
+                <span>
+                  {discipline.emoji} {discipline.label}
+                </span>
+              )}
+            </p>
+          </div>
+          <SparringActions sessionId={session.id} />
+        </div>
       </div>
 
       <SparringBoard session={session} />

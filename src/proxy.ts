@@ -30,6 +30,7 @@ const PROTECTED_PREFIXES = [
   "/sparring",
   "/settings",
   "/checkin",
+  "/my",
 ];
 
 export async function proxy(request: NextRequest) {

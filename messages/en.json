@@ -273,6 +273,8 @@
     "colStudent": "Student",
     "colJoined": "Joined",
     "colFamily": "Family",
+    "attendanceCount": "{count, plural, one {# class} other {# classes}}",
+    "membershipNone": "None",
     "paymentPending": "Pending",
     "backToRoster": "Back to roster",
     "backToProfile": "Back to profile",
@@ -416,6 +418,9 @@
     "qrAppearsLater": "The QR code appears once an upcoming session is scheduled.",
     "notConfiguredTitle": "Class details aren't available yet",
     "notConfiguredBody": "Connect a database to view sessions, check students in, and track attendance.",
+    "editClass": "Edit class",
+    "updateClass": "Update class",
+    "errorUpdateClass": "Could not update the class.",
     "delete": "Delete",
     "deleteConfirm": "Delete class?",
     "deleteError": "Could not delete the class.",
@@ -510,6 +515,10 @@
     "errSave": "Could not save.",
     "errDelete": "Could not delete.",
     "errReorder": "Could not reorder.",
+    "deleteRank": "Delete rank",
+    "confirmDeleteRank": "Delete this rank?",
+    "cannotDeleteAssigned": "Cannot delete a rank that has students assigned to it.",
+    "rankDeleted": "Rank deleted.",
     "backToBelts": "Back to belts",
     "backToExams": "Back to exams",
     "requirementsToEarn": "Requirements to earn",
@@ -772,6 +781,11 @@
     "locationPlaceholder": "City Convention Center",
     "notesLabel": "Notes",
     "notesPlaceholder": "Registration details, divisions, etc. (optional)",
+    "editCompetition": "Edit",
+    "deleteCompetition": "Delete",
+    "confirmDelete": "Delete this competition?",
+    "updateCompetition": "Update competition",
+    "errorUpdateCompetition": "Could not update the competition.",
     "errorAdd": "Could not add the competition.",
     "statusLabel": "Status",
     "enterStudent": "Enter a student",
@@ -849,7 +863,13 @@
     "pairing": "Pairing…",
     "generatePairings": "Generate pairings",
     "minTwoStudents": "Select at least two students.",
-    "createError": "Could not create the session."
+    "createError": "Could not create the session.",
+    "editSession": "Edit session",
+    "updateSession": "Update session",
+    "confirmDeleteSession": "Delete this sparring session?",
+    "errorUpdateSession": "Could not update the session.",
+    "notes": "Notes",
+    "notesPlaceholder": "Anything to note about this session (optional)"
   },
   "Club": {
     "tryClassTitle": "Try a class on us",
@@ -868,6 +888,15 @@
     "comingSoonBody": "Class schedules, disciplines, and a sign-up form will live here once {name} finishes setting up its public profile.",
     "runYourOwn": "Run your own club on EntrenaDojo",
     "poweredBy": "Powered by EntrenaDojo",
+    "dayShort": {
+      "MON": "Mon",
+      "TUE": "Tue",
+      "WED": "Wed",
+      "THU": "Thu",
+      "FRI": "Fri",
+      "SAT": "Sat",
+      "SUN": "Sun"
+    },
     "ogCta": "Book a free trial class on EntrenaDojo",
     "metaDescription": "{name} — class schedules, disciplines, and a free trial booking on EntrenaDojo."
   },
@@ -981,5 +1010,17 @@
       "issuedVia": "Issued via {brand}",
       "printButton": "Print / Save as PDF"
     }
+  },
+  "Privacy": {
+    "privacyTitle": "Privacy Policy",
+    "privacyIntro": "EntrenaDojo is committed to protecting the privacy of club owners, instructors, and students who use our platform. This page explains what data we collect, how we use it, and your rights.",
+    "privacyDataCollection": "Data we collect",
+    "privacyDataCollectionBody": "We collect the information you provide when registering a club or student account: names, phone numbers, email addresses, and belt rank data. Attendance records are stored when students check in to classes. We do not track your browsing activity, use cookies for advertising, or sell your data to third parties.",
+    "privacyAuth": "Authentication",
+    "privacyAuthBody": "EntrenaDojo uses Supabase for authentication. When you log in with your phone number, a one-time verification code is sent via SMS. Your authentication credentials are managed securely by Supabase and are never stored in our application database.",
+    "privacyPayments": "Payments",
+    "privacyPaymentsBody": "Online payments are processed through Stripe. EntrenaDojo never sees or stores your full card details. Each club connects their own Stripe account to receive payments directly. Payment records (amounts, dates, plan names) are stored in our database for billing history.",
+    "privacyContact": "Contact",
+    "privacyContactBody": "If you have questions about your data or wish to request deletion of your account, contact us at hello@entrenadojo.app."
   }
 }

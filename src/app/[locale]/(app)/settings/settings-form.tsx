@@ -261,7 +261,7 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
       {toast && (
         <div
           role="status"
-          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-brand-teal/30 bg-white px-4 py-3 text-sm font-medium text-brand-navy shadow-lg shadow-slate-900/10"
+          className="fixed bottom-6 right-6 z-50 flex items-center gap-2 rounded-xl border border-brand-teal/30 bg-card px-4 py-3 text-sm font-medium text-brand-navy shadow-lg shadow-slate-900/10"
         >
           <span className="flex h-6 w-6 items-center justify-center rounded-full bg-brand-teal text-white">
             <Check size={14} />

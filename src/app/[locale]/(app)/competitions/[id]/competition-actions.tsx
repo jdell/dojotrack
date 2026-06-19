@@ -6,9 +6,14 @@ import { useRouter } from "@/i18n/navigation";
 import { Link } from "@/i18n/navigation";
 import { Loader2, Pencil, Trash2 } from "lucide-react";
 
-/** Delete-class control for the class detail page header. */
-export function ClassActions({ classId }: { classId: string }) {
-  const t = useTranslations("Classes");
+/** Edit + delete controls for the competition detail page header. */
+export function CompetitionActions({
+  competitionId,
+}: {
+  competitionId: string;
+}) {
+  const t = useTranslations("Competitions");
+  const tc = useTranslations("Common");
   const router = useRouter();
   const [confirming, setConfirming] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -18,13 +23,17 @@ export function ClassActions({ classId }: { classId: string }) {
     setLoading(true);
     setError("");
     try {
-      const res = await fetch(`/api/classes/${classId}`, { method: "DELETE" });
+      const res = await fetch(`/api/competitions/${competitionId}`, {
+        method: "DELETE",
+      });
       const data = await res.json().catch(() => ({}));
-      if (!res.ok) throw new Error(data.error ?? t("deleteError"));
-      router.push("/classes");
+      if (!res.ok) throw new Error(data.error ?? t("deleteCompetition"));
+      router.push("/competitions");
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("deleteError"));
+      setError(
+        err instanceof Error ? err.message : t("deleteCompetition"),
+      );
       setLoading(false);
     }
   }
@@ -34,7 +43,7 @@ export function ClassActions({ classId }: { classId: string }) {
       <div className="flex flex-col items-end gap-1">
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">
-            {t("deleteConfirm")}
+            {t("confirmDelete")}
           </span>
           <button
             type="button"
@@ -43,14 +52,14 @@ export function ClassActions({ classId }: { classId: string }) {
             className="inline-flex items-center gap-1.5 rounded-lg bg-red-600 px-3 py-1.5 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:opacity-50"
           >
             {loading && <Loader2 size={13} className="animate-spin" />}
-            {t("delete")}
+            {tc("delete")}
           </button>
           <button
             type="button"
             onClick={() => setConfirming(false)}
             className="text-xs font-medium text-muted-foreground hover:text-brand-navy"
           >
-            {t("cancel")}
+            {tc("cancel")}
           </button>
         </div>
         {error && <p className="text-xs text-red-600">{error}</p>}
@@ -61,11 +70,11 @@ export function ClassActions({ classId }: { classId: string }) {
   return (
     <div className="flex items-center gap-2">
       <Link
-        href={`/classes/${classId}/edit`}
+        href={`/competitions/${competitionId}/edit`}
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-brand-teal hover:text-brand-teal"
       >
         <Pencil size={15} />
-        {t("editClass")}
+        {t("editCompetition")}
       </Link>
       <button
         type="button"
@@ -73,7 +82,7 @@ export function ClassActions({ classId }: { classId: string }) {
         className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:border-red-200 hover:text-red-600"
       >
         <Trash2 size={15} />
-        {t("delete")}
+        {t("deleteCompetition")}
       </button>
     </div>
   );

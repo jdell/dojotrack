@@ -153,6 +153,9 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
 }
 
+/** PATCH /api/classes/[id] — alias for PUT (partial update). */
+export { PUT as PATCH };
+
 /** DELETE /api/classes/[id] — remove a class and its sessions (cascade). */
 export async function DELETE(_request: Request, { params }: RouteContext) {
   const { id } = await params;

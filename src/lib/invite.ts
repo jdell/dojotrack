@@ -25,3 +25,9 @@ export function whatsappShare(clubName: string, token: string) {
     whatsappUrl: `https://wa.me/?text=${encodeURIComponent(text)}`,
   };
 }
+
+/** The public payment link for a club's plan. */
+export function payLink(clubSlug: string, planId?: string): string {
+  const url = `${baseUrl()}/pay/${clubSlug}`;
+  return planId ? `${url}?plan=${planId}` : url;
+}

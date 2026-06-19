@@ -12,28 +12,34 @@ interface DisciplineOption {
   emoji: string;
 }
 
+interface CompetitionEditFormProps {
+  competitionId: string;
+  initialData: {
+    name: string;
+    discipline: string;
+    date: string;
+    location: string;
+    description: string;
+  };
+  disciplines: DisciplineOption[];
+}
+
 const inputClass =
   "w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
 const labelClass = "mb-1.5 block text-sm font-medium text-foreground";
 
-/** Create-competition form. POSTs to /api/competitions, then returns to list. */
-export function CompetitionForm({
+/** Edit-competition form. PATCHes /api/competitions/[id], then returns to detail. */
+export function CompetitionEditForm({
+  competitionId,
+  initialData,
   disciplines,
-}: {
-  disciplines: DisciplineOption[];
-}) {
+}: CompetitionEditFormProps) {
   const t = useTranslations("Competitions");
   const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    discipline: disciplines[0]?.value ?? "",
-    date: "",
-    location: "",
-    description: "",
-  });
+  const [form, setForm] = useState({ ...initialData });
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -44,8 +50,8 @@ export function CompetitionForm({
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/competitions", {
-        method: "POST",
+      const res = await fetch(`/api/competitions/${competitionId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: form.name,
@@ -56,13 +62,14 @@ export function CompetitionForm({
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? t("errorAdd"));
-      }
-      router.push(`/competitions/${data.competition.id}`);
+      if (!res.ok)
+        throw new Error(data.error ?? t("errorUpdateCompetition"));
+      router.push(`/competitions/${competitionId}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errorAdd"));
+      setError(
+        err instanceof Error ? err.message : t("errorUpdateCompetition"),
+      );
       setLoading(false);
     }
   }
@@ -106,7 +113,7 @@ export function CompetitionForm({
           <select
             value={form.discipline}
             onChange={(e) => update("discipline", e.target.value)}
-            className={`${inputClass} bg-background`}
+            className={inputClass}
           >
             {disciplines.map((d) => (
               <option key={d.value} value={d.value}>
@@ -146,10 +153,10 @@ export function CompetitionForm({
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? tc("saving") : t("addCompetition")}
+          {loading ? tc("saving") : t("updateCompetition")}
         </button>
         <Link
-          href="/competitions"
+          href={`/competitions/${competitionId}`}
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
           {tc("cancel")}

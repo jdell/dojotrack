@@ -63,6 +63,8 @@ export interface StudentRow {
   familyId: string | null;
   familyName: string | null;
   active: boolean;
+  attendanceCount: number;
+  membershipStatus: MembershipStatus | null;
 }
 
 export interface BeltOption {
@@ -218,6 +220,13 @@ export async function getStudents(clubId: string): Promise<StudentRow[]> {
       include: {
         beltRank: { select: { name: true, hexColor: true } },
         family: { select: { id: true, name: true } },
+        _count: { select: { attendances: true } },
+        memberships: {
+          where: { status: { in: ["ACTIVE", "TRIALING", "PAST_DUE", "CANCELLED"] } },
+          orderBy: { createdAt: "desc" },
+          take: 1,
+          select: { status: true },
+        },
       },
     });
     return students.map((s) => ({
@@ -231,6 +240,8 @@ export async function getStudents(clubId: string): Promise<StudentRow[]> {
       familyId: s.familyId,
       familyName: s.family?.name ?? null,
       active: s.active,
+      attendanceCount: s._count.attendances,
+      membershipStatus: s.memberships[0]?.status ?? null,
     }));
   } catch {
     return [];
@@ -550,7 +561,9 @@ export interface ClassDetail {
   level: ClassLevel;
   maxStudents: number;
   location: string | null;
+  instructorId: string | null;
   instructorName: string | null;
+  active: boolean;
   sessions: SessionDetail[];
   stats: { totalSessions: number; avgFillRate: number; totalCheckins: number };
 }
@@ -696,7 +709,9 @@ export async function getClassDetail(
       level: schedule.level,
       maxStudents: schedule.maxStudents,
       location: schedule.location,
+      instructorId: schedule.instructorId,
       instructorName: schedule.instructor?.fullName ?? null,
+      active: schedule.active,
       sessions: sessionDetails,
       stats: { totalSessions, avgFillRate, totalCheckins },
     };

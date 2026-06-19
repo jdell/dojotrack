@@ -42,27 +42,145 @@ const EMPTY_FORM: FormValues = {
 /**
  * Per-club belt requirement configuration: every rank, expandable, with inline
  * add / edit / delete and up-down reordering of its requirements.
+ * Also supports reordering and deleting ranks themselves.
  */
 export function BeltsManager({
-  ranks,
+  ranks: initialRanks,
 }: {
   ranks: BeltRankWithRequirements[];
 }) {
+  const t = useTranslations("Belts");
+  const tc = useTranslations("Common");
+  const router = useRouter();
+  const [ranks, setRanks] = useState(initialRanks);
   const [expanded, setExpanded] = useState<string | null>(
     ranks.find((r) => r.requirements.length > 0)?.id ?? ranks[0]?.id ?? null,
   );
+  const [rankBusy, setRankBusy] = useState(false);
+  const [rankError, setRankError] = useState("");
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  async function moveRank(rankId: string, direction: "up" | "down") {
+    setRankBusy(true);
+    setRankError("");
+    try {
+      const res = await fetch("/api/belt-ranks/reorder", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rankId, direction }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? t("errReorder"));
+      // Swap locally
+      const idx = ranks.findIndex((r) => r.id === rankId);
+      const j = direction === "up" ? idx - 1 : idx + 1;
+      if (idx >= 0 && j >= 0 && j < ranks.length) {
+        const next = [...ranks];
+        const tmpOrder = next[idx].order;
+        next[idx] = { ...next[idx], order: next[j].order };
+        next[j] = { ...next[j], order: tmpOrder };
+        next.sort((a, b) => a.order - b.order);
+        setRanks(next);
+      }
+      router.refresh();
+    } catch (err) {
+      setRankError(err instanceof Error ? err.message : t("errReorder"));
+    } finally {
+      setRankBusy(false);
+    }
+  }
+
+  async function deleteRank(rankId: string) {
+    setRankBusy(true);
+    setRankError("");
+    try {
+      const res = await fetch(`/api/belt-ranks/${rankId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 409) {
+        throw new Error(t("cannotDeleteAssigned"));
+      }
+      if (!res.ok) throw new Error(data.error ?? t("errDelete"));
+      setRanks((prev) => prev.filter((r) => r.id !== rankId));
+      setConfirmDeleteId(null);
+      router.refresh();
+    } catch (err) {
+      setRankError(err instanceof Error ? err.message : t("errDelete"));
+    } finally {
+      setRankBusy(false);
+    }
+  }
 
   return (
     <div className="space-y-3">
-      {ranks.map((rank) => (
-        <RankRow
-          key={rank.id}
-          rank={rank}
-          open={expanded === rank.id}
-          onToggle={() =>
-            setExpanded((cur) => (cur === rank.id ? null : rank.id))
-          }
-        />
+      {rankError && (
+        <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          {rankError}
+        </p>
+      )}
+      {ranks.map((rank, i) => (
+        <div key={rank.id} className="relative">
+          <RankRow
+            rank={rank}
+            open={expanded === rank.id}
+            onToggle={() =>
+              setExpanded((cur) => (cur === rank.id ? null : rank.id))
+            }
+            rankActions={
+              <div
+                className="flex items-center gap-0.5"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <IconButton
+                  label={t("moveUp")}
+                  disabled={rankBusy || i === 0}
+                  onClick={() => moveRank(rank.id, "up")}
+                >
+                  <ArrowUp size={14} />
+                </IconButton>
+                <IconButton
+                  label={t("moveDown")}
+                  disabled={rankBusy || i === ranks.length - 1}
+                  onClick={() => moveRank(rank.id, "down")}
+                >
+                  <ArrowDown size={14} />
+                </IconButton>
+                {confirmDeleteId === rank.id ? (
+                  <span className="ml-1 flex items-center gap-1.5">
+                    <span className="text-xs text-muted-foreground">
+                      {t("confirmDeleteRank")}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => deleteRank(rank.id)}
+                      disabled={rankBusy}
+                      className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                    >
+                      {tc("delete")}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setConfirmDeleteId(null)}
+                      className="text-xs font-medium text-muted-foreground hover:text-brand-navy"
+                    >
+                      {tc("cancel")}
+                    </button>
+                  </span>
+                ) : (
+                  <IconButton
+                    label={t("deleteRank")}
+                    disabled={rankBusy}
+                    danger
+                    onClick={() => setConfirmDeleteId(rank.id)}
+                  >
+                    <Trash2 size={14} />
+                  </IconButton>
+                )}
+              </div>
+            }
+          />
+        </div>
       ))}
     </div>
   );
@@ -72,10 +190,12 @@ function RankRow({
   rank,
   open,
   onToggle,
+  rankActions,
 }: {
   rank: BeltRankWithRequirements;
   open: boolean;
   onToggle: () => void;
+  rankActions?: React.ReactNode;
 }) {
   const t = useTranslations("Belts");
   const tc = useTranslations("Common");
@@ -217,6 +337,7 @@ function RankRow({
             {t("requirementCount", { count: reqs.length })}
           </span>
         </span>
+        {rankActions}
         <Link
           href={`/belts/${rank.id}`}
           onClick={(e) => e.stopPropagation()}

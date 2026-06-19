@@ -318,6 +318,11 @@ export const BELT_SYSTEMS: Record<Discipline, BeltSystem> = {
   },
 };
 
+// TODO: Discipline labels and belt names are English-only constants used as
+// fallbacks. They are stored per-club in the database (belt ranks have custom
+// names, disciplines are values). Full i18n of these constants should be done
+// in a future pass, but the per-club DB values take precedence where available.
+
 /** Disciplines available when creating a club, with display metadata. */
 export const DISCIPLINES: {
   value: Discipline;
@@ -378,6 +383,10 @@ export function disciplineMeta(value: string): {
   );
 }
 
+// TODO: REQUIREMENT_TYPES labels are English-only. These should be i18n'd in a
+// future pass. The UI currently reads translated labels from the Belts.reqType
+// namespace in the message catalog instead.
+
 /**
  * The kinds of bar a belt requirement can set. TIME and CLASSES are computed
  * automatically from a student's record; the rest are graded by an instructor.
@@ -402,6 +411,9 @@ export const REQUIREMENT_TYPES: {
 /**
  * Billing cadence labels for payment plans. Matches the Prisma `BillingInterval`
  * enum. `short` is the suffix shown next to a price (e.g. "$49/mo").
+ *
+ * For translated labels, use `getBillingLabel(interval, t)` with a
+ * next-intl translation function scoped to the `Payments.interval` namespace.
  */
 export const BILLING_INTERVAL_LABELS: Record<
   "MONTHLY" | "QUARTERLY" | "ANNUAL" | "ONE_TIME",
@@ -412,6 +424,26 @@ export const BILLING_INTERVAL_LABELS: Record<
   ANNUAL: { label: "Annual", short: "/yr" },
   ONE_TIME: { label: "One-time", short: "" },
 };
+
+/**
+ * Return the translated billing interval label via next-intl. Pass a `t`
+ * function scoped to the `Payments.interval` namespace (or the root
+ * `Payments` namespace and prefix keys manually).
+ *
+ * Example usage in a client component:
+ * ```ts
+ * const t = useTranslations("Payments");
+ * const label = getBillingLabel("MONTHLY", (key) => t(`interval.${key}`));
+ * ```
+ */
+export function getBillingLabel(
+  interval: string,
+  t: (key: string) => string,
+): string {
+  const known = ["MONTHLY", "QUARTERLY", "ANNUAL", "ONE_TIME"];
+  if (known.includes(interval)) return t(interval);
+  return interval;
+}
 
 /** Display metadata for a stored requirement type, tolerating unknown values. */
 export function requirementTypeMeta(value: string) {

@@ -12,28 +12,34 @@ interface DisciplineOption {
   emoji: string;
 }
 
+interface SparringEditFormProps {
+  sessionId: string;
+  initialData: {
+    name: string;
+    discipline: string;
+    date: string;
+    rounds: string;
+    notes: string;
+  };
+  disciplines: DisciplineOption[];
+}
+
 const inputClass =
   "w-full rounded-lg border border-border px-3 py-2.5 text-sm bg-background text-foreground focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
 const labelClass = "mb-1.5 block text-sm font-medium text-foreground";
 
-/** Create-competition form. POSTs to /api/competitions, then returns to list. */
-export function CompetitionForm({
+/** Edit-sparring form. PATCHes /api/sparring/[id], then returns to detail. */
+export function SparringEditForm({
+  sessionId,
+  initialData,
   disciplines,
-}: {
-  disciplines: DisciplineOption[];
-}) {
-  const t = useTranslations("Competitions");
+}: SparringEditFormProps) {
+  const t = useTranslations("Sparring");
   const tc = useTranslations("Common");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({
-    name: "",
-    discipline: disciplines[0]?.value ?? "",
-    date: "",
-    location: "",
-    description: "",
-  });
+  const [form, setForm] = useState({ ...initialData });
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -44,25 +50,26 @@ export function CompetitionForm({
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/competitions", {
-        method: "POST",
+      const res = await fetch(`/api/sparring/${sessionId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          name: form.name,
+          name: form.name || null,
           discipline: form.discipline || null,
           date: form.date,
-          location: form.location || null,
-          description: form.description || null,
+          rounds: Number(form.rounds),
+          notes: form.notes || null,
         }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error ?? t("errorAdd"));
-      }
-      router.push(`/competitions/${data.competition.id}`);
+      if (!res.ok)
+        throw new Error(data.error ?? t("errorUpdateSession"));
+      router.push(`/sparring/${sessionId}`);
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errorAdd"));
+      setError(
+        err instanceof Error ? err.message : t("errorUpdateSession"),
+      );
       setLoading(false);
     }
   }
@@ -78,21 +85,33 @@ export function CompetitionForm({
         </div>
       )}
 
-      <div>
-        <label className={labelClass}>{t("nameLabel")}</label>
-        <input
-          type="text"
-          required
-          placeholder={t("namePlaceholder")}
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          className={inputClass}
-        />
-      </div>
-
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>{t("dateLabel")}</label>
+          <label className={labelClass}>{t("sessionName")}</label>
+          <input
+            type="text"
+            placeholder={t("sessionNamePlaceholder")}
+            value={form.name}
+            onChange={(e) => update("name", e.target.value)}
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>{t("discipline")}</label>
+          <select
+            value={form.discipline}
+            onChange={(e) => update("discipline", e.target.value)}
+            className={inputClass}
+          >
+            {disciplines.map((d) => (
+              <option key={d.value} value={d.value}>
+                {d.emoji} {d.label}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className={labelClass}>{t("date")}</label>
           <input
             type="date"
             required
@@ -102,39 +121,25 @@ export function CompetitionForm({
           />
         </div>
         <div>
-          <label className={labelClass}>{t("disciplineLabel")}</label>
-          <select
-            value={form.discipline}
-            onChange={(e) => update("discipline", e.target.value)}
-            className={`${inputClass} bg-background`}
-          >
-            {disciplines.map((d) => (
-              <option key={d.value} value={d.value}>
-                {d.emoji} {d.label}
-              </option>
-            ))}
-          </select>
+          <label className={labelClass}>{t("rounds")}</label>
+          <input
+            type="number"
+            min={1}
+            max={10}
+            value={form.rounds}
+            onChange={(e) => update("rounds", e.target.value)}
+            className={inputClass}
+          />
         </div>
       </div>
 
       <div>
-        <label className={labelClass}>{t("locationLabel")}</label>
-        <input
-          type="text"
-          placeholder={t("locationPlaceholder")}
-          value={form.location}
-          onChange={(e) => update("location", e.target.value)}
-          className={inputClass}
-        />
-      </div>
-
-      <div>
-        <label className={labelClass}>{t("notesLabel")}</label>
+        <label className={labelClass}>{t("notes")}</label>
         <textarea
           rows={2}
           placeholder={t("notesPlaceholder")}
-          value={form.description}
-          onChange={(e) => update("description", e.target.value)}
+          value={form.notes}
+          onChange={(e) => update("notes", e.target.value)}
           className={inputClass}
         />
       </div>
@@ -142,14 +147,14 @@ export function CompetitionForm({
       <div className="flex items-center gap-3 pt-1">
         <button
           type="submit"
-          disabled={loading || !form.name.trim() || !form.date}
+          disabled={loading || !form.date}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}
-          {loading ? tc("saving") : t("addCompetition")}
+          {loading ? tc("saving") : t("updateSession")}
         </button>
         <Link
-          href="/competitions"
+          href={`/sparring/${sessionId}`}
           className="rounded-lg px-4 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:text-brand-navy"
         >
           {tc("cancel")}
