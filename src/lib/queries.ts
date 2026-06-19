@@ -2546,3 +2546,199 @@ export async function getSparringSessionDetail(
     return null;
   }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Public payment links (shareable checkout)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface PublicPaymentPlan {
+  id: string;
+  name: string;
+  description: string | null;
+  amount: number;
+  currency: string;
+  interval: BillingInterval;
+}
+
+export interface PublicPaymentClub {
+  id: string;
+  name: string;
+  slug: string;
+  logoUrl: string | null;
+  stripeAccountId: string | null;
+  stripeOnboarded: boolean;
+  platformFeePercent: number;
+}
+
+export interface PublicPaymentData {
+  club: PublicPaymentClub;
+  plans: PublicPaymentPlan[];
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Student self-service portal (My profile)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface MyMembership {
+  id: string;
+  planName: string;
+  status: MembershipStatus;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  interval: BillingInterval;
+  amount: number;
+  currency: string;
+}
+
+export interface MyAttendance {
+  id: string;
+  date: string;
+  className: string;
+  discipline: string;
+  method: CheckinMethod;
+}
+
+export interface MyStudentProfile {
+  id: string;
+  fullName: string;
+  email: string | null;
+  phone: string | null;
+  beltName: string | null;
+  beltColor: string | null;
+  joinDate: string;
+  clubName: string;
+  memberships: MyMembership[];
+  recentAttendance: MyAttendance[];
+}
+
+/**
+ * Load the student record linked to a given user id within a club. Returns the
+ * student's profile, active memberships (with plan details), and the 10 most
+ * recent attendances. Used by the /my self-service portal so students see only
+ * their own data.
+ */
+export async function getMyStudentProfile(
+  userId: string,
+  clubId: string,
+): Promise<MyStudentProfile | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const student = await prisma.student.findFirst({
+      where: { userId, clubId, active: true },
+      include: {
+        beltRank: { select: { name: true, hexColor: true } },
+        club: { select: { name: true } },
+        memberships: {
+          where: { status: { in: ["ACTIVE", "TRIALING", "PAST_DUE", "INCOMPLETE"] } },
+          orderBy: { createdAt: "desc" },
+          include: {
+            plan: {
+              select: { name: true, interval: true, amount: true, currency: true },
+            },
+          },
+        },
+      },
+    });
+    if (!student) return null;
+
+    const attendances = await prisma.attendance.findMany({
+      where: { studentId: student.id },
+      orderBy: { checkedInAt: "desc" },
+      take: 10,
+      include: {
+        classSession: {
+          include: {
+            classSchedule: { select: { name: true, discipline: true } },
+          },
+        },
+      },
+    });
+
+    return {
+      id: student.id,
+      fullName: student.fullName,
+      email: student.email,
+      phone: student.phone,
+      beltName: student.beltRank?.name ?? null,
+      beltColor: student.beltRank?.hexColor ?? null,
+      joinDate: student.joinDate.toISOString(),
+      clubName: student.club.name,
+      memberships: student.memberships.map((m) => ({
+        id: m.id,
+        planName: m.plan.name,
+        status: m.status,
+        currentPeriodEnd: m.currentPeriodEnd
+          ? m.currentPeriodEnd.toISOString()
+          : null,
+        cancelAtPeriodEnd: m.cancelAtPeriodEnd,
+        interval: m.plan.interval,
+        amount: Number(m.plan.amount),
+        currency: m.plan.currency,
+      })),
+      recentAttendance: attendances.map((a) => ({
+        id: a.id,
+        date: a.checkedInAt.toISOString(),
+        className: a.classSession.classSchedule.name,
+        discipline: a.classSession.classSchedule.discipline,
+        method: a.method,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Fetch a club and its active payment plans by slug, for the public /pay/[slug]
+ * page. No auth required — this is public data. Always returns all active plans
+ * so the user can browse; the `planId` param is only used for pre-selection on
+ * the client.
+ */
+export async function getPublicPaymentData(
+  slug: string,
+  _planId?: string | null,
+): Promise<PublicPaymentData | null> {
+  if (!isDbConfigured()) return null;
+  try {
+    const club = await prisma.club.findUnique({
+      where: { slug },
+      select: {
+        id: true,
+        name: true,
+        slug: true,
+        logoUrl: true,
+        stripeAccountId: true,
+        stripeOnboarded: true,
+        platformFeePercent: true,
+      },
+    });
+    if (!club) return null;
+
+    const plans = await prisma.paymentPlan.findMany({
+      where: { clubId: club.id, active: true },
+      orderBy: { createdAt: "asc" },
+    });
+
+    return {
+      club: {
+        id: club.id,
+        name: club.name,
+        slug: club.slug,
+        logoUrl: club.logoUrl,
+        stripeAccountId: club.stripeAccountId,
+        stripeOnboarded: club.stripeOnboarded,
+        platformFeePercent: Number(club.platformFeePercent),
+      },
+      plans: plans.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        amount: Number(p.amount),
+        currency: p.currency,
+        interval: p.interval,
+      })),
+    };
+  } catch {
+    return null;
+  }
+}

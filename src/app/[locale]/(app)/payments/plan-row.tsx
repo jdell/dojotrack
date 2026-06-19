@@ -2,27 +2,30 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { CreditCard, Pencil } from "lucide-react";
+import { CreditCard, Pencil, Share2 } from "lucide-react";
 import type { BillingInterval } from "@prisma/client";
 import { formatMoney } from "@/lib/utils";
 import { EditPlanForm } from "./edit-plan-form";
+import { ShareLinkPopover } from "./share-link-popover";
 
 interface PlanRowProps {
   plan: {
     id: string;
     name: string;
-    amount: string | number;
+    amount: number;
     currency: string;
     interval: BillingInterval;
     description: string | null;
     active: boolean;
     activeMembers: number;
   };
+  clubSlug: string;
 }
 
-export function PlanRow({ plan }: PlanRowProps) {
+export function PlanRow({ plan, clubSlug }: PlanRowProps) {
   const t = useTranslations("Payments");
   const [editing, setEditing] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   return (
     <li className="relative">
@@ -46,7 +49,7 @@ export function PlanRow({ plan }: PlanRowProps) {
         </div>
         <div className="shrink-0 text-right">
           <p className="font-bold text-brand-navy">
-            {formatMoney(plan.amount, plan.currency)}
+            {formatMoney(Number(plan.amount), plan.currency)}
             <span className="text-xs font-normal text-muted-foreground">
               {t(`intervalShort.${plan.interval}`)}
             </span>
@@ -55,6 +58,16 @@ export function PlanRow({ plan }: PlanRowProps) {
             {t(`interval.${plan.interval}`)}
           </p>
         </div>
+        {plan.active && (
+          <button
+            type="button"
+            onClick={() => setSharing(!sharing)}
+            aria-label={t("shareLink")}
+            className="shrink-0 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-muted hover:text-brand-teal"
+          >
+            <Share2 size={15} />
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setEditing(!editing)}
@@ -64,6 +77,17 @@ export function PlanRow({ plan }: PlanRowProps) {
           <Pencil size={15} />
         </button>
       </div>
+      {sharing && (
+        <ShareLinkPopover
+          planId={plan.id}
+          planName={plan.name}
+          planAmount={plan.amount}
+          planCurrency={plan.currency}
+          planInterval={plan.interval}
+          clubSlug={clubSlug}
+          onClose={() => setSharing(false)}
+        />
+      )}
       {editing && (
         <EditPlanForm plan={plan} onClose={() => setEditing(false)} />
       )}

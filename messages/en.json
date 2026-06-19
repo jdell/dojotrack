@@ -711,7 +711,32 @@
       "other": "Other"
     },
     "recordedBy": "Recorded by {name}",
-    "paymentRecorded": "Payment recorded"
+    "paymentRecorded": "Payment recorded",
+    "shareLink": "Share link"
+  },
+  "Pay": {
+    "payTitle": "Pay",
+    "paySubtitle": "Pay {club} online",
+    "selectPlan": "Select a plan",
+    "yourName": "Your name",
+    "yourNamePlaceholder": "Full name",
+    "yourEmail": "Email",
+    "yourEmailPlaceholder": "email@example.com",
+    "optional": "optional",
+    "payNow": "Pay now",
+    "redirecting": "Redirecting to payment...",
+    "paySuccess": "Payment successful!",
+    "paySuccessDetail": "Thank you! Your payment to {club} has been received. You can close this page.",
+    "payCancelled": "Payment cancelled. No charge was made. You can try again below.",
+    "payError": "Could not start checkout. Please try again.",
+    "noPlansTitle": "No plans available",
+    "noPlansBody": "{club} doesn't have any active payment plans at the moment.",
+    "changePlan": "Change",
+    "shareLink": "Share payment link",
+    "copyLink": "Copy link",
+    "linkCopied": "Copied!",
+    "whatsappShare": "Share via WhatsApp",
+    "paymentLinkMessage": "Pay for {plan}: {link}"
   },
   "Competitions": {
     "eyebrow": "Events",

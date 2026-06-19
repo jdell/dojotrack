@@ -711,7 +711,32 @@
       "other": "Outro"
     },
     "recordedBy": "Rexistrado por {name}",
-    "paymentRecorded": "Pagamento rexistrado"
+    "paymentRecorded": "Pagamento rexistrado",
+    "shareLink": "Compartir enlace"
+  },
+  "Pay": {
+    "payTitle": "Pagar",
+    "paySubtitle": "Paga a {club} en lina",
+    "selectPlan": "Selecciona un plan",
+    "yourName": "O teu nome",
+    "yourNamePlaceholder": "Nome completo",
+    "yourEmail": "Email",
+    "yourEmailPlaceholder": "email@exemplo.com",
+    "optional": "opcional",
+    "payNow": "Pagar agora",
+    "redirecting": "Redirixindo ao pagamento...",
+    "paySuccess": "Pagamento realizado con exito!",
+    "paySuccessDetail": "Grazas! O teu pagamento a {club} foi recibido. Podes pechar esta paxina.",
+    "payCancelled": "Pagamento cancelado. Non se realizou ningun cargo. Podes intentalo de novo a continuacion.",
+    "payError": "Non se puido iniciar o pagamento. Intentao de novo.",
+    "noPlansTitle": "Non hai plans disponibles",
+    "noPlansBody": "{club} non ten plans de pagamento activos neste momento.",
+    "changePlan": "Cambiar",
+    "shareLink": "Compartir enlace de pagamento",
+    "copyLink": "Copiar enlace",
+    "linkCopied": "Copiado!",
+    "whatsappShare": "Compartir por WhatsApp",
+    "paymentLinkMessage": "Paga {plan}: {link}"
   },
   "Competitions": {
     "eyebrow": "Eventos",

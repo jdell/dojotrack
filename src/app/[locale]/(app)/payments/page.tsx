@@ -168,7 +168,7 @@ export default async function PaymentsPage({
               ) : (
                 <ul className="space-y-2">
                   {(data?.plans ?? []).map((plan) => (
-                    <PlanRow key={plan.id} plan={plan} />
+                    <PlanRow key={plan.id} plan={plan} clubSlug={club!.slug} />
                   ))}
                 </ul>
               )}
