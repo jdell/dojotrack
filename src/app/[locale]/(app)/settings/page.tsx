@@ -3,8 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { getClubSettings } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
+import { isStripeConfigured } from "@/lib/stripe";
 import { BRAND } from "@/lib/constants";
 import { SettingsForm } from "./settings-form";
+import { StripeConnect } from "./stripe-connect";
 
 export async function generateMetadata({
   params,
@@ -40,7 +42,15 @@ export default async function SettingsPage() {
       </div>
 
       {settings ? (
-        <SettingsForm settings={settings} publicHost={publicHost()} />
+        <>
+          <SettingsForm settings={settings} publicHost={publicHost()} />
+          {isStripeConfigured() && (
+            <StripeConnect
+              initialConnected={settings.stripeConnected}
+              initialOnboarded={settings.stripeOnboarded}
+            />
+          )}
+        </>
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
           <div className="mx-auto mb-3 text-4xl">🥋</div>

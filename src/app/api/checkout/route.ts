@@ -25,36 +25,54 @@ function recurringFor(
 
 /**
  * Find-or-create the Stripe Product + Price backing a plan. Prices are created
- * lazily on first checkout and cached back onto the plan row.
+ * lazily on first checkout and cached back onto the plan row. When
+ * `stripeAccount` is set, products/prices are created on the connected account.
  */
 async function ensurePlanPrice(
   stripe: Stripe,
   plan: PaymentPlan,
+  stripeAccount?: string,
 ): Promise<string> {
-  if (plan.stripePriceId) return plan.stripePriceId;
+  // Connected-account prices live on the connected account and can't be cached
+  // the same way (each connected account has its own product catalogue), so
+  // when using Connect we always create fresh products/prices on the connected
+  // account. For the platform account the existing caching behaviour applies.
+  if (plan.stripePriceId && !stripeAccount) return plan.stripePriceId;
+
+  const opts = stripeAccount ? { stripeAccount } : undefined;
 
   const productId =
-    plan.stripeProductId ??
-    (
-      await stripe.products.create({
-        name: plan.name,
-        description: plan.description ?? undefined,
-        metadata: { planId: plan.id, clubId: plan.clubId },
-      })
-    ).id;
+    !stripeAccount && plan.stripeProductId
+      ? plan.stripeProductId
+      : (
+          await stripe.products.create(
+            {
+              name: plan.name,
+              description: plan.description ?? undefined,
+              metadata: { planId: plan.id, clubId: plan.clubId },
+            },
+            opts,
+          )
+        ).id;
 
   const recurring = recurringFor(plan.interval);
-  const price = await stripe.prices.create({
-    product: productId,
-    currency: plan.currency,
-    unit_amount: Math.round(Number(plan.amount) * 100),
-    ...(recurring ? { recurring } : {}),
-  });
+  const price = await stripe.prices.create(
+    {
+      product: productId,
+      currency: plan.currency,
+      unit_amount: Math.round(Number(plan.amount) * 100),
+      ...(recurring ? { recurring } : {}),
+    },
+    opts,
+  );
 
-  await prisma.paymentPlan.update({
-    where: { id: plan.id },
-    data: { stripeProductId: productId, stripePriceId: price.id },
-  });
+  // Cache the ids on the plan row only for platform-account prices.
+  if (!stripeAccount) {
+    await prisma.paymentPlan.update({
+      where: { id: plan.id },
+      data: { stripeProductId: productId, stripePriceId: price.id },
+    });
+  }
   return price.id;
 }
 
@@ -89,6 +107,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
   }
 
+  // Load Connect fields for the club.
+  const clubRow = await prisma.club.findUnique({
+    where: { id: club.id },
+    select: {
+      stripeAccountId: true,
+      stripeOnboarded: true,
+      platformFeePercent: true,
+    },
+  });
+  const useConnect = Boolean(
+    clubRow?.stripeAccountId && clubRow?.stripeOnboarded,
+  );
+  const connectedAccountId = useConnect ? clubRow!.stripeAccountId! : undefined;
+
   let body: CheckoutBody;
   try {
     body = await request.json();
@@ -119,7 +151,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const priceId = await ensurePlanPrice(stripe, plan);
+    const priceId = await ensurePlanPrice(stripe, plan, connectedAccountId);
     const mode: Stripe.Checkout.SessionCreateParams.Mode =
       plan.interval === "ONE_TIME" ? "payment" : "subscription";
     const metadata = {
@@ -128,7 +160,21 @@ export async function POST(request: Request) {
       planId: plan.id,
     };
 
-    const session = await stripe.checkout.sessions.create({
+    // Application fee for Connect: percentage of the charge amount.
+    const applicationFeeAmount =
+      useConnect && clubRow?.platformFeePercent
+        ? Math.round(
+            Number(plan.amount) *
+              100 *
+              (Number(clubRow.platformFeePercent) / 100),
+          )
+        : undefined;
+
+    const connectOpts = connectedAccountId
+      ? { stripeAccount: connectedAccountId }
+      : undefined;
+
+    const sessionParams: Stripe.Checkout.SessionCreateParams = {
       mode,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: student.id,
@@ -137,9 +183,28 @@ export async function POST(request: Request) {
       cancel_url: `${appUrl()}/payments?status=cancelled`,
       metadata,
       ...(mode === "subscription"
-        ? { subscription_data: { metadata } }
-        : { payment_intent_data: { metadata } }),
-    });
+        ? {
+            subscription_data: {
+              metadata,
+              ...(applicationFeeAmount
+                ? { application_fee_percent: Number(clubRow!.platformFeePercent) }
+                : {}),
+            },
+          }
+        : {
+            payment_intent_data: {
+              metadata,
+              ...(applicationFeeAmount
+                ? { application_fee_amount: applicationFeeAmount }
+                : {}),
+            },
+          }),
+    };
+
+    const session = await stripe.checkout.sessions.create(
+      sessionParams,
+      connectOpts,
+    );
 
     // For one-time charges, record a pending payment so the dashboard reflects
     // the attempt before the webhook confirms it (the webhook flips it to PAID).
@@ -156,6 +221,7 @@ export async function POST(request: Request) {
           status: "PENDING",
           description: `${plan.name} — ${student.fullName}`,
           stripeCheckoutId: session.id,
+          paymentMethod: "stripe",
         },
       });
     }

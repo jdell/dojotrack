@@ -235,6 +235,14 @@
     "youtube": "YouTube",
     "toastSaved": "Ajustes guardados",
     "errorSave": "No se pudieron guardar los ajustes.",
+    "stripeConnectTitle": "Pagos con Stripe",
+    "stripeConnectDesc": "Conecta tu cuenta de Stripe para aceptar pagos online de los miembros. Se aplica una comisión de plataforma del 3% por transacción.",
+    "stripeConnectButton": "Conectar Stripe",
+    "stripeConnectError": "No se pudo iniciar la conexión con Stripe.",
+    "stripeConnected": "Stripe está conectado y listo para recibir pagos.",
+    "stripeIncomplete": "La configuración de Stripe no está completa. Termina el proceso para empezar a cobrar.",
+    "stripeCompleteSetup": "Completar configuración",
+    "stripeDashboard": "Panel de Stripe",
     "noClubTitle": "Aún no hay ningún club que configurar",
     "noClubSubtitle": "Los ajustes aparecen cuando inicias sesión en un club. Registra uno para empezar.",
     "registerClub": "Registrar un club"
@@ -635,6 +643,7 @@
       "renews": "Renueva",
       "date": "Fecha",
       "for": "Concepto",
+      "method": "Método",
       "amount": "Importe"
     },
     "checkout": {
@@ -681,7 +690,20 @@
       "ACTIVE": "Activo",
       "PAST_DUE": "Atrasado",
       "CANCELLED": "Cancelado"
-    }
+    },
+    "recordPayment": "Registrar pago",
+    "manualPaymentTitle": "Registrar pago manual",
+    "manualPaymentError": "No se pudo registrar el pago.",
+    "paymentMethodLabel": "Método",
+    "method": {
+      "stripe": "Stripe",
+      "cash": "Efectivo",
+      "bank_transfer": "Transferencia",
+      "bizum": "Bizum",
+      "other": "Otro"
+    },
+    "recordedBy": "Registrado por {name}",
+    "paymentRecorded": "Pago registrado"
   },
   "Competitions": {
     "eyebrow": "Eventos",

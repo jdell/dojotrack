@@ -174,6 +174,10 @@ export interface ClubSettings {
   description: string | null;
   beltSystemId: string | null;
   disciplines: string[];
+  /** Stripe Connect: true when a connected account id is set. */
+  stripeConnected: boolean;
+  /** Stripe Connect: true when onboarding is complete (charges enabled). */
+  stripeOnboarded: boolean;
 }
 
 /** Load the authenticated club's editable settings, or null when none. */
@@ -199,6 +203,8 @@ export async function getClubSettings(): Promise<ClubSettings | null> {
     description: c.description,
     beltSystemId: c.beltSystemId,
     disciplines: c.disciplines,
+    stripeConnected: Boolean(c.stripeAccountId),
+    stripeOnboarded: c.stripeOnboarded,
   };
 }
 
@@ -2089,6 +2095,8 @@ export interface PaymentRow {
   amount: number;
   currency: string;
   status: PaymentStatus;
+  paymentMethod: string | null;
+  recordedByName: string | null;
   paidAt: string | null;
   createdAt: string;
 }
@@ -2156,10 +2164,11 @@ export async function getPaymentDashboard(
         prisma.payment.findMany({
           where: { clubId },
           orderBy: { createdAt: "desc" },
-          take: 12,
+          take: 20,
           include: {
             student: { select: { fullName: true } },
             plan: { select: { name: true } },
+            recordedBy: { select: { fullName: true } },
           },
         }),
         prisma.membership.findMany({
@@ -2225,6 +2234,8 @@ export async function getPaymentDashboard(
         amount: Number(p.amount),
         currency: p.currency,
         status: p.status,
+        paymentMethod: p.paymentMethod,
+        recordedByName: p.recordedBy?.fullName ?? null,
         paidAt: p.paidAt ? p.paidAt.toISOString() : null,
         createdAt: p.createdAt.toISOString(),
       })),

@@ -235,6 +235,14 @@
     "youtube": "YouTube",
     "toastSaved": "Axustes gardados",
     "errorSave": "Non se puideron gardar os axustes.",
+    "stripeConnectTitle": "Pagamentos con Stripe",
+    "stripeConnectDesc": "Conecta a túa conta de Stripe para aceptar pagamentos online dos membros. Aplícase unha comisión de plataforma do 3% por transacción.",
+    "stripeConnectButton": "Conectar Stripe",
+    "stripeConnectError": "Non se puido iniciar a conexión con Stripe.",
+    "stripeConnected": "Stripe está conectado e listo para recibir pagamentos.",
+    "stripeIncomplete": "A configuración de Stripe non está completa. Remata o proceso para comezar a cobrar.",
+    "stripeCompleteSetup": "Completar configuración",
+    "stripeDashboard": "Panel de Stripe",
     "noClubTitle": "Aínda non hai ningún club que configurar",
     "noClubSubtitle": "Os axustes aparecen cando inicias sesión nun club. Rexistra un para comezar.",
     "registerClub": "Rexistrar un club"
@@ -635,6 +643,7 @@
       "renews": "Renova",
       "date": "Data",
       "for": "Concepto",
+      "method": "Método",
       "amount": "Importe"
     },
     "checkout": {
@@ -681,7 +690,20 @@
       "ACTIVE": "Activo",
       "PAST_DUE": "Atrasado",
       "CANCELLED": "Cancelado"
-    }
+    },
+    "recordPayment": "Rexistrar pagamento",
+    "manualPaymentTitle": "Rexistrar pagamento manual",
+    "manualPaymentError": "Non se puido rexistrar o pagamento.",
+    "paymentMethodLabel": "Método",
+    "method": {
+      "stripe": "Stripe",
+      "cash": "Efectivo",
+      "bank_transfer": "Transferencia",
+      "bizum": "Bizum",
+      "other": "Outro"
+    },
+    "recordedBy": "Rexistrado por {name}",
+    "paymentRecorded": "Pagamento rexistrado"
   },
   "Competitions": {
     "eyebrow": "Eventos",

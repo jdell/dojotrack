@@ -235,6 +235,14 @@
     "youtube": "YouTube",
     "toastSaved": "Settings saved",
     "errorSave": "Could not save settings.",
+    "stripeConnectTitle": "Stripe payments",
+    "stripeConnectDesc": "Connect your Stripe account to accept online payments from members. A 3% platform fee applies to each transaction.",
+    "stripeConnectButton": "Connect Stripe",
+    "stripeConnectError": "Could not start Stripe onboarding.",
+    "stripeConnected": "Stripe is connected and ready to accept payments.",
+    "stripeIncomplete": "Stripe onboarding is not complete. Finish setup to start accepting payments.",
+    "stripeCompleteSetup": "Complete setup",
+    "stripeDashboard": "Stripe dashboard",
     "noClubTitle": "No club to configure yet",
     "noClubSubtitle": "Settings appear once you're signed in to a club. Register a club to get started.",
     "registerClub": "Register a club"
@@ -635,6 +643,7 @@
       "renews": "Renews",
       "date": "Date",
       "for": "For",
+      "method": "Method",
       "amount": "Amount"
     },
     "checkout": {
@@ -681,7 +690,20 @@
       "ACTIVE": "Active",
       "PAST_DUE": "Past due",
       "CANCELLED": "Cancelled"
-    }
+    },
+    "recordPayment": "Record payment",
+    "manualPaymentTitle": "Record manual payment",
+    "manualPaymentError": "Could not record payment.",
+    "paymentMethodLabel": "Method",
+    "method": {
+      "stripe": "Stripe",
+      "cash": "Cash",
+      "bank_transfer": "Bank transfer",
+      "bizum": "Bizum",
+      "other": "Other"
+    },
+    "recordedBy": "Recorded by {name}",
+    "paymentRecorded": "Payment recorded"
   },
   "Competitions": {
     "eyebrow": "Events",

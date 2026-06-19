@@ -1,12 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
+  Banknote,
   CheckCircle2,
   CreditCard,
   TrendingUp,
   Users,
   Wallet,
   XCircle,
+  Zap,
 } from "lucide-react";
 import type { MembershipStatus, PaymentStatus } from "@prisma/client";
 import {
@@ -18,6 +20,7 @@ import { isDbConfigured } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/utils";
 import { NewPlanForm } from "./new-plan-form";
 import { CheckoutPanel } from "./checkout-panel";
+import { ManualPaymentForm } from "./manual-payment-form";
 
 export async function generateMetadata({
   params,
@@ -204,15 +207,35 @@ export default async function PaymentsPage({
               )}
             </div>
 
-            <div className="space-y-3">
-              <h2 className="text-lg font-bold text-brand-navy">
-                {t("chargeMember")}
-              </h2>
-              <CheckoutPanel
-                students={students}
-                plans={activePlans}
-                stripeConfigured={data?.stripeConfigured ?? false}
-              />
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-brand-navy">
+                  {t("chargeMember")}
+                </h2>
+                {data?.stripeConfigured ? (
+                  <CheckoutPanel
+                    students={students}
+                    plans={activePlans}
+                    stripeConfigured={data.stripeConfigured}
+                  />
+                ) : (
+                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-amber-200 bg-amber-50 p-4">
+                    <Zap size={18} className="shrink-0 text-amber-600" />
+                    <p className="text-sm text-amber-800">
+                      {t("checkout.connectStripe")}
+                    </p>
+                  </div>
+                )}
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-lg font-bold text-brand-navy">
+                  {t("recordPayment")}
+                </h2>
+                <ManualPaymentForm
+                  students={students}
+                  plans={activePlans}
+                />
+              </div>
             </div>
           </section>
 
@@ -304,6 +327,9 @@ export default async function PaymentsPage({
                         {t("table.for")}
                       </th>
                       <th className="px-4 py-3 font-semibold">
+                        {t("table.method")}
+                      </th>
+                      <th className="px-4 py-3 font-semibold">
                         {t("table.status")}
                       </th>
                       <th className="px-4 py-3 text-right font-semibold">
@@ -326,6 +352,20 @@ export default async function PaymentsPage({
                           </td>
                           <td className="px-4 py-3 text-muted-foreground">
                             {p.planName ?? p.description ?? "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            {p.paymentMethod ? (
+                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                {p.paymentMethod === "stripe" ? (
+                                  <CreditCard size={12} />
+                                ) : (
+                                  <Banknote size={12} />
+                                )}
+                                {t(`method.${p.paymentMethod}`)}
+                              </span>
+                            ) : (
+                              "—"
+                            )}
                           </td>
                           <td className="px-4 py-3">
                             <span

@@ -134,6 +134,7 @@ async function recordInvoice(
       currency: invoice.currency ?? "usd",
       status: paid ? "PAID" : "FAILED",
       description: invoice.description ?? "Subscription payment",
+      paymentMethod: "stripe",
       stripeInvoiceId: invoiceId ?? null,
       stripePaymentIntentId: invoicePaymentIntentId(invoice),
       paidAt: paid ? new Date() : null,
@@ -188,7 +189,13 @@ async function emailReceipt(args: {
   });
 }
 
-/** POST /api/webhooks/stripe — verify and process Stripe events. */
+/** POST /api/webhooks/stripe — verify and process Stripe events.
+ *
+ * Handles both platform and connected-account events. Connected-account events
+ * carry an `account` field on the event object; the processing logic is the
+ * same — Stripe routes the webhook to the platform endpoint automatically when
+ * the platform is the application fee collector.
+ */
 export async function POST(request: Request) {
   if (!isStripeConfigured() || !isDbConfigured()) {
     return NextResponse.json({ received: true });
@@ -216,6 +223,14 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Invalid signature." },
       { status: 400 },
+    );
+  }
+
+  // Connected-account events carry an `account` field. Log it for debugging.
+  const connectedAccount = (event as unknown as { account?: string }).account;
+  if (connectedAccount) {
+    console.log(
+      `Processing connected-account event ${event.type} for account ${connectedAccount}`,
     );
   }
 

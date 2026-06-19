@@ -155,6 +155,12 @@ model Club {
   locale       String?
   disciplines  String[]
   beltSystemId String?  @map("belt_system_id")
+  /// Stripe Connect Standard account id, set during onboarding.
+  stripeAccountId    String?  @map("stripe_account_id")
+  /// True once the connected Stripe account has completed onboarding.
+  stripeOnboarded    Boolean  @default(false) @map("stripe_onboarded")
+  /// Platform fee percentage applied to connected-account payments (default 3%).
+  platformFeePercent Decimal  @default(3.0) @db.Decimal(4, 2) @map("platform_fee_percent")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
@@ -191,6 +197,7 @@ model User {
   instructingClasses ClassSchedule[]       @relation("ClassInstructor")
   substituteSessions ClassSession[]        @relation("SessionSubstitute")
   assessedTechniques StudentTechniqueLog[] @relation("TechniqueAssessor")
+  recordedPayments   Payment[]             @relation("PaymentRecorder")
 
   @@index([clubId])
   @@map("users")
@@ -513,7 +520,7 @@ model Membership {
 }
 
 /// A single payment / invoice, recorded from a Stripe checkout or invoice
-/// webhook. The payment dashboard aggregates these for club revenue.
+/// webhook, or manually by an instructor/owner for cash/Bizum/bank transfer.
 model Payment {
   id                    String        @id @default(uuid())
   clubId                String        @map("club_id")
@@ -524,6 +531,10 @@ model Payment {
   currency              String        @default("usd")
   status                PaymentStatus @default(PENDING)
   description           String?
+  /// How the payment was collected: "stripe", "cash", "bank_transfer", "bizum", "other".
+  paymentMethod         String?       @map("payment_method")
+  /// Who recorded this payment (null for Stripe-originated payments).
+  recordedById          String?       @map("recorded_by_id")
   stripeCheckoutId      String?       @map("stripe_checkout_id")
   stripePaymentIntentId String?       @unique @map("stripe_payment_intent_id")
   stripeInvoiceId       String?       @map("stripe_invoice_id")
@@ -534,6 +545,7 @@ model Payment {
   student    Student?     @relation(fields: [studentId], references: [id])
   membership Membership?  @relation(fields: [membershipId], references: [id])
   plan       PaymentPlan? @relation(fields: [planId], references: [id])
+  recordedBy User?        @relation("PaymentRecorder", fields: [recordedById], references: [id])
 
   @@index([clubId])
   @@index([studentId])
