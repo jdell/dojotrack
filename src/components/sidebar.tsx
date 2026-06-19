@@ -12,6 +12,7 @@ import {
   Settings,
   Swords,
   Trophy,
+  User,
   Users,
   type LucideIcon,
 } from "lucide-react";
@@ -19,6 +20,7 @@ import { Link, usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils";
 import { Logo } from "./logo";
 import { LanguageSwitcher } from "./language-switcher";
+import type { Role } from "@prisma/client";
 
 interface NavItem {
   /** Key under the `Nav` message namespace. */
@@ -28,7 +30,8 @@ interface NavItem {
   matches: (pathname: string) => boolean;
 }
 
-const NAV_ITEMS: NavItem[] = [
+/** Full nav for owners and instructors. */
+const ADMIN_NAV_ITEMS: NavItem[] = [
   {
     key: "dashboard",
     href: "/dashboard",
@@ -79,18 +82,45 @@ const NAV_ITEMS: NavItem[] = [
   },
 ];
 
+/** Simplified nav for students and parents. */
+const STUDENT_NAV_ITEMS: NavItem[] = [
+  {
+    key: "myProfile",
+    href: "/my",
+    icon: User,
+    matches: (p) => p === "/my" || p.startsWith("/my/"),
+  },
+  {
+    key: "classes",
+    href: "/classes",
+    icon: Calendar,
+    matches: (p) => p.startsWith("/classes"),
+  },
+  {
+    key: "settings",
+    href: "/settings",
+    icon: Settings,
+    matches: (p) => p.startsWith("/settings"),
+  },
+];
+
 interface SidebarProps {
   clubName?: string;
   userName?: string;
+  userRole?: Role;
 }
 
 export function Sidebar({
   clubName = "Your Dojo",
   userName = "Instructor",
+  userRole = "OWNER",
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("Nav");
   const [collapsed, setCollapsed] = useState(false);
+
+  const isStudentRole = userRole === "STUDENT" || userRole === "PARENT";
+  const navItems = isStudentRole ? STUDENT_NAV_ITEMS : ADMIN_NAV_ITEMS;
 
   return (
     <aside
@@ -128,7 +158,7 @@ export function Sidebar({
 
       <nav className="flex-1 overflow-y-auto py-3">
         <ul className="space-y-1 px-2">
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const Icon = item.icon;
             const active = item.matches(pathname);
             const label = t(item.key);

@@ -35,6 +35,7 @@
     "competitions": "Competitions",
     "sparring": "Sparring",
     "settings": "Settings",
+    "myProfile": "My profile",
     "club": "Club",
     "signedInAs": "Signed in as {name}",
     "expandSidebar": "Expand sidebar",
@@ -893,6 +894,21 @@
     "examPassedBody2": "Your instructors are proud of the work you put in — keep it up.",
     "examFailBody": "Hi {name}, thanks for testing for {belt} at {club}. You didn't pass this time, but every grading is a step forward.",
     "examFailBody2": "Your instructors will share feedback and the areas to focus on before your next attempt."
+  },
+  "MyProfile": {
+    "myProfile": "My profile",
+    "myMembership": "My membership",
+    "activeMembership": "Active membership",
+    "noMembership": "No active membership",
+    "membershipStatus": "Browse the available plans below to subscribe.",
+    "nextBilling": "Next billing",
+    "cancelAtEnd": "Cancels at end of period",
+    "availablePlans": "Available plans",
+    "subscribe": "Subscribe",
+    "recentAttendance": "Recent attendance",
+    "noAttendance": "No check-ins recorded yet.",
+    "viewBeltProgress": "View belt progress",
+    "memberSince": "Member since {date}"
   },
   "Public": {
     "join": {

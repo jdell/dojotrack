@@ -35,6 +35,7 @@
     "competitions": "Competicións",
     "sparring": "Sparring",
     "settings": "Configuración",
+    "myProfile": "O meu perfil",
     "club": "Club",
     "signedInAs": "Sesión iniciada como {name}",
     "expandSidebar": "Expandir barra lateral",
@@ -893,6 +894,21 @@
     "examPassedBody2": "Os teus instrutores están orgullosos do traballo que fixeches. Segue así!",
     "examFailBody": "Ola {name}, grazas por presentarte ao exame de {belt} en {club}. Esta vez non aprobaches, pero cada exame é un paso adiante.",
     "examFailBody2": "Os teus instrutores daranche a súa valoración e os aspectos nos que centrarte antes do teu próximo intento."
+  },
+  "MyProfile": {
+    "myProfile": "O meu perfil",
+    "myMembership": "A miña membresía",
+    "activeMembership": "Membresía activa",
+    "noMembership": "Sen membresía activa",
+    "membershipStatus": "Explora os plans dispoñibles a continuación para subscribirte.",
+    "nextBilling": "Próximo cobro",
+    "cancelAtEnd": "Cancélase ao final do período",
+    "availablePlans": "Plans dispoñibles",
+    "subscribe": "Subscribirse",
+    "recentAttendance": "Asistencia recente",
+    "noAttendance": "Aínda non hai rexistros de asistencia.",
+    "viewBeltProgress": "Ver progreso do cinto",
+    "memberSince": "Membro desde {date}"
   },
   "Public": {
     "join": {
