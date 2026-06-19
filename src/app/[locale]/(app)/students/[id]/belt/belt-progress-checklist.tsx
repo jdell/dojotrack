@@ -41,6 +41,7 @@ export function BeltProgressChecklist({
   totalCount: number;
 }) {
   const t = useTranslations("Students");
+  const tBelts = useTranslations("Belts");
   const router = useRouter();
   const [requirements, setRequirements] =
     useState<RequirementProgress[]>(initial);
@@ -119,7 +120,7 @@ export function BeltProgressChecklist({
                       {rp.requirement.name}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      <span aria-hidden>{meta.emoji}</span> {meta.label} ·{" "}
+                      <span aria-hidden>{meta.emoji}</span> {tBelts(`reqType.${rp.requirement.type}`)} ·{" "}
                       {rp.detail}
                       {rp.requirement.description
                         ? ` · ${rp.requirement.description}`

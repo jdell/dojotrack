@@ -1,16 +1,14 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { CalendarClock, MapPin, Medal, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import type { CompetitionStatus } from "@prisma/client";
 import {
   getCompetitions,
   getCurrentClub,
-  type CompetitionRow,
 } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
-import { disciplineMeta } from "@/lib/constants";
-import { formatDate } from "@/lib/utils";
+import { CompetitionsFilter } from "./competitions-filter";
 
 export async function generateMetadata({
   params,
@@ -71,94 +69,9 @@ export default async function CompetitionsPage() {
           </Link>
         </div>
       ) : (
-        <div className="space-y-6">
-          <CompetitionGroup
-            title={t("upcoming")}
-            competitions={upcoming}
-            emptyHint={t("noneScheduled")}
-          />
-          <CompetitionGroup
-            title={t("past")}
-            competitions={past}
-            emptyHint={t("noPastCompetitions")}
-          />
-        </div>
+        <CompetitionsFilter upcoming={upcoming} past={past} />
       )}
     </div>
-  );
-}
-
-async function CompetitionGroup({
-  title,
-  competitions,
-  emptyHint,
-}: {
-  title: string;
-  competitions: CompetitionRow[];
-  emptyHint: string;
-}) {
-  const t = await getTranslations("Competitions");
-  return (
-    <section className="space-y-3">
-      <h2 className="text-lg font-bold text-brand-navy">{title}</h2>
-      {competitions.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-          {emptyHint}
-        </p>
-      ) : (
-        <ul className="space-y-2">
-          {competitions.map((c) => {
-            const discipline = c.discipline ? disciplineMeta(c.discipline) : null;
-            return (
-              <li key={c.id}>
-                <Link
-                  href={`/competitions/${c.id}`}
-                  className="flex items-center gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-colors hover:border-brand-teal/40"
-                >
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-gold/10 text-brand-gold">
-                    <Trophy size={18} />
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-semibold text-brand-navy">
-                      {c.name}
-                    </p>
-                    <p className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-                      <span className="inline-flex items-center gap-1">
-                        <CalendarClock size={13} />
-                        {formatDate(c.date)}
-                      </span>
-                      {c.location && (
-                        <span className="inline-flex items-center gap-1">
-                          <MapPin size={13} />
-                          {c.location}
-                        </span>
-                      )}
-                      {discipline && (
-                        <span>
-                          {discipline.emoji} {discipline.label}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <CompetitionStatusBadge status={c.status} />
-                    <p className="mt-1 flex items-center justify-end gap-1 text-xs text-muted-foreground">
-                      {t("entryCount", { count: c.entryCount })}
-                      {c.medalCount > 0 && (
-                        <span className="inline-flex items-center gap-0.5 text-brand-gold">
-                          · <Medal size={12} />
-                          {c.medalCount}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      )}
-    </section>
   );
 }
 

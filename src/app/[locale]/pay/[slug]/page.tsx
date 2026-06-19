@@ -41,9 +41,9 @@ export default async function PublicPayPage({
   const { club, plans } = data;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="mx-auto max-w-2xl px-4 py-8">
           <div className="flex items-center gap-4">
             {club.logoUrl ? (
@@ -51,7 +51,7 @@ export default async function PublicPayPage({
               <img
                 src={club.logoUrl}
                 alt={club.name}
-                className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 object-cover"
+                className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover"
               />
             ) : (
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
@@ -62,7 +62,7 @@ export default async function PublicPayPage({
               <h1 className="text-2xl font-bold text-brand-navy">
                 {club.name}
               </h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
                 {t("paySubtitle", { club: club.name })}
               </p>
             </div>
@@ -81,7 +81,7 @@ export default async function PublicPayPage({
       </div>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 py-6">
+      <footer className="border-t border-slate-200 dark:border-slate-800 py-6">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4">
           <Link href={`/club/${slug}`} className="text-xs text-slate-400 hover:text-brand-navy transition-colors">
             {club.name}

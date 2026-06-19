@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import {
-  Banknote,
   CheckCircle2,
   CreditCard,
   TrendingUp,
@@ -10,7 +9,7 @@ import {
   XCircle,
   Zap,
 } from "lucide-react";
-import type { MembershipStatus, PaymentStatus } from "@prisma/client";
+import type { MembershipStatus } from "@prisma/client";
 import {
   getCurrentClub,
   getPaymentDashboard,
@@ -22,6 +21,7 @@ import { NewPlanForm } from "./new-plan-form";
 import { PlanRow } from "./plan-row";
 import { CheckoutPanel } from "./checkout-panel";
 import { ManualPaymentForm } from "./manual-payment-form";
+import { PaymentsTable } from "./payments-table";
 
 export async function generateMetadata({
   params,
@@ -41,13 +41,6 @@ const MEMBER_STATUS: Record<MembershipStatus, string> = {
   PAST_DUE: "bg-red-100 text-red-800",
   CANCELLED: "bg-slate-100 text-slate-600",
   INCOMPLETE: "bg-amber-100 text-amber-800",
-};
-
-const PAYMENT_STATUS: Record<PaymentStatus, string> = {
-  PAID: "bg-green-100 text-green-800",
-  PENDING: "bg-amber-100 text-amber-800",
-  FAILED: "bg-red-100 text-red-800",
-  REFUNDED: "bg-slate-100 text-slate-600",
 };
 
 export default async function PaymentsPage({
@@ -275,82 +268,10 @@ export default async function PaymentsPage({
             <h2 className="text-lg font-bold text-brand-navy">
               {t("recentPaymentsHeading")}
             </h2>
-            {(data?.recentPayments.length ?? 0) === 0 ? (
-              <p className="rounded-xl border border-dashed border-border bg-card p-6 text-center text-sm text-muted-foreground">
-                {t("paymentsEmpty")}
-              </p>
-            ) : (
-              <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-                <table className="w-full text-left text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/30 text-xs uppercase tracking-wide text-muted-foreground">
-                      <th className="px-4 py-3 font-semibold">
-                        {t("table.date")}
-                      </th>
-                      <th className="px-4 py-3 font-semibold">
-                        {t("table.member")}
-                      </th>
-                      <th className="px-4 py-3 font-semibold">
-                        {t("table.for")}
-                      </th>
-                      <th className="px-4 py-3 font-semibold">
-                        {t("table.method")}
-                      </th>
-                      <th className="px-4 py-3 font-semibold">
-                        {t("table.status")}
-                      </th>
-                      <th className="px-4 py-3 text-right font-semibold">
-                        {t("table.amount")}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data?.recentPayments ?? []).map((p) => {
-                      return (
-                        <tr
-                          key={p.id}
-                          className="border-b border-border last:border-0 hover:bg-muted/20"
-                        >
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {formatDate(p.paidAt ?? p.createdAt)}
-                          </td>
-                          <td className="px-4 py-3 font-medium text-brand-navy">
-                            {p.studentName ?? "—"}
-                          </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {p.planName ?? p.description ?? "—"}
-                          </td>
-                          <td className="px-4 py-3">
-                            {p.paymentMethod ? (
-                              <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
-                                {p.paymentMethod === "stripe" ? (
-                                  <CreditCard size={12} />
-                                ) : (
-                                  <Banknote size={12} />
-                                )}
-                                {t(`method.${p.paymentMethod}`)}
-                              </span>
-                            ) : (
-                              "—"
-                            )}
-                          </td>
-                          <td className="px-4 py-3">
-                            <span
-                              className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${PAYMENT_STATUS[p.status]}`}
-                            >
-                              {t(`paymentStatus.${p.status}`)}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3 text-right font-semibold text-brand-navy">
-                            {formatMoney(p.amount, p.currency)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+            <PaymentsTable
+              payments={data?.recentPayments ?? []}
+              currency={currency}
+            />
           </section>
         </>
       )}

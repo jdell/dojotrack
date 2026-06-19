@@ -17,6 +17,7 @@ import { Logo } from "@/components/logo";
 import { getClubBySlug, type PublicClub } from "@/lib/queries";
 import { baseUrl } from "@/lib/invite";
 import { initials } from "@/lib/utils";
+import { TrialRequestForm } from "./trial-request-form";
 
 export const dynamic = "force-dynamic";
 
@@ -135,14 +136,14 @@ export default async function ClubPublicPage({
   const t = await getTranslations("Club");
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       {/* Structured data for search engines (Organization + SportsActivityLocation). */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       {/* Header */}
-      <header className="border-b border-slate-200 bg-white">
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="flex items-center gap-4">
             {club.logoUrl ? (
@@ -150,7 +151,7 @@ export default async function ClubPublicPage({
               <img
                 src={club.logoUrl}
                 alt={club.name}
-                className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 object-cover"
+                className="h-16 w-16 shrink-0 rounded-2xl border border-slate-200 dark:border-slate-800 object-cover"
               />
             ) : (
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
@@ -161,41 +162,41 @@ export default async function ClubPublicPage({
               <h1 className="text-2xl font-bold text-brand-navy">
                 {club.name}
               </h1>
-              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
+              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                 <MapPin size={14} /> {location ?? t("locationSoon")}
               </p>
             </div>
           </div>
 
           {/* Contact & social links */}
-          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 pt-4">
+          <div className="mt-4 flex flex-wrap items-center gap-4 border-t border-slate-100 dark:border-slate-800 pt-4">
             {club.phone && (
-              <a href={`tel:${club.phone}`} className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={`tel:${club.phone}`} className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <Phone size={14} /> {club.phone}
               </a>
             )}
             {club.email && (
-              <a href={`mailto:${club.email}`} className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={`mailto:${club.email}`} className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <Mail size={14} /> {club.email}
               </a>
             )}
             {club.websiteUrl && (
-              <a href={club.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={club.websiteUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <Globe size={14} /> {t("website")}
               </a>
             )}
             {club.instagramUrl && (
-              <a href={club.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={club.instagramUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <ExternalLink size={14} /> Instagram
               </a>
             )}
             {club.facebookUrl && (
-              <a href={club.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={club.facebookUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <ExternalLink size={14} /> Facebook
               </a>
             )}
             {club.youtubeUrl && (
-              <a href={club.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 transition-colors hover:text-brand-navy">
+              <a href={club.youtubeUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 text-sm text-slate-500 dark:text-slate-400 transition-colors hover:text-brand-navy">
                 <ExternalLink size={14} /> YouTube
               </a>
             )}
@@ -206,7 +207,7 @@ export default async function ClubPublicPage({
               {club.disciplines.map((d) => (
                 <span
                   key={d.value}
-                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium text-brand-navy"
+                  className="rounded-full border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-brand-navy"
                 >
                   {d.emoji} {d.label}
                 </span>
@@ -250,9 +251,9 @@ export default async function ClubPublicPage({
         </section>
 
         {club.description && (
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
             <h2 className="text-base font-bold text-brand-navy">{t("about")}</h2>
-            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600">
+            <p className="mt-2 whitespace-pre-line text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               {club.description}
             </p>
           </section>
@@ -260,7 +261,7 @@ export default async function ClubPublicPage({
 
         <div className="grid gap-6 sm:grid-cols-2">
           {/* Schedule */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
             <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
               <CalendarDays size={16} className="text-brand-teal" />{" "}
               {t("schedule")}
@@ -279,34 +280,39 @@ export default async function ClubPublicPage({
                       .map((cs) => (
                         <div
                           key={cs.id}
-                          className="flex items-center gap-3 rounded-lg bg-slate-50 px-3 py-2 mb-1"
+                          className="flex items-center gap-3 rounded-lg bg-slate-50 dark:bg-slate-800 px-3 py-2 mb-1"
                         >
                           <Clock size={14} className="text-brand-teal shrink-0" />
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-medium text-brand-navy truncate">
                               {cs.name}
                             </p>
-                            <p className="text-xs text-slate-500">
+                            <p className="text-xs text-slate-500 dark:text-slate-400">
                               {cs.startTime} – {cs.endTime}
                               {cs.location && ` · ${cs.location}`}
                               {cs.instructorName && ` · ${cs.instructorName}`}
                             </p>
                           </div>
-                          <span className="shrink-0 rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-medium text-slate-500">
+                          <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
                             {cs.level.replace("_", " ")}
                           </span>
+                          <TrialRequestForm
+                            clubSlug={slug}
+                            classScheduleId={cs.id}
+                            className={cs.name}
+                          />
                         </div>
                       ))}
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="mt-2 text-sm text-slate-500">{t("scheduleSoon")}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t("scheduleSoon")}</p>
             )}
           </section>
 
           {/* Instructors */}
-          <section className="rounded-2xl border border-slate-200 bg-white p-6">
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
             <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
               <Users size={16} className="text-brand-teal" /> {t("instructors")}
             </h2>
@@ -329,7 +335,7 @@ export default async function ClubPublicPage({
                 ))}
               </ul>
             ) : (
-              <p className="mt-2 text-sm text-slate-500">
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 {t("instructorsSoon")}
               </p>
             )}
@@ -346,8 +352,8 @@ export default async function ClubPublicPage({
 async function ClubComingSoon({ name }: { name: string }) {
   const t = await getTranslations("Club");
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <header className="border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
         <div className="mx-auto max-w-4xl px-4 py-8">
           <div className="flex items-center gap-4">
             <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-brand-teal text-2xl font-bold text-white">
@@ -355,7 +361,7 @@ async function ClubComingSoon({ name }: { name: string }) {
             </div>
             <div className="min-w-0">
               <h1 className="text-2xl font-bold text-brand-navy">{name}</h1>
-              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500">
+              <p className="mt-1 flex items-center gap-1 text-sm text-slate-500 dark:text-slate-400">
                 <MapPin size={14} /> {t("locationSoon")}
               </p>
             </div>
@@ -364,12 +370,12 @@ async function ClubComingSoon({ name }: { name: string }) {
       </header>
 
       <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center">
           <div className="mb-3 text-4xl">🥋</div>
           <h2 className="text-lg font-bold text-brand-navy">
             {t("comingSoonTitle")}
           </h2>
-          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+          <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
             {t("comingSoonBody", { name })}
           </p>
           <Link
@@ -389,7 +395,7 @@ async function ClubComingSoon({ name }: { name: string }) {
 async function ClubFooter() {
   const t = await getTranslations("Club");
   return (
-    <footer className="border-t border-slate-200 py-6">
+    <footer className="border-t border-slate-200 dark:border-slate-800 py-6">
       <div className="mx-auto flex max-w-4xl items-center justify-between px-4">
         <Link href="/" className="flex items-center">
           <Logo size={24} />

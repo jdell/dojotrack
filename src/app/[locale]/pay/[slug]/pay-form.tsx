@@ -12,8 +12,8 @@ import { formatMoney } from "@/lib/utils";
 import type { PublicPaymentPlan } from "@/lib/queries";
 
 const controlClass =
-  "w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
-const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+  "w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 px-3 py-2.5 text-sm text-slate-900 dark:text-slate-100 focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
+const labelClass = "mb-1.5 block text-sm font-medium text-slate-700 dark:text-slate-300";
 
 interface PayFormProps {
   club: { name: string; slug: string };
@@ -38,14 +38,14 @@ export function PayForm({ club, plans, preselectedPlanId, status }: PayFormProps
   // Success state
   if (status === "success") {
     return (
-      <div className="rounded-2xl border border-green-200 bg-white p-8 text-center">
-        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+      <div className="rounded-2xl border border-green-200 dark:border-green-900 bg-white dark:bg-slate-900 p-8 text-center">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/40">
           <CheckCircle2 size={32} className="text-green-600" />
         </div>
         <h2 className="text-xl font-bold text-brand-navy">
           {t("paySuccess")}
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
           {t("paySuccessDetail", { club: club.name })}
         </p>
       </div>
@@ -56,7 +56,7 @@ export function PayForm({ club, plans, preselectedPlanId, status }: PayFormProps
   if (status === "cancelled") {
     return (
       <div className="space-y-6">
-        <div className="flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+        <div className="flex items-center gap-2 rounded-lg border border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950 p-3 text-sm text-amber-800 dark:text-amber-200">
           <XCircle size={16} />
           {t("payCancelled")}
         </div>
@@ -84,12 +84,12 @@ export function PayForm({ club, plans, preselectedPlanId, status }: PayFormProps
 
   if (plans.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-200 bg-white p-10 text-center">
+      <div className="rounded-2xl border border-dashed border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-10 text-center">
         <div className="mb-3 text-4xl">💳</div>
         <h2 className="text-lg font-bold text-brand-navy">
           {t("noPlansTitle")}
         </h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">
+        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500 dark:text-slate-400">
           {t("noPlansBody", { club: club.name })}
         </p>
       </div>
@@ -194,13 +194,13 @@ function PayFormInner({
                 key={plan.id}
                 type="button"
                 onClick={() => setSelectedPlanId(plan.id)}
-                className="flex flex-col gap-1 rounded-xl border border-slate-200 bg-white p-5 text-left transition-all hover:border-brand-teal hover:shadow-md"
+                className="flex flex-col gap-1 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 text-left transition-all hover:border-brand-teal hover:shadow-md"
               >
                 <span className="font-semibold text-brand-navy">
                   {plan.name}
                 </span>
                 {plan.description && (
-                  <span className="text-xs text-slate-500">
+                  <span className="text-xs text-slate-500 dark:text-slate-400">
                     {plan.description}
                   </span>
                 )}
@@ -230,7 +230,7 @@ function PayFormInner({
                   {selectedPlan.name}
                 </p>
                 {selectedPlan.description && (
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {selectedPlan.description}
                   </p>
                 )}
@@ -256,7 +256,7 @@ function PayFormInner({
           )}
 
           {/* Student details */}
-          <div className="rounded-xl border border-slate-200 bg-white p-5 space-y-4">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 space-y-4">
             <div>
               <label htmlFor="studentName" className={labelClass}>
                 {t("yourName")} *

@@ -4,18 +4,21 @@ import { Link } from "@/i18n/navigation";
 import { redirect } from "next/navigation";
 import {
   Award,
+  Calendar,
   CreditCard,
   QrCode,
   User,
 } from "lucide-react";
 import { getAuthContext } from "@/lib/auth-context";
-import { getMyStudentProfile } from "@/lib/queries";
+import { getMyStudentProfile, getClassSchedules, getCurrentStudent } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { BeltBadge } from "@/components/belt-badge";
 import { PlanCard } from "./plan-card";
+import { MyBeltProgress } from "./my-belt-progress";
+import { MyClasses } from "./my-classes";
 import type { BillingInterval } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
@@ -80,6 +83,9 @@ export default async function MyProfilePage({
     // fall through — empty plans list
   }
 
+  const currentStudent = await getCurrentStudent(ctx.club.id);
+  const classes = await getClassSchedules(ctx.club.id, currentStudent?.id ?? null);
+
   const stripeReady = isStripeConfigured();
   const resolvedParams = await searchParams;
   const activeMembership = profile.memberships.find(
@@ -131,6 +137,9 @@ export default async function MyProfilePage({
           </Link>
         </div>
       </section>
+
+      {/* Belt progress */}
+      <MyBeltProgress studentId={profile.id} clubId={ctx.club.id} />
 
       {/* Membership status */}
       <section className="space-y-3">
@@ -207,6 +216,15 @@ export default async function MyProfilePage({
           </div>
         </section>
       )}
+
+      {/* Upcoming classes */}
+      <section className="space-y-3">
+        <h2 className="flex items-center gap-2 text-lg font-bold text-brand-navy">
+          <Calendar size={20} />
+          {t("upcomingClasses")}
+        </h2>
+        <MyClasses classes={classes} studentId={currentStudent?.id ?? profile.id} />
+      </section>
 
       {/* Recent attendance */}
       <section className="space-y-3">

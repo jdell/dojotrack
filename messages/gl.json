@@ -357,7 +357,10 @@
       "IN_PROGRESS": "En progreso",
       "PASSED": "Superado",
       "inactive": "Inactivo"
-    }
+    },
+    "filterAll": "Todos",
+    "filterActive": "Activos",
+    "filterInactive": "Inactivos"
   },
   "Classes": {
     "eyebrow": "Horario",
@@ -722,7 +725,11 @@
     },
     "recordedBy": "Rexistrado por {name}",
     "paymentRecorded": "Pagamento rexistrado",
-    "shareLink": "Compartir enlace"
+    "shareLink": "Compartir enlace",
+    "searchPayments": "Buscar pagamentos…",
+    "filterStatus": "Estado",
+    "filterMethod": "Método",
+    "filterAll": "Todos"
   },
   "Pay": {
     "payTitle": "Pagar",
@@ -819,7 +826,8 @@
       "GOLD": "Ouro",
       "SILVER": "Prata",
       "BRONZE": "Bronce"
-    }
+    },
+    "searchCompetitions": "Buscar competicións…"
   },
   "Sparring": {
     "eyebrow": "Adestramento",
@@ -898,7 +906,17 @@
       "SUN": "Dom"
     },
     "ogCta": "Reserva unha clase de proba gratuíta en EntrenaDojo",
-    "metaDescription": "{name} — horarios de clases, disciplinas e reserva dunha clase de proba gratuíta en EntrenaDojo."
+    "metaDescription": "{name} — horarios de clases, disciplinas e reserva dunha clase de proba gratuíta en EntrenaDojo.",
+    "bookTrialClass": "Reservar proba",
+    "trialName": "O teu nome",
+    "trialPhone": "Telefono",
+    "trialEmail": "Correo electronico",
+    "trialMessage": "Mensaxe (opcional)",
+    "trialSent": "Solicitude enviada! O club contactara contigo pronto.",
+    "trialError": "Non se puido enviar a solicitude. Tentao de novo.",
+    "trialFormTitle": "Reservar unha clase de proba",
+    "trialSubmit": "Enviar solicitude",
+    "trialContactRequired": "Indica un correo electronico ou un telefono."
   },
   "Email": {
     "invitationSubject": "Únete a {club} en EntrenaDojo",
@@ -937,7 +955,15 @@
     "recentAttendance": "Asistencia recente",
     "noAttendance": "Aínda non hai rexistros de asistencia.",
     "viewBeltProgress": "Ver progreso do cinto",
-    "memberSince": "Membro desde {date}"
+    "memberSince": "Membro desde {date}",
+    "upcomingClasses": "Próximas clases",
+    "bookClass": "Reservar",
+    "cancelBooking": "Cancelar reserva",
+    "alreadyBooked": "Reservado",
+    "classFull": "Clase completa",
+    "noBeltAssigned": "Aínda non tes cinto asignado. Pide ao teu instrutor que che asigne un rango.",
+    "beltProgress": "Progreso do cinto",
+    "requirementsMet": "{met} de {total} requisitos cumpridos"
   },
   "Public": {
     "join": {
@@ -1022,5 +1048,34 @@
     "privacyPaymentsBody": "Os pagamentos en lina procesanse a traves de Stripe. EntrenaDojo nunca ve nin almacena os datos completos da tua tarxeta. Cada club conecta a sua propia conta de Stripe para recibir pagamentos directamente. Os rexistros de pagamentos (importes, datas, nomes de plans) almacenanse na nosa base de datos para o historial de facturacion.",
     "privacyContact": "Contacto",
     "privacyContactBody": "Se tes preguntas sobre os teus datos ou desexas solicitar a eliminacion da tua conta, contacta connosco en hello@entrenadojo.app."
+  },
+  "Disciplines": {
+    "bjj": "Jiu-Jitsu Brasileiro",
+    "karate": "Kárate",
+    "judo": "Judo",
+    "taekwondo": "Taekwondo",
+    "aikido": "Aikido",
+    "kung_fu": "Kung Fu",
+    "krav_maga": "Krav Maga",
+    "hapkido": "Hapkido",
+    "capoeira": "Capoeira",
+    "american_kenpo": "Kenpo Americano",
+    "tang_soo_do": "Tang Soo Do",
+    "custom": "Personalizado",
+    "other": "Outra"
+  },
+  "BeltSystems": {
+    "bjj": "Jiu-Jitsu Brasileiro",
+    "karate": "Kárate",
+    "judo": "Judo",
+    "taekwondo": "Taekwondo",
+    "aikido": "Aikido",
+    "kung_fu": "Kung Fu",
+    "krav_maga": "Krav Maga",
+    "hapkido": "Hapkido",
+    "capoeira": "Capoeira",
+    "american_kenpo": "Kenpo Americano",
+    "tang_soo_do": "Tang Soo Do",
+    "custom": "Personalizado"
   }
 }

@@ -21,12 +21,16 @@ export function StudentsTable({ students }: StudentsTableProps) {
   const t = useTranslations("Students");
   const [query, setQuery] = useState("");
   const [grouped, setGrouped] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<"all" | "active" | "inactive">("all");
 
   const filtered = useMemo(() => {
+    let result = students;
+    if (statusFilter === "active") result = result.filter((s) => s.active === true);
+    else if (statusFilter === "inactive") result = result.filter((s) => s.active === false);
     const q = query.trim().toLowerCase();
-    if (!q) return students;
-    return students.filter((s) => s.fullName.toLowerCase().includes(q));
-  }, [students, query]);
+    if (q) result = result.filter((s) => s.fullName.toLowerCase().includes(q));
+    return result;
+  }, [students, query, statusFilter]);
 
   const groups = useMemo(() => groupByFamily(filtered), [filtered]);
 
@@ -45,6 +49,22 @@ export function StudentsTable({ students }: StudentsTableProps) {
             placeholder={t("searchPlaceholder")}
             className="w-full rounded-lg border border-border bg-card py-2 pl-9 pr-3 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal"
           />
+        </div>
+        <div className="inline-flex rounded-lg border border-border">
+          {(["all", "active", "inactive"] as const).map((opt) => (
+            <button
+              key={opt}
+              type="button"
+              onClick={() => setStatusFilter(opt)}
+              className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                statusFilter === opt
+                  ? "bg-brand-teal text-white"
+                  : "bg-card text-muted-foreground hover:bg-muted/50"
+              } ${opt === "all" ? "rounded-l-lg" : opt === "inactive" ? "rounded-r-lg" : ""}`}
+            >
+              {t(opt === "all" ? "filterAll" : opt === "active" ? "filterActive" : "filterInactive")}
+            </button>
+          ))}
         </div>
         <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-brand-navy">
           <input

@@ -52,6 +52,11 @@ function ranks(systemId: string, belts: BeltDef[]): BeltRank[] {
  * Belt progression systems keyed by discipline.
  * Requirements are intentionally left empty here — clubs define their own
  * curriculum per rank in a later sprint.
+ *
+ * System names below are English fallbacks. Translated names are available
+ * via the "BeltSystems" namespace in the message catalog (messages/en.json,
+ * es.json, gl.json). Use `t(systemId)` with a `useTranslations("BeltSystems")`
+ * or `getTranslations("BeltSystems")` call where i18n context is available.
  */
 export const BELT_SYSTEMS: Record<Discipline, BeltSystem> = {
   // Brazilian Jiu-Jitsu — adult IBJJF belts, each carrying 0–4 stripes.
@@ -318,10 +323,10 @@ export const BELT_SYSTEMS: Record<Discipline, BeltSystem> = {
   },
 };
 
-// TODO: Discipline labels and belt names are English-only constants used as
-// fallbacks. They are stored per-club in the database (belt ranks have custom
-// names, disciplines are values). Full i18n of these constants should be done
-// in a future pass, but the per-club DB values take precedence where available.
+// Discipline labels below are English fallbacks. Translated labels are available
+// via the "Disciplines" namespace in the message catalog (messages/en.json,
+// es.json, gl.json). Use `t(value)` with a `useTranslations("Disciplines")`
+// or `getTranslations("Disciplines")` call where i18n context is available.
 
 /** Disciplines available when creating a club, with display metadata. */
 export const DISCIPLINES: {
@@ -383,9 +388,12 @@ export function disciplineMeta(value: string): {
   );
 }
 
-// TODO: REQUIREMENT_TYPES labels are English-only. These should be i18n'd in a
-// future pass. The UI currently reads translated labels from the Belts.reqType
-// namespace in the message catalog instead.
+// Requirement type labels below are English fallbacks. Translated labels are
+// available via the "Belts.reqType" namespace in the message catalog
+// (messages/en.json, es.json, gl.json). The UI reads translated labels from
+// `t("reqType.TIME")` etc. with `useTranslations("Belts")` where i18n context
+// is available. The `requirementTypeMeta` function returns only the constant
+// (emoji, unit, auto flag); use the message catalog for display labels.
 
 /**
  * The kinds of bar a belt requirement can set. TIME and CLASSES are computed
