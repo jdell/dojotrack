@@ -8,7 +8,7 @@ import { DISCIPLINES, TIMEZONES } from "@/lib/constants";
 
 interface SettingsFormProps {
   settings: ClubSettings;
-  /** Public base shown next to the slug, e.g. "entrenadojo.app". */
+  /** Public base shown next to the slug, e.g. "entrenadojo.es". */
   publicHost: string;
 }
 

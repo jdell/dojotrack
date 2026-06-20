@@ -29,7 +29,7 @@ function publicHost(): string {
   try {
     return new URL(BRAND.url).host;
   } catch {
-    return "entrenadojo.app";
+    return "entrenadojo.es";
   }
 }
 

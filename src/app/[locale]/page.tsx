@@ -102,7 +102,7 @@ export default function LandingPage() {
       heading: t("footerCompany"),
       links: [
         { label: t("footerAbout"), href: "#features" },
-        { label: t("footerContact"), href: "mailto:hello@entrenadojo.app" },
+        { label: t("footerContact"), href: "mailto:hello@entrenadojo.es" },
         { label: t("footerPrivacy"), href: "/privacy" },
       ],
     },

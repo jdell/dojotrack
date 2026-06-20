@@ -3,8 +3,8 @@ import type { BeltRank, BeltSystem, Discipline } from "@/types";
 export const BRAND = {
   name: "EntrenaDojo",
   tagline: "Martial arts club management, simplified.",
-  email: "hello@entrenadojo.app",
-  url: "https://entrenadojo.app",
+  email: "hello@entrenadojo.es",
+  url: "https://entrenadojo.es",
 } as const;
 
 /** Brand palette. Teal is the primary brand colour; navy is used for text/headings. */
