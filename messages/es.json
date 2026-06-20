@@ -891,9 +891,9 @@
     "notesPlaceholder": "Cualquier detalle sobre esta sesión (opcional)"
   },
   "Club": {
-    "tryClassTitle": "Prueba una clase con nosotros",
-    "tryClassSubtitle": "¿Nuevo en {club}? Tu primera sesión es gratis.",
-    "bookTrial": "Reservar clase de prueba gratuita",
+    "tryClassTitle": "¿Te interesa unirte?",
+    "tryClassSubtitle": "¿Nuevo en {club}? Escríbenos y te ayudamos a encontrar la clase ideal.",
+    "bookTrial": "Contáctanos",
     "website": "Web",
     "trialEmailSubject": "Quiero probar una clase en {club}",
     "trialEmailBody": "Hola,\n\nMe gustaría reservar una clase de prueba gratuita en {club}.\n\nGracias.",
@@ -1155,6 +1155,7 @@
     "proPlan": "Pro",
     "manageSubscription": "Tu club tiene acceso completo a todas las funciones Pro.",
     "cancelSubscription": "Cancelar suscripción",
+    "haveCoupon": "¿Tienes un cupón? Puedes introducirlo en el pago.",
     "upgradeSuccess": "¡Bienvenido a Pro! Todas las funciones están desbloqueadas.",
     "tierFree": "Gratis",
     "tierPro": "Pro",

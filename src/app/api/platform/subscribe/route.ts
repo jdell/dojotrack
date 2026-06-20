@@ -101,6 +101,7 @@ export async function POST() {
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
+      allow_promotion_codes: true,
       success_url: `${appUrl()}/settings?upgraded=true`,
       cancel_url: `${appUrl()}/settings?upgrade=cancelled`,
       metadata: { clubId: ctx.club.id, type: "platform_subscription" },

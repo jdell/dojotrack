@@ -107,7 +107,7 @@ export function UpgradeBanner({ clubTier }: UpgradeBannerProps) {
           )}
 
           <p className="text-xs text-muted-foreground">
-            {t("currentPlan")}: {t("freePlan")}
+            {t("currentPlan")}: {t("freePlan")} · {t("haveCoupon")}
           </p>
         </div>
       </div>

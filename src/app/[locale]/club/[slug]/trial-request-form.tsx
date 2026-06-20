@@ -78,7 +78,7 @@ export function TrialRequestForm({
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="shrink-0 flex items-center gap-1 rounded-lg bg-brand-gold px-2.5 py-1 text-xs font-semibold text-brand-navy transition-opacity hover:opacity-90"
+        className="shrink-0 flex items-center gap-1 rounded-lg bg-brand-teal/10 px-2.5 py-1 text-xs font-medium text-brand-teal transition-colors hover:bg-brand-teal/20"
       >
         <CalendarPlus size={12} />
         {t("bookTrialClass")}

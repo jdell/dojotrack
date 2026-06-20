@@ -891,9 +891,9 @@
     "notesPlaceholder": "Anything to note about this session (optional)"
   },
   "Club": {
-    "tryClassTitle": "Try a class on us",
-    "tryClassSubtitle": "New to {club}? Your first session is free.",
-    "bookTrial": "Book a free trial class",
+    "tryClassTitle": "Interested in joining?",
+    "tryClassSubtitle": "New to {club}? Get in touch and we'll find the right class for you.",
+    "bookTrial": "Contact us",
     "website": "Website",
     "trialEmailSubject": "I'd like to try a class at {club}",
     "trialEmailBody": "Hi,\n\nI'd like to book a free trial class at {club}.\n\nThanks.",
@@ -1155,6 +1155,7 @@
     "proPlan": "Pro",
     "manageSubscription": "Your club has full access to all Pro features.",
     "cancelSubscription": "Cancel subscription",
+    "haveCoupon": "Have a coupon? You can enter it at checkout.",
     "upgradeSuccess": "Welcome to Pro! All features are now unlocked.",
     "tierFree": "Free",
     "tierPro": "Pro",
