@@ -20,6 +20,11 @@ enum Role {
   PARENT
 }
 
+enum ClubTier {
+  FREE
+  PRO
+}
+
 enum InvitationStatus {
   PENDING
   ACCEPTED
@@ -161,6 +166,10 @@ model Club {
   stripeOnboarded    Boolean  @default(false) @map("stripe_onboarded")
   /// Platform fee percentage applied to connected-account payments (default 3%).
   platformFeePercent Decimal  @default(3.0) @db.Decimal(4, 2) @map("platform_fee_percent")
+  tier                     ClubTier @default(FREE)
+  platformCustomerId       String?  @map("platform_customer_id")
+  platformSubscriptionId   String?  @unique @map("platform_subscription_id")
+  platformCurrentPeriodEnd DateTime? @map("platform_current_period_end")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 

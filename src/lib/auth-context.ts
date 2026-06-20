@@ -89,3 +89,17 @@ export async function requireAuth(): Promise<AuthContext | NextResponse> {
   }
   return ctx;
 }
+
+/**
+ * Whether the given email is in the comma-separated `ADMIN_EMAILS` env var,
+ * granting platform-level admin access (the /admin section).
+ */
+export function isPlatformAdmin(email: string | null | undefined): boolean {
+  if (!email) return false;
+  const raw = process.env.ADMIN_EMAILS ?? "";
+  const admins = raw
+    .split(",")
+    .map((e) => e.trim().toLowerCase())
+    .filter(Boolean);
+  return admins.includes(email.toLowerCase());
+}

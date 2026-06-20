@@ -4,9 +4,11 @@ import { Link } from "@/i18n/navigation";
 import { getClubSettings } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
+import { prisma } from "@/lib/prisma";
 import { BRAND } from "@/lib/constants";
 import { SettingsForm } from "./settings-form";
 import { StripeConnect } from "./stripe-connect";
+import { UpgradeBanner } from "./upgrade-banner";
 
 export async function generateMetadata({
   params,
@@ -33,6 +35,20 @@ export default async function SettingsPage() {
   const settings = isDbConfigured() ? await getClubSettings() : null;
   const t = await getTranslations("Settings");
 
+  // Load club tier for upgrade banner
+  let clubTier: "FREE" | "PRO" = "FREE";
+  if (isDbConfigured() && settings) {
+    try {
+      const club = await prisma.club.findUnique({
+        where: { id: settings.id },
+        select: { tier: true },
+      });
+      if (club) clubTier = club.tier;
+    } catch {
+      // Fall through
+    }
+  }
+
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <div>
@@ -44,7 +60,8 @@ export default async function SettingsPage() {
       {settings ? (
         <>
           <SettingsForm settings={settings} publicHost={publicHost()} />
-          {isStripeConfigured() && (
+          <UpgradeBanner clubTier={clubTier} />
+          {isStripeConfigured() && clubTier === "PRO" && (
             <StripeConnect
               initialConnected={settings.stripeConnected}
               initialOnboarded={settings.stripeOnboarded}

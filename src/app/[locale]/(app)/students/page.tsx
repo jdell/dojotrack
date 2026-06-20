@@ -5,6 +5,7 @@ import { UserPlus } from "lucide-react";
 import { getCurrentClub, getStudents } from "@/lib/queries";
 import { StudentsTable } from "./students-table";
 import { InviteButton } from "./invite-button";
+import { StudentLimitBanner } from "@/components/student-limit-banner";
 
 export async function generateMetadata({
   params,
@@ -45,6 +46,13 @@ export default async function StudentsPage() {
           </Link>
         </div>
       </div>
+
+      {club && (
+        <StudentLimitBanner
+          studentCount={students.filter((s) => s.active).length}
+          clubTier={club.tier}
+        />
+      )}
 
       {students.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">

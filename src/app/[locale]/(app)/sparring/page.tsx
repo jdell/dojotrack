@@ -6,6 +6,7 @@ import { getCurrentClub, getSparringSessions } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -50,25 +51,27 @@ export default async function SparringPage() {
           title={t("notConfiguredTitle")}
           body={t("notConfiguredBody")}
         />
-      ) : sessions.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-          <div className="mx-auto mb-3 text-4xl">🥊</div>
-          <h2 className="text-lg font-bold text-brand-navy">
-            {t("emptyTitle")}
-          </h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            {t("emptyBody")}
-          </p>
-          <Link
-            href="/sparring/new"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
-          >
-            {t("newSession")}
-          </Link>
-        </div>
       ) : (
-        <ul className="space-y-2">
-          {sessions.map((s) => {
+        <ProGate feature="sparring" clubTier={club.tier}>
+          {sessions.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <div className="mx-auto mb-3 text-4xl">🥊</div>
+              <h2 className="text-lg font-bold text-brand-navy">
+                {t("emptyTitle")}
+              </h2>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                {t("emptyBody")}
+              </p>
+              <Link
+                href="/sparring/new"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+              >
+                {t("newSession")}
+              </Link>
+            </div>
+          ) : (
+            <ul className="space-y-2">
+              {sessions.map((s) => {
             const discipline = s.discipline ? disciplineMeta(s.discipline) : null;
             return (
               <li key={s.id}>
@@ -109,7 +112,9 @@ export default async function SparringPage() {
               </li>
             );
           })}
-        </ul>
+            </ul>
+          )}
+        </ProGate>
       )}
     </div>
   );

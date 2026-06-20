@@ -189,6 +189,48 @@ async function emailReceipt(args: {
   });
 }
 
+/** Handle a platform subscription lifecycle event (club tier PRO/FREE). */
+async function handlePlatformSubscription(sub: Stripe.Subscription): Promise<void> {
+  const clubId = sub.metadata?.clubId;
+  if (!clubId) return;
+
+  const status = sub.status;
+  const periodEnd = subscriptionPeriodEnd(sub);
+  const customerId =
+    typeof sub.customer === "string" ? sub.customer : (sub.customer?.id ?? null);
+
+  if (status === "active" || status === "trialing") {
+    await prisma.club.update({
+      where: { id: clubId },
+      data: {
+        tier: "PRO",
+        platformSubscriptionId: sub.id,
+        platformCurrentPeriodEnd: periodEnd,
+        ...(customerId ? { platformCustomerId: customerId } : {}),
+      },
+    });
+  } else if (status === "canceled" || status === "incomplete_expired") {
+    await prisma.club.update({
+      where: { id: clubId },
+      data: {
+        tier: "FREE",
+        platformSubscriptionId: null,
+        platformCurrentPeriodEnd: null,
+      },
+    });
+  } else {
+    // past_due, unpaid, etc. — keep PRO but update period end
+    await prisma.club.update({
+      where: { id: clubId },
+      data: {
+        platformSubscriptionId: sub.id,
+        platformCurrentPeriodEnd: periodEnd,
+        ...(customerId ? { platformCustomerId: customerId } : {}),
+      },
+    });
+  }
+}
+
 /** POST /api/webhooks/stripe — verify and process Stripe events.
  *
  * Handles both platform and connected-account events. Connected-account events
@@ -279,7 +321,12 @@ export async function POST(request: Request) {
               ? session.subscription
               : session.subscription.id;
           const sub = await stripe.subscriptions.retrieve(subId);
-          await upsertMembership(sub);
+          // Check for platform subscription checkout
+          if (session.metadata?.type === "platform_subscription") {
+            await handlePlatformSubscription(sub);
+          } else {
+            await upsertMembership(sub);
+          }
         }
         break;
       }
@@ -288,12 +335,32 @@ export async function POST(request: Request) {
         break;
       case "invoice.payment_failed":
         await recordInvoice(event.data.object as Stripe.Invoice, false);
+        // Check if this is a platform subscription invoice
+        {
+          const failedInvoice = event.data.object as Stripe.Invoice;
+          const failedSubId = invoiceSubscriptionId(failedInvoice);
+          if (failedSubId) {
+            const platformClub = await prisma.club.findFirst({
+              where: { platformSubscriptionId: failedSubId },
+              select: { id: true },
+            });
+            if (platformClub) {
+              console.warn(`Platform subscription payment failed for club ${platformClub.id}`);
+            }
+          }
+        }
         break;
       case "customer.subscription.created":
       case "customer.subscription.updated":
-      case "customer.subscription.deleted":
-        await upsertMembership(event.data.object as Stripe.Subscription);
+      case "customer.subscription.deleted": {
+        const sub = event.data.object as Stripe.Subscription;
+        if (sub.metadata?.type === "platform_subscription") {
+          await handlePlatformSubscription(sub);
+          break;
+        }
+        await upsertMembership(sub);
         break;
+      }
       default:
         break;
     }

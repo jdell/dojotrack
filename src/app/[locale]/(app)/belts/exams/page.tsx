@@ -6,6 +6,7 @@ import type { ExamStatus } from "@prisma/client";
 import { getCurrentClub, getExams, type ExamRow } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { formatDate } from "@/lib/utils";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -58,33 +59,37 @@ export default async function ExamsPage() {
 
       {!club ? (
         <NotConfigured />
-      ) : upcoming.length === 0 && past.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-          <div className="mx-auto mb-3 text-4xl">🥋</div>
-          <h2 className="text-lg font-bold text-brand-navy">{t("noExams")}</h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            {t("noExamsHint")}
-          </p>
-          <Link
-            href="/belts/exams/new"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
-          >
-            {t("newExam")}
-          </Link>
-        </div>
       ) : (
-        <div className="space-y-6">
-          <ExamGroup
-            title={t("upcoming")}
-            exams={upcoming}
-            emptyHint={t("noneScheduled")}
-          />
-          <ExamGroup
-            title={t("past")}
-            exams={past}
-            emptyHint={t("noPastExams")}
-          />
-        </div>
+        <ProGate feature="exams" clubTier={club.tier}>
+          {upcoming.length === 0 && past.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <div className="mx-auto mb-3 text-4xl">🥋</div>
+              <h2 className="text-lg font-bold text-brand-navy">{t("noExams")}</h2>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                {t("noExamsHint")}
+              </p>
+              <Link
+                href="/belts/exams/new"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+              >
+                {t("newExam")}
+              </Link>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              <ExamGroup
+                title={t("upcoming")}
+                exams={upcoming}
+                emptyHint={t("noneScheduled")}
+              />
+              <ExamGroup
+                title={t("past")}
+                exams={past}
+                emptyHint={t("noPastExams")}
+              />
+            </div>
+          )}
+        </ProGate>
       )}
     </div>
   );

@@ -9,6 +9,7 @@ import {
 } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { CompetitionsFilter } from "./competitions-filter";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -52,24 +53,28 @@ export default async function CompetitionsPage() {
 
       {!club ? (
         <NotConfigured />
-      ) : upcoming.length === 0 && past.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
-          <div className="mx-auto mb-3 text-4xl">🏆</div>
-          <h2 className="text-lg font-bold text-brand-navy">
-            {t("emptyTitle")}
-          </h2>
-          <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
-            {t("emptyHint")}
-          </p>
-          <Link
-            href="/competitions/new"
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
-          >
-            {t("addCompetition")}
-          </Link>
-        </div>
       ) : (
-        <CompetitionsFilter upcoming={upcoming} past={past} />
+        <ProGate feature="competitions" clubTier={club.tier}>
+          {upcoming.length === 0 && past.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
+              <div className="mx-auto mb-3 text-4xl">🏆</div>
+              <h2 className="text-lg font-bold text-brand-navy">
+                {t("emptyTitle")}
+              </h2>
+              <p className="mx-auto mt-1 max-w-md text-sm text-muted-foreground">
+                {t("emptyHint")}
+              </p>
+              <Link
+                href="/competitions/new"
+                className="mt-5 inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+              >
+                {t("addCompetition")}
+              </Link>
+            </div>
+          ) : (
+            <CompetitionsFilter upcoming={upcoming} past={past} />
+          )}
+        </ProGate>
       )}
     </div>
   );

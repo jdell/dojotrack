@@ -50,6 +50,7 @@ export interface ClubSummary {
   disciplines: string[];
   /** Club's preferred language for outbound email (en/es/gl), or null. */
   locale: string | null;
+  tier: "FREE" | "PRO";
 }
 
 export interface StudentRow {
@@ -129,6 +130,7 @@ export async function getCurrentClub(): Promise<ClubSummary | null> {
     beltSystemId: club.beltSystemId,
     disciplines: club.disciplines,
     locale: club.locale,
+    tier: club.tier,
   };
 }
 

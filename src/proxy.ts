@@ -31,6 +31,7 @@ const PROTECTED_PREFIXES = [
   "/settings",
   "/checkin",
   "/my",
+  "/admin",
 ];
 
 export async function proxy(request: NextRequest) {
