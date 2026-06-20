@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
-import { notifyStudents } from "@/lib/notify";
+import { sendBeltPromotion } from "@/lib/notify";
 import { sendExamResultEmail } from "@/lib/email";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -158,10 +158,13 @@ export async function POST(request: Request, { params }: RouteContext) {
     });
 
     if (promoted.length > 0) {
-      const message = `Congratulations! You passed your grading and have been promoted to ${exam.targetBeltRank.name} at ${club.name}.`;
-      await notifyStudents(
-        promoted.map((s) => ({ name: s.fullName, phone: s.phone })),
-        message,
+      await Promise.all(
+        promoted.map((s) =>
+          sendBeltPromotion(
+            { name: s.fullName, phone: s.phone },
+            { beltName: exam.targetBeltRank.name, clubName: club.name },
+          ),
+        ),
       );
       // Email the result to candidates who have an address on file.
       await Promise.all(

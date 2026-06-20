@@ -246,7 +246,11 @@
     "stripeDashboard": "Panel de Stripe",
     "noClubTitle": "Aínda non hai ningún club que configurar",
     "noClubSubtitle": "Os axustes aparecen cando inicias sesión nun club. Rexistra un para comezar.",
-    "registerClub": "Rexistrar un club"
+    "registerClub": "Rexistrar un club",
+    "whatsappTitle": "Notificacións de WhatsApp",
+    "whatsappConfigured": "WhatsApp está configurado e listo para enviar notificacións.",
+    "whatsappNotConfigured": "WhatsApp non está configurado. Engade as variables de contorno WHATSAPP_API_TOKEN e WHATSAPP_PHONE_ID para activar as notificacións de WhatsApp.",
+    "whatsappSetupInstructions": "Para configurar as notificacións de WhatsApp, crea unha conta de WhatsApp Business e engade o teu token de API e o teu Phone ID como variables de contorno."
   },
   "Students": {
     "eyebrow": "Lista",
@@ -360,7 +364,14 @@
     },
     "filterAll": "Todos",
     "filterActive": "Activos",
-    "filterInactive": "Inactivos"
+    "filterInactive": "Inactivos",
+    "deleteStudent": "Eliminar alumno",
+    "confirmDeleteTitle": "Eliminar este alumno?",
+    "confirmDeleteBody": "Esta acción non se pode desfacer. Todos os rexistros de asistencia, reservas, competicións e demais datos do alumno eliminaranse permanentemente.",
+    "typeNameToConfirm": "Escribe \"{name}\" para confirmar",
+    "studentDeleted": "Alumno eliminado correctamente.",
+    "cannotDeleteActive": "Non se pode eliminar un alumno con membresías activas. Desactívaas primeiro.",
+    "errorDelete": "Non se puido eliminar o alumno."
   },
   "Classes": {
     "eyebrow": "Horario",
@@ -1161,5 +1172,11 @@
     "featureGate_exams": "Os exames de grao son unha función Pro. Mellora para programar exames e outorgar cintos.",
     "featureGate_stripe_connect": "Os pagamentos online requiren o plan Pro. Mellora para conectar Stripe e cobrar pagamentos.",
     "featureGate_unlimited_students": "Alcanzaches o límite do plan Gratis. Mellora para engadir máis alumnado."
+  },
+  "Notifications": {
+    "classReminder": "Recordatorio de clase enviado",
+    "paymentDue": "Recordatorio de pagamento enviado",
+    "beltPromotion": "Notificación de promoción do cinto enviada",
+    "whatsappSent": "Mensaxe de WhatsApp enviada"
   }
 }

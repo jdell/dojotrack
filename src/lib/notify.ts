@@ -162,3 +162,19 @@ export async function sendBeltExamScheduled(
     `Hi ${recipient.name.split(" ")[0]}, you've been entered for your ${beltName} grading on ${date}${where}. Train hard and good luck! 🥋`,
   );
 }
+
+interface BeltPromotionArgs {
+  beltName: string;
+  clubName: string;
+}
+
+/** Congratulate a student on passing their grading and earning a new belt. */
+export async function sendBeltPromotion(
+  recipient: Recipient,
+  { beltName, clubName }: BeltPromotionArgs,
+): Promise<boolean> {
+  return sendWhatsApp(
+    recipient.phone,
+    `Congratulations ${recipient.name.split(" ")[0]}! You passed your grading and have been promoted to ${beltName} at ${clubName}. Keep up the great work! 🥋`,
+  );
+}

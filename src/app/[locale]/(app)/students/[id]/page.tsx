@@ -16,6 +16,7 @@ import { isDbConfigured } from "@/lib/db";
 import { disciplineMeta } from "@/lib/constants";
 import { formatDate } from "@/lib/utils";
 import { BeltBadge } from "@/components/belt-badge";
+import { DeleteStudentButton } from "./delete-student-button";
 
 export async function generateMetadata({
   params,
@@ -85,6 +86,10 @@ export default async function StudentProfilePage({
               <Award size={16} />
               {t("beltProgress")}
             </Link>
+            <DeleteStudentButton
+              studentId={id}
+              studentName={student.fullName}
+            />
           </div>
         </div>
       </div>

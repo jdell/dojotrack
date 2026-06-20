@@ -185,3 +185,80 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     );
   }
 }
+
+/**
+ * DELETE /api/students/[id] — permanently delete a student and all related
+ * records. Refuses if the student has active/trialing memberships or pending
+ * payments.
+ */
+export async function DELETE(_request: Request, { params }: RouteContext) {
+  const { id } = await params;
+  if (!isDbConfigured()) {
+    return NextResponse.json(
+      { error: "The database isn't configured yet." },
+      { status: 503 },
+    );
+  }
+  const auth = await requireAuth();
+  if (auth instanceof NextResponse) return auth;
+  const club = await getCurrentClub();
+  if (!club) {
+    return NextResponse.json({ error: "No club found." }, { status: 400 });
+  }
+
+  const student = await prisma.student.findFirst({
+    where: { id, clubId: club.id },
+    select: {
+      id: true,
+      memberships: {
+        where: { status: { in: ["ACTIVE", "TRIALING"] } },
+        select: { id: true },
+        take: 1,
+      },
+      payments: {
+        where: { status: "PENDING" },
+        select: { id: true },
+        take: 1,
+      },
+    },
+  });
+
+  if (!student) {
+    return NextResponse.json({ error: "Student not found." }, { status: 404 });
+  }
+
+  if (student.memberships.length > 0 || student.payments.length > 0) {
+    return NextResponse.json(
+      {
+        error:
+          "Cannot delete a student with active memberships. Deactivate them first.",
+      },
+      { status: 409 },
+    );
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      // Delete children in FK-safe order
+      await tx.sparringPair.deleteMany({ where: { studentAId: id } });
+      await tx.sparringPair.deleteMany({ where: { studentBId: id } });
+      await tx.competitionEntry.deleteMany({ where: { studentId: id } });
+      await tx.payment.deleteMany({ where: { studentId: id } });
+      await tx.membership.deleteMany({ where: { studentId: id } });
+      await tx.booking.deleteMany({ where: { studentId: id } });
+      await tx.attendance.deleteMany({ where: { studentId: id } });
+      await tx.studentTechniqueLog.deleteMany({ where: { studentId: id } });
+      await tx.gradingCandidate.deleteMany({ where: { studentId: id } });
+      // Finally, the student itself
+      await tx.student.delete({ where: { id } });
+    });
+
+    return NextResponse.json({ deleted: true });
+  } catch (err) {
+    console.error("DELETE /api/students/[id] failed", err);
+    return NextResponse.json(
+      { error: "Could not delete the student." },
+      { status: 500 },
+    );
+  }
+}

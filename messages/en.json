@@ -246,7 +246,11 @@
     "stripeDashboard": "Stripe dashboard",
     "noClubTitle": "No club to configure yet",
     "noClubSubtitle": "Settings appear once you're signed in to a club. Register a club to get started.",
-    "registerClub": "Register a club"
+    "registerClub": "Register a club",
+    "whatsappTitle": "WhatsApp notifications",
+    "whatsappConfigured": "WhatsApp is configured and ready to send notifications.",
+    "whatsappNotConfigured": "WhatsApp is not configured. Add WHATSAPP_API_TOKEN and WHATSAPP_PHONE_ID environment variables to enable WhatsApp notifications.",
+    "whatsappSetupInstructions": "To set up WhatsApp notifications, create a WhatsApp Business account and add your API token and Phone ID as environment variables."
   },
   "Students": {
     "eyebrow": "Roster",
@@ -360,7 +364,14 @@
     },
     "filterAll": "All",
     "filterActive": "Active",
-    "filterInactive": "Inactive"
+    "filterInactive": "Inactive",
+    "deleteStudent": "Delete student",
+    "confirmDeleteTitle": "Delete this student?",
+    "confirmDeleteBody": "This action cannot be undone. All attendance records, bookings, competition entries, and other data for this student will be permanently deleted.",
+    "typeNameToConfirm": "Type \"{name}\" to confirm",
+    "studentDeleted": "Student deleted successfully.",
+    "cannotDeleteActive": "Cannot delete a student with active memberships. Deactivate them first.",
+    "errorDelete": "Could not delete the student."
   },
   "Classes": {
     "eyebrow": "Schedule",
@@ -1161,5 +1172,11 @@
     "featureGate_exams": "Grading exams are a Pro feature. Upgrade to schedule exams and award belts.",
     "featureGate_stripe_connect": "Online payments require the Pro plan. Upgrade to connect Stripe and collect payments.",
     "featureGate_unlimited_students": "You've reached the Free plan limit. Upgrade to add more students."
+  },
+  "Notifications": {
+    "classReminder": "Class reminder sent",
+    "paymentDue": "Payment reminder sent",
+    "beltPromotion": "Belt promotion notification sent",
+    "whatsappSent": "WhatsApp message sent"
   }
 }

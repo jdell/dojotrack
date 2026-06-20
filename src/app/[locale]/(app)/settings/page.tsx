@@ -4,11 +4,13 @@ import { Link } from "@/i18n/navigation";
 import { getClubSettings } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
+import { isWhatsAppConfigured } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
 import { BRAND } from "@/lib/constants";
 import { SettingsForm } from "./settings-form";
 import { StripeConnect } from "./stripe-connect";
 import { UpgradeBanner } from "./upgrade-banner";
+import { WhatsAppStatus } from "./whatsapp-status";
 
 export async function generateMetadata({
   params,
@@ -67,6 +69,7 @@ export default async function SettingsPage() {
               initialOnboarded={settings.stripeOnboarded}
             />
           )}
+          <WhatsAppStatus configured={isWhatsAppConfigured()} />
         </>
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-card p-10 text-center">
