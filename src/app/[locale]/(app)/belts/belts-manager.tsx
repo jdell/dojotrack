@@ -369,24 +369,6 @@ function RankRow({
               <p className="text-sm text-muted-foreground">
                 {t("noRequirementsForRank", { rank: rank.name })}
               </p>
-              <div className="mt-3 flex items-center justify-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowLibrary(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-teal/30 bg-brand-teal/5 px-3 py-1.5 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/10"
-                >
-                  <Library size={14} />
-                  {t("browseLibrary")}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setAdding(true)}
-                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/5"
-                >
-                  <Plus size={14} />
-                  {t("addRequirement")}
-                </button>
-              </div>
             </div>
           ) : (
             <ul className="space-y-2">
