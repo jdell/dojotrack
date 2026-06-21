@@ -252,6 +252,8 @@
     "youtube": "YouTube",
     "currency": "Moeda",
     "currencyHint": "Moeda utilizada para plans de pagamento e facturas.",
+    "childMaxAge": "Idade máxima infantil",
+    "childMaxAgeHint": "O alumnado con esta idade ou menos verá os requisitos de cinto infantís. Por defecto: 15 (menores de 16).",
     "toastSaved": "Axustes gardados",
     "errorSave": "Non se puideron gardar os axustes.",
     "stripeConnectTitle": "Pagamentos con Stripe",

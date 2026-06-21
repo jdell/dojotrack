@@ -160,6 +160,10 @@ model Club {
   locale       String?
   /// ISO 4217 currency code for payments (lowercase). Defaults to EUR for Spain.
   currency     String   @default("eur")
+  /// Maximum age (inclusive) to be considered a child for belt requirement
+  /// filtering. Students at or below this age see "children" requirements;
+  /// those above see "adults" requirements. Defaults to 15 (under 16).
+  childMaxAge  Int      @default(15) @map("child_max_age")
   disciplines  String[]
   beltSystemId String?  @map("belt_system_id")
   /// Stripe Connect Standard account id, set during onboarding.

@@ -252,6 +252,8 @@
     "youtube": "YouTube",
     "currency": "Moneda",
     "currencyHint": "Moneda utilizada para planes de pago y facturas.",
+    "childMaxAge": "Edad máxima infantil",
+    "childMaxAgeHint": "Los alumnos con esta edad o menos verán los requisitos de cinturón infantiles. Por defecto: 15 (menores de 16).",
     "toastSaved": "Ajustes guardados",
     "errorSave": "No se pudieron guardar los ajustes.",
     "stripeConnectTitle": "Pagos con Stripe",

@@ -36,6 +36,7 @@ type FormState = {
   martialArt: string;
   timezone: string;
   currency: string;
+  childMaxAge: string;
 };
 
 function initial(s: ClubSettings): FormState {
@@ -52,6 +53,7 @@ function initial(s: ClubSettings): FormState {
     martialArt: s.beltSystemId ?? s.disciplines[0] ?? "",
     timezone: s.timezone ?? "",
     currency: s.currency ?? "eur",
+    childMaxAge: String(s.childMaxAge ?? 15),
   };
 }
 
@@ -91,6 +93,7 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
           martialArt: form.martialArt || null,
           timezone: form.timezone || null,
           currency: form.currency || null,
+          childMaxAge: form.childMaxAge ? Number(form.childMaxAge) : 15,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -187,6 +190,16 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
                 </option>
               ))}
             </select>
+          </Field>
+          <Field label={t("childMaxAge")} hint={t("childMaxAgeHint")}>
+            <input
+              type="number"
+              min={10}
+              max={21}
+              value={form.childMaxAge}
+              onChange={(e) => set("childMaxAge", e.target.value)}
+              className={inputClass}
+            />
           </Field>
         </div>
       </section>

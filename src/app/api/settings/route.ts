@@ -28,6 +28,7 @@ interface SettingsBody {
   martialArt?: string | null;
   timezone?: string | null;
   currency?: string | null;
+  childMaxAge?: number | null;
 }
 
 /** Trim a string field; empty becomes null (clears it). Undefined = untouched. */
@@ -106,6 +107,9 @@ export async function PATCH(request: Request) {
         ...(disciplines ? { disciplines } : {}),
         ...(timezone !== undefined ? { timezone } : {}),
         ...(currency !== undefined ? { currency } : {}),
+        ...(typeof body.childMaxAge === "number" && body.childMaxAge >= 10 && body.childMaxAge <= 21
+          ? { childMaxAge: body.childMaxAge }
+          : {}),
       },
     });
     return NextResponse.json({ club: updated });

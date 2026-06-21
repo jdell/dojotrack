@@ -187,6 +187,8 @@ export interface ClubSettings {
   stripeConnected: boolean;
   /** Stripe Connect: true when onboarding is complete (charges enabled). */
   stripeOnboarded: boolean;
+  /** Max age (inclusive) considered a child for belt requirements. Default 15. */
+  childMaxAge: number;
 }
 
 /** Load the authenticated club's editable settings, or null when none. */
@@ -215,6 +217,7 @@ export async function getClubSettings(): Promise<ClubSettings | null> {
     disciplines: c.disciplines,
     stripeConnected: Boolean(c.stripeAccountId),
     stripeOnboarded: c.stripeOnboarded,
+    childMaxAge: c.childMaxAge ?? 15,
   };
 }
 

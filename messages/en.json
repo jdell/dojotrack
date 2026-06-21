@@ -252,6 +252,8 @@
     "youtube": "YouTube",
     "currency": "Currency",
     "currencyHint": "Currency used for payment plans and invoices.",
+    "childMaxAge": "Child age threshold",
+    "childMaxAgeHint": "Students at or below this age see children's belt requirements. Default: 15 (under 16).",
     "toastSaved": "Settings saved",
     "errorSave": "Could not save settings.",
     "stripeConnectTitle": "Stripe payments",

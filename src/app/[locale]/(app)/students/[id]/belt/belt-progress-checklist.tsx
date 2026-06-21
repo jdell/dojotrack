@@ -28,10 +28,11 @@ function getAgeYears(dateOfBirth: string): number {
 function filterByAge(
   requirements: RequirementProgress[],
   dateOfBirth?: string | null,
+  childMaxAge: number = 15,
 ): RequirementProgress[] {
   if (!dateOfBirth) return requirements;
   const age = getAgeYears(dateOfBirth);
-  const group = age < 16 ? "children" : "adults";
+  const group = age <= childMaxAge ? "children" : "adults";
   return requirements.filter((rp) => {
     const ag = rp.requirement.ageGroup ?? "common";
     return ag === "common" || ag === group;
@@ -59,12 +60,14 @@ export function BeltProgressChecklist({
   requirements: initial,
   totalCount: rawTotalCount,
   studentDateOfBirth,
+  childMaxAge = 15,
 }: {
   studentId: string;
   nextBeltName: string;
   requirements: RequirementProgress[];
   totalCount: number;
   studentDateOfBirth?: string | null;
+  childMaxAge?: number;
 }) {
   const t = useTranslations("Students");
   const tBelts = useTranslations("Belts");
@@ -74,7 +77,7 @@ export function BeltProgressChecklist({
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState("");
 
-  const requirements = filterByAge(allRequirements, studentDateOfBirth);
+  const requirements = filterByAge(allRequirements, studentDateOfBirth, childMaxAge);
   const totalCount = requirements.length;
   const metCount = requirements.filter((r) => r.state === "met").length;
   const pct = totalCount > 0 ? Math.round((metCount / totalCount) * 100) : 0;
