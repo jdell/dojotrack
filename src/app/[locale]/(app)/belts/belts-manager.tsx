@@ -10,6 +10,7 @@ import {
   ArrowUpRight,
   ChevronDown,
   ChevronRight,
+  Library,
   Loader2,
   Pencil,
   Plus,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import type { BeltRankWithRequirements, RequirementDTO } from "@/lib/queries";
 import { REQUIREMENT_TYPES, requirementTypeMeta } from "@/lib/constants";
+import { RequirementsLibraryModal } from "./[rankId]/requirements-library-modal";
 
 type ReqType = (typeof REQUIREMENT_TYPES)[number]["value"];
 
@@ -50,8 +52,10 @@ const EMPTY_FORM: FormValues = {
  */
 export function BeltsManager({
   ranks: initialRanks,
+  discipline,
 }: {
   ranks: BeltRankWithRequirements[];
+  discipline: string;
 }) {
   const t = useTranslations("Belts");
   const tc = useTranslations("Common");
@@ -127,6 +131,7 @@ export function BeltsManager({
         <div key={rank.id} className="relative">
           <RankRow
             rank={rank}
+            discipline={discipline}
             open={expanded === rank.id}
             onToggle={() =>
               setExpanded((cur) => (cur === rank.id ? null : rank.id))
@@ -192,11 +197,13 @@ export function BeltsManager({
 
 function RankRow({
   rank,
+  discipline,
   open,
   onToggle,
   rankActions,
 }: {
   rank: BeltRankWithRequirements;
+  discipline: string;
   open: boolean;
   onToggle: () => void;
   rankActions?: React.ReactNode;
@@ -207,6 +214,7 @@ function RankRow({
   const [reqs, setReqs] = useState<RequirementDTO[]>(rank.requirements);
   const [adding, setAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -357,9 +365,29 @@ function RankRow({
       {open && (
         <div className="border-t border-border px-4 py-3">
           {reqs.length === 0 && !adding ? (
-            <p className="rounded-lg bg-muted/30 px-3 py-4 text-center text-sm text-muted-foreground">
-              {t("noRequirementsForRank", { rank: rank.name })}
-            </p>
+            <div className="rounded-lg bg-muted/30 px-3 py-4 text-center">
+              <p className="text-sm text-muted-foreground">
+                {t("noRequirementsForRank", { rank: rank.name })}
+              </p>
+              <div className="mt-3 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowLibrary(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-brand-teal/30 bg-brand-teal/5 px-3 py-1.5 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/10"
+                >
+                  <Library size={14} />
+                  {t("browseLibrary")}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdding(true)}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-1.5 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/5"
+                >
+                  <Plus size={14} />
+                  {t("addRequirement")}
+                </button>
+              </div>
+            </div>
           ) : (
             <ul className="space-y-2">
               {reqs.map((req, i) =>
@@ -462,17 +490,40 @@ function RankRow({
               />
             </div>
           ) : (
-            <button
-              type="button"
-              onClick={() => setAdding(true)}
-              className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/5"
-            >
-              <Plus size={14} />
-              {t("addRequirement")}
-            </button>
+            <div className="mt-3 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setAdding(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-dashed border-border px-3 py-2 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/5"
+              >
+                <Plus size={14} />
+                {t("addRequirement")}
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowLibrary(true)}
+                className="inline-flex items-center gap-1.5 rounded-lg border border-brand-teal/30 bg-brand-teal/5 px-3 py-2 text-xs font-semibold text-brand-teal transition-colors hover:bg-brand-teal/10"
+              >
+                <Library size={14} />
+                {t("browseLibrary")}
+              </button>
+            </div>
           )}
 
           {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
+
+          {showLibrary && (
+            <RequirementsLibraryModal
+              discipline={discipline}
+              beltName={rank.name}
+              rankId={rank.id}
+              onImported={() => {
+                // Reload the page to get fresh data
+                window.location.reload();
+              }}
+              onClose={() => setShowLibrary(false)}
+            />
+          )}
         </div>
       )}
     </section>
