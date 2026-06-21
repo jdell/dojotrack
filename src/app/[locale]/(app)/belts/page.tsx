@@ -57,7 +57,7 @@ export default async function BeltsPage() {
       </div>
 
       {club && ranks.length > 0 ? (
-        <BeltsManager ranks={ranks} />
+        <BeltsManager ranks={ranks} discipline={club.disciplines?.[0] ?? "custom"} />
       ) : club ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
           {t("settingUp")}
