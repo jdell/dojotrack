@@ -651,7 +651,25 @@
       "PENDING": "Pendiente",
       "PASS": "Aprobado",
       "FAIL": "Suspenso"
-    }
+    },
+    "requirementsLibrary": "Biblioteca de requisitos",
+    "browseLibrary": "Explorar biblioteca",
+    "addFromLibrary": "Agregar desde biblioteca",
+    "addFromLibraryHint": "Explora los requisitos comunes para {discipline} {belt} e importalos con un clic.",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "addSelected": "Agregar seleccionados",
+    "selectedCount": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+    "noLibraryAvailable": "No hay biblioteca disponible para esta disciplina",
+    "noLibraryHint": "Aun no tenemos una biblioteca de requisitos predefinida para {discipline} ({belt}). Puedes agregar requisitos manualmente.",
+    "importedSuccess": "Requisitos importados correctamente.",
+    "libraryHint": "Selecciona los requisitos que quieras agregar a este grado de cinturon. Puedes editarlos o eliminarlos despues.",
+    "category_techniques": "Tecnicas",
+    "category_forms": "Formas",
+    "category_sets": "Series",
+    "category_sparring": "Combate",
+    "category_time": "Tiempo y asistencia",
+    "category_fitness": "Condicion fisica"
   },
   "Payments": {
     "eyebrow": "Facturación",

@@ -3,10 +3,10 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { notFound } from "next/navigation";
 import { ArrowLeft, GraduationCap, Users } from "lucide-react";
-import { getRankDetail } from "@/lib/queries";
+import { getRankDetail, getCurrentClub } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
-import { requirementTypeMeta } from "@/lib/constants";
 import { RankCandidateMatrix } from "./rank-candidate-matrix";
+import { RankRequirementsSection } from "./rank-requirements-section";
 
 export async function generateMetadata({
   params,
@@ -30,9 +30,13 @@ export default async function RankDetailPage({
 
   if (!isDbConfigured()) return <NotConfigured />;
 
-  const rank = await getRankDetail(rankId);
+  const [rank, club] = await Promise.all([
+    getRankDetail(rankId),
+    getCurrentClub(),
+  ]);
   if (!rank) notFound();
 
+  const discipline = club?.disciplines?.[0] ?? "custom";
   const gradesFromBelow = rank.prevRankName !== null;
 
   return (
@@ -79,52 +83,13 @@ export default async function RankDetailPage({
         </div>
       </div>
 
-      {/* Requirements */}
-      <section className="space-y-3">
-        <h2 className="text-lg font-bold text-brand-navy">{t("requirements")}</h2>
-        {rank.requirements.length === 0 ? (
-          <p className="rounded-xl border border-dashed border-border bg-card p-8 text-center text-sm text-muted-foreground">
-            {t.rich("noRequirementsSet", {
-              link: (chunks) => (
-                <Link href="/belts" className="font-medium text-brand-teal">
-                  {chunks}
-                </Link>
-              ),
-            })}
-          </p>
-        ) : (
-          <ul className="grid gap-2 sm:grid-cols-2">
-            {rank.requirements.map((req) => {
-              const meta = requirementTypeMeta(req.type);
-              return (
-                <li
-                  key={req.id}
-                  className="flex items-start gap-3 rounded-xl border border-border bg-card p-3 shadow-sm"
-                >
-                  <span className="mt-0.5 text-lg" aria-hidden>
-                    {meta.emoji}
-                  </span>
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-brand-navy">
-                      {req.name}
-                      {req.targetValue != null && (
-                        <span className="ml-1.5 text-xs font-normal text-muted-foreground">
-                          {req.targetValue}{" "}
-                          {meta.unit ? t(`reqUnit.${req.type}`) : ""}
-                        </span>
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {t(`reqType.${req.type}`)}
-                      {req.description ? ` · ${req.description}` : ""}
-                    </p>
-                  </div>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </section>
+      {/* Requirements — client component with library modal */}
+      <RankRequirementsSection
+        rankId={rank.id}
+        rankName={rank.name}
+        discipline={discipline}
+        requirements={rank.requirements}
+      />
 
       {/* Candidates */}
       {gradesFromBelow && (

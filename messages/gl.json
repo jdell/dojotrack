@@ -651,7 +651,25 @@
       "PENDING": "Pendente",
       "PASS": "Aprobado",
       "FAIL": "Suspenso"
-    }
+    },
+    "requirementsLibrary": "Biblioteca de requisitos",
+    "browseLibrary": "Explorar biblioteca",
+    "addFromLibrary": "Engadir desde biblioteca",
+    "addFromLibraryHint": "Explora os requisitos comuns para {discipline} {belt} e importaos cun clic.",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "addSelected": "Engadir seleccionados",
+    "selectedCount": "{count, plural, one {# seleccionado} other {# seleccionados}}",
+    "noLibraryAvailable": "Non hai biblioteca disponible para esta disciplina",
+    "noLibraryHint": "Ainda non temos unha biblioteca de requisitos predefinida para {discipline} ({belt}). Podes engadir requisitos manualmente.",
+    "importedSuccess": "Requisitos importados correctamente.",
+    "libraryHint": "Selecciona os requisitos que queiras engadir a este grao de cinto. Podes editalos ou eliminalos despois.",
+    "category_techniques": "Tecnicas",
+    "category_forms": "Formas",
+    "category_sets": "Series",
+    "category_sparring": "Combate",
+    "category_time": "Tempo e asistencia",
+    "category_fitness": "Condicion fisica"
   },
   "Payments": {
     "eyebrow": "Facturación",

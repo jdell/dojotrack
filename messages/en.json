@@ -651,7 +651,25 @@
       "PENDING": "Pending",
       "PASS": "Pass",
       "FAIL": "Fail"
-    }
+    },
+    "requirementsLibrary": "Requirements library",
+    "browseLibrary": "Browse library",
+    "addFromLibrary": "Add from library",
+    "addFromLibraryHint": "Browse common requirements for {discipline} {belt} and import them with one click.",
+    "selectAll": "Select all",
+    "deselectAll": "Deselect all",
+    "addSelected": "Add selected",
+    "selectedCount": "{count, plural, one {# selected} other {# selected}}",
+    "noLibraryAvailable": "No library available for this discipline",
+    "noLibraryHint": "We don't have a pre-built requirements library for {discipline} ({belt}) yet. You can still add requirements manually.",
+    "importedSuccess": "Requirements imported successfully.",
+    "libraryHint": "Select the requirements you want to add to this belt rank. You can edit or remove them afterwards.",
+    "category_techniques": "Techniques",
+    "category_forms": "Forms",
+    "category_sets": "Sets",
+    "category_sparring": "Sparring",
+    "category_time": "Time & Attendance",
+    "category_fitness": "Fitness"
   },
   "Payments": {
     "eyebrow": "Billing",
