@@ -125,6 +125,8 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
+  const startTime: string = body.startTime;
+  const endTime: string = body.endTime;
   const maxStudents = Number(body.maxStudents);
   if (!Number.isInteger(maxStudents) || maxStudents < 1) {
     return NextResponse.json(
@@ -159,8 +161,8 @@ export async function POST(request: Request) {
             name,
             discipline,
             dayOfWeek: day,
-            startTime: body.startTime,
-            endTime: body.endTime,
+            startTime,
+            endTime,
             instructorId,
             maxStudents,
             location: body.location?.trim() || null,
