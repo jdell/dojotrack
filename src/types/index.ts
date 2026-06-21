@@ -15,7 +15,7 @@ export type Discipline =
   | "krav_maga"
   | "hapkido"
   | "capoeira"
-  | "american_kenpo"
+  | "kenpo"
   | "tang_soo_do"
   | "custom";
 

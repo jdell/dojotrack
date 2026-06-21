@@ -262,12 +262,12 @@ export const BELT_SYSTEMS: Record<Discipline, BeltSystem> = {
     ]),
   },
 
-  // American Kenpo — Ed Parker system: colours, 3 brown degrees, 10 black degrees.
-  american_kenpo: {
-    id: "american_kenpo",
-    name: "American Kenpo",
-    discipline: "american_kenpo",
-    belts: ranks("american_kenpo", [
+  // Kempo / Kenpo — Ed Parker system: colours, 3 brown degrees, 10 black degrees.
+  kenpo: {
+    id: "kenpo",
+    name: "Kempo / Kenpo",
+    discipline: "kenpo",
+    belts: ranks("kenpo", [
       { name: "White Belt", color: BELT_COLORS.white },
       { name: "Yellow Belt", color: BELT_COLORS.yellow },
       { name: "Orange Belt", color: BELT_COLORS.orange },
@@ -343,7 +343,7 @@ export const DISCIPLINES: {
   { value: "krav_maga", label: "Krav Maga", emoji: "🥋" },
   { value: "hapkido", label: "Hapkido", emoji: "🥋" },
   { value: "capoeira", label: "Capoeira", emoji: "🥋" },
-  { value: "american_kenpo", label: "American Kenpo", emoji: "🥋" },
+  { value: "kenpo", label: "Kempo / Kenpo", emoji: "🥋" },
   { value: "tang_soo_do", label: "Tang Soo Do", emoji: "🥋" },
   { value: "custom", label: "Custom", emoji: "⚙️" },
 ];
