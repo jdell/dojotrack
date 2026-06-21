@@ -4,6 +4,7 @@ import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
 import { regenerateSparringPairs } from "@/lib/sparring-service";
+import { clubCanAccess } from "@/lib/tier";
 
 interface CreateBody {
   name?: string | null;
@@ -32,6 +33,12 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "No club found. Create a club before running sparring." },
       { status: 400 },
+    );
+  }
+  if (!clubCanAccess(club.tier, "sparring")) {
+    return NextResponse.json(
+      { error: "Sparring requires the Pro plan." },
+      { status: 403 },
     );
   }
 

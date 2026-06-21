@@ -40,7 +40,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
   const [form, setForm] = useState({
     name: "",
     discipline: disciplines[0]?.value ?? "",
-    dayOfWeek: "MON" as DayOfWeek,
+    daysOfWeek: ["MON"] as DayOfWeek[],
     startTime: "18:00",
     endTime: "19:00",
     instructorId: "",
@@ -64,7 +64,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         body: JSON.stringify({
           name: form.name,
           discipline: form.discipline,
-          dayOfWeek: form.dayOfWeek,
+          daysOfWeek: form.daysOfWeek,
           startTime: form.startTime,
           endTime: form.endTime,
           instructorId: form.instructorId || null,
@@ -146,20 +146,39 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
           {t("whenWhere")}
         </legend>
         <div>
-          <label className={labelClass}>{t("dayOfWeek")}</label>
-          <select
-            value={form.dayOfWeek}
-            onChange={(e) => update("dayOfWeek", e.target.value)}
-            className={`${inputClass} bg-background`}
-          >
-            {DAY_ORDER.map((d) => (
-              <option key={d} value={d}>
-                {t(`day.${d}`)}
-              </option>
-            ))}
-          </select>
+          <label className={labelClass}>{t("selectDays")}</label>
+          <div className="flex flex-wrap gap-2">
+            {DAY_ORDER.map((d) => {
+              const checked = form.daysOfWeek.includes(d);
+              return (
+                <label
+                  key={d}
+                  className={`inline-flex cursor-pointer items-center gap-1.5 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    checked
+                      ? "border-brand-teal bg-brand-teal/10 font-semibold text-brand-teal"
+                      : "border-border text-muted-foreground hover:border-brand-teal/40"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => {
+                      setForm((f) => ({
+                        ...f,
+                        daysOfWeek: checked
+                          ? f.daysOfWeek.filter((x) => x !== d)
+                          : [...f.daysOfWeek, d],
+                      }));
+                    }}
+                    className="sr-only"
+                  />
+                  {t(`day.${d}`)}
+                </label>
+              );
+            })}
+          </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            {t("recursWeekly")}
+            {t("multipleDaysHint")}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -233,7 +252,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={loading || !form.name.trim()}
+          disabled={loading || !form.name.trim() || form.daysOfWeek.length === 0}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}

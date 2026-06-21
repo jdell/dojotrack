@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentClub } from "@/lib/queries";
 import { DISCIPLINES, disciplineMeta } from "@/lib/constants";
 import { CompetitionForm } from "../competition-form";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -48,7 +49,9 @@ export default async function NewCompetitionPage() {
         </p>
       </div>
 
-      <CompetitionForm disciplines={disciplines} />
+      <ProGate feature="competitions" clubTier={club!.tier}>
+        <CompetitionForm disciplines={disciplines} />
+      </ProGate>
     </div>
   );
 }

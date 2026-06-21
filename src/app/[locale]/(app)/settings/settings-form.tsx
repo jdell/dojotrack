@@ -6,6 +6,16 @@ import { Check, Loader2 } from "lucide-react";
 import type { ClubSettings } from "@/lib/queries";
 import { DISCIPLINES, TIMEZONES } from "@/lib/constants";
 
+const CURRENCIES = [
+  { value: "eur", label: "EUR - Euro" },
+  { value: "usd", label: "USD - US Dollar" },
+  { value: "gbp", label: "GBP - British Pound" },
+  { value: "mxn", label: "MXN - Mexican Peso" },
+  { value: "cop", label: "COP - Colombian Peso" },
+  { value: "brl", label: "BRL - Brazilian Real" },
+  { value: "ars", label: "ARS - Argentine Peso" },
+] as const;
+
 interface SettingsFormProps {
   settings: ClubSettings;
   /** Public base shown next to the slug, e.g. "entrenadojo.es". */
@@ -25,6 +35,7 @@ type FormState = {
   youtubeUrl: string;
   martialArt: string;
   timezone: string;
+  currency: string;
 };
 
 function initial(s: ClubSettings): FormState {
@@ -40,6 +51,7 @@ function initial(s: ClubSettings): FormState {
     youtubeUrl: s.youtubeUrl ?? "",
     martialArt: s.beltSystemId ?? s.disciplines[0] ?? "",
     timezone: s.timezone ?? "",
+    currency: s.currency ?? "eur",
   };
 }
 
@@ -78,6 +90,7 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
           youtubeUrl: form.youtubeUrl,
           martialArt: form.martialArt || null,
           timezone: form.timezone || null,
+          currency: form.currency || null,
         }),
       });
       const data = await res.json().catch(() => ({}));
@@ -133,7 +146,7 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
           />
         </Field>
 
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-3">
           <Field label={t("defaultArt")}>
             <select
               value={form.martialArt}
@@ -158,6 +171,19 @@ export function SettingsForm({ settings, publicHost }: SettingsFormProps) {
               {TIMEZONES.map((tz) => (
                 <option key={tz} value={tz}>
                   {tz.replace(/_/g, " ")}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <Field label={t("currency")} hint={t("currencyHint")}>
+            <select
+              value={form.currency}
+              onChange={(e) => set("currency", e.target.value)}
+              className={inputClass}
+            >
+              {CURRENCIES.map((c) => (
+                <option key={c.value} value={c.value}>
+                  {c.label}
                 </option>
               ))}
             </select>

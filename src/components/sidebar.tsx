@@ -10,6 +10,7 @@ import {
   CreditCard,
   LayoutDashboard,
   Settings,
+  Shield,
   Swords,
   Trophy,
   User,
@@ -108,12 +109,14 @@ interface SidebarProps {
   clubName?: string;
   userName?: string;
   userRole?: Role;
+  isAdmin?: boolean;
 }
 
 export function Sidebar({
   clubName = "Your Dojo",
   userName = "Instructor",
   userRole = "OWNER",
+  isAdmin = false,
 }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations("Nav");
@@ -184,6 +187,22 @@ export function Sidebar({
           })}
         </ul>
       </nav>
+
+      {isAdmin && (
+        <div className="px-2 pb-1">
+          <Link
+            href="/admin"
+            className={cn(
+              "flex items-center gap-3 rounded-md px-3 py-2 text-xs font-medium transition-colors text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+              collapsed && "justify-center px-2",
+            )}
+            title={collapsed ? "Admin" : undefined}
+          >
+            <Shield size={16} className="shrink-0" />
+            {!collapsed && <span>Admin</span>}
+          </Link>
+        </div>
+      )}
 
       {!collapsed && (
         <div className="border-t border-sidebar-border px-2 py-2">

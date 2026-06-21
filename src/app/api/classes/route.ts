@@ -45,6 +45,7 @@ interface CreateClassBody {
   name?: string;
   discipline?: string;
   dayOfWeek?: string;
+  daysOfWeek?: string[];
   startTime?: string;
   endTime?: string;
   instructorId?: string | null;
@@ -95,9 +96,20 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  if (!DAYS.includes(body.dayOfWeek as DayOfWeek)) {
+  // Support both single dayOfWeek and multi-day daysOfWeek
+  const daysOfWeek: DayOfWeek[] = [];
+  if (Array.isArray(body.daysOfWeek) && body.daysOfWeek.length > 0) {
+    for (const d of body.daysOfWeek) {
+      if (DAYS.includes(d as DayOfWeek)) {
+        daysOfWeek.push(d as DayOfWeek);
+      }
+    }
+  } else if (body.dayOfWeek && DAYS.includes(body.dayOfWeek as DayOfWeek)) {
+    daysOfWeek.push(body.dayOfWeek as DayOfWeek);
+  }
+  if (daysOfWeek.length === 0) {
     return NextResponse.json(
-      { error: "Pick a valid day of the week." },
+      { error: "Pick at least one day of the week." },
       { status: 400 },
     );
   }
@@ -139,22 +151,29 @@ export async function POST(request: Request) {
       instructorId = instructor?.id ?? null;
     }
 
-    const created = await prisma.classSchedule.create({
-      data: {
-        clubId: club.id,
-        name,
-        discipline,
-        dayOfWeek: body.dayOfWeek as DayOfWeek,
-        startTime: body.startTime,
-        endTime: body.endTime,
-        instructorId,
-        maxStudents,
-        location: body.location?.trim() || null,
-        level,
-      },
-    });
+    const created = await prisma.$transaction(
+      daysOfWeek.map((day) =>
+        prisma.classSchedule.create({
+          data: {
+            clubId: club.id,
+            name,
+            discipline,
+            dayOfWeek: day,
+            startTime: body.startTime,
+            endTime: body.endTime,
+            instructorId,
+            maxStudents,
+            location: body.location?.trim() || null,
+            level,
+          },
+        })
+      )
+    );
 
-    return NextResponse.json({ class: created }, { status: 201 });
+    return NextResponse.json(
+      { classes: created, count: created.length },
+      { status: 201 },
+    );
   } catch (err) {
     console.error("POST /api/classes failed", err);
     return NextResponse.json(

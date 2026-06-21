@@ -81,7 +81,7 @@ export async function POST(request: Request) {
   const interval = INTERVALS.includes(body.interval as BillingInterval)
     ? (body.interval as BillingInterval)
     : "MONTHLY";
-  const currency = (body.currency?.trim() || "usd").toLowerCase();
+  const currency = (body.currency?.trim() || club.currency || "eur").toLowerCase();
 
   try {
     const plan = await prisma.paymentPlan.create({

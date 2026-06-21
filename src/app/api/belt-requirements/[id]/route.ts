@@ -15,6 +15,8 @@ const TYPES: RequirementType[] = [
   "CUSTOM",
 ];
 
+const AGE_GROUPS = ["adults", "children", "common"] as const;
+
 /** Confirm a requirement exists and belongs to the current club's ranks. */
 async function ownedRequirement(id: string, clubId: string) {
   return prisma.beltRequirement.findFirst({
@@ -29,6 +31,7 @@ interface UpdateBody {
   type?: string;
   targetValue?: number | string | null;
   order?: number | null;
+  ageGroup?: string;
 }
 
 /** PUT /api/belt-requirements/[id] — edit a requirement. */
@@ -103,6 +106,15 @@ export async function PUT(request: Request, { params }: RouteContext) {
   }
   if (body.order !== undefined && Number.isInteger(Number(body.order))) {
     data.order = Number(body.order);
+  }
+  if (body.ageGroup !== undefined) {
+    if (!AGE_GROUPS.includes(body.ageGroup as (typeof AGE_GROUPS)[number])) {
+      return NextResponse.json(
+        { error: "Invalid age group." },
+        { status: 400 },
+      );
+    }
+    data.ageGroup = body.ageGroup;
   }
 
   try {

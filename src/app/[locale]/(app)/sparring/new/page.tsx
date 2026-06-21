@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentClub, getSparringRoster } from "@/lib/queries";
 import { disciplineMeta, DISCIPLINES } from "@/lib/constants";
 import { SparringForm } from "../sparring-form";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -51,7 +52,9 @@ export default async function NewSparringPage() {
         </p>
       </div>
 
-      <SparringForm roster={roster} disciplines={disciplines} />
+      <ProGate feature="sparring" clubTier={club!.tier}>
+        <SparringForm roster={roster} disciplines={disciplines} />
+      </ProGate>
     </div>
   );
 }

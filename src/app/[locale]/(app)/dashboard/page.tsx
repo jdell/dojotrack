@@ -9,7 +9,8 @@ import {
   TrendingUp,
   Users,
 } from "lucide-react";
-import { getCurrentClub, getDashboard } from "@/lib/queries";
+import { getCurrentClub, getDashboard, getOnboardingStatus } from "@/lib/queries";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { disciplineMeta } from "@/lib/constants";
 import { formatTime } from "@/lib/schedule";
 import { formatDate, formatMoney } from "@/lib/utils";
@@ -29,17 +30,20 @@ export const dynamic = "force-dynamic";
 export default async function DashboardPage() {
   const t = await getTranslations("Dashboard");
   const club = await getCurrentClub();
-  const data = club
-    ? await getDashboard(club.id)
-    : {
-        totalStudents: 0,
-        classesThisWeek: 0,
-        eligibleForPromotion: 0,
-        monthlyRevenue: 0,
-        currency: "usd",
-        todayClasses: [],
-        upcomingExams: [],
-      };
+  const [data, onboardingStatus] = club
+    ? await Promise.all([getDashboard(club.id), getOnboardingStatus(club.id)])
+    : [
+        {
+          totalStudents: 0,
+          classesThisWeek: 0,
+          eligibleForPromotion: 0,
+          monthlyRevenue: 0,
+          currency: "usd",
+          todayClasses: [],
+          upcomingExams: [],
+        },
+        null,
+      ];
 
   const metrics = [
     {
@@ -75,6 +79,11 @@ export default async function DashboardPage() {
         <h1 className="text-2xl font-bold text-brand-navy">{t("title")}</h1>
         <p className="mt-1 text-sm text-muted-foreground">{t("subtitle")}</p>
       </div>
+
+      {onboardingStatus &&
+        Object.values(onboardingStatus).filter(Boolean).length < 6 && (
+          <OnboardingChecklist completedSteps={onboardingStatus} />
+        )}
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {metrics.map(({ label, value, hint, icon: Icon }) => (

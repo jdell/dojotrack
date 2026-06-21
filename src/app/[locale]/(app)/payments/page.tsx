@@ -17,6 +17,7 @@ import {
 } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { formatDate, formatMoney } from "@/lib/utils";
+import { ProGate } from "@/components/pro-gate";
 import { NewPlanForm } from "./new-plan-form";
 import { PlanRow } from "./plan-row";
 import { CheckoutPanel } from "./checkout-panel";
@@ -172,20 +173,22 @@ export default async function PaymentsPage({
                 <h2 className="text-lg font-bold text-brand-navy">
                   {t("chargeMember")}
                 </h2>
-                {data?.stripeConfigured ? (
-                  <CheckoutPanel
-                    students={students}
-                    plans={activePlans}
-                    stripeConfigured={data.stripeConfigured}
-                  />
-                ) : (
-                  <div className="flex items-center gap-3 rounded-xl border border-dashed border-amber-200 bg-amber-50 p-4">
-                    <Zap size={18} className="shrink-0 text-amber-600" />
-                    <p className="text-sm text-amber-800">
-                      {t("checkout.connectStripe")}
-                    </p>
-                  </div>
-                )}
+                <ProGate feature="stripe_connect" clubTier={club!.tier}>
+                  {data?.stripeConfigured ? (
+                    <CheckoutPanel
+                      students={students}
+                      plans={activePlans}
+                      stripeConfigured={data.stripeConfigured}
+                    />
+                  ) : (
+                    <div className="flex items-center gap-3 rounded-xl border border-dashed border-amber-200 bg-amber-50 p-4">
+                      <Zap size={18} className="shrink-0 text-amber-600" />
+                      <p className="text-sm text-amber-800">
+                        {t("checkout.connectStripe")}
+                      </p>
+                    </div>
+                  )}
+                </ProGate>
               </div>
               <div className="space-y-3">
                 <h2 className="text-lg font-bold text-brand-navy">

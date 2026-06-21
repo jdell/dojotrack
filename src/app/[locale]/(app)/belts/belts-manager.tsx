@@ -21,6 +21,8 @@ import { REQUIREMENT_TYPES, requirementTypeMeta } from "@/lib/constants";
 
 type ReqType = (typeof REQUIREMENT_TYPES)[number]["value"];
 
+const AGE_GROUPS = ["adults", "children", "common"] as const;
+
 const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-transparent focus:outline-none focus:ring-2 focus:ring-brand-teal";
 const labelClass = "mb-1 block text-xs font-medium text-slate-700";
@@ -30,6 +32,7 @@ interface FormValues {
   type: ReqType;
   targetValue: string;
   description: string;
+  ageGroup: string;
 }
 
 const EMPTY_FORM: FormValues = {
@@ -37,6 +40,7 @@ const EMPTY_FORM: FormValues = {
   type: "TECHNIQUE",
   targetValue: "",
   description: "",
+  ageGroup: "common",
 };
 
 /**
@@ -219,6 +223,7 @@ function RankRow({
           type: values.type,
           targetValue: values.targetValue || null,
           description: values.description || null,
+          ageGroup: values.ageGroup,
         }),
       });
       const data = await res.json();
@@ -245,6 +250,7 @@ function RankRow({
           type: values.type,
           targetValue: values.targetValue || null,
           description: values.description || null,
+          ageGroup: values.ageGroup,
         }),
       });
       const data = await res.json();
@@ -366,6 +372,7 @@ function RankRow({
                         targetValue:
                           req.targetValue != null ? String(req.targetValue) : "",
                         description: req.description ?? "",
+                        ageGroup: req.ageGroup ?? "common",
                       }}
                       busy={busy}
                       submitLabel={tc("save")}
@@ -390,6 +397,15 @@ function RankRow({
                             {requirementTypeMeta(req.type).unit
                               ? t(`reqUnit.${req.type}`)
                               : ""}
+                          </span>
+                        )}
+                        {req.ageGroup && req.ageGroup !== "common" && (
+                          <span className={`ml-1.5 inline-flex items-center rounded-full px-1.5 py-0.5 text-[0.6rem] font-semibold ${
+                            req.ageGroup === "adults"
+                              ? "bg-blue-100 text-blue-700"
+                              : "bg-purple-100 text-purple-700"
+                          }`}>
+                            {t(req.ageGroup)}
                           </span>
                         )}
                       </p>
@@ -577,6 +593,23 @@ function RequirementForm({
             className={inputClass}
           />
         </div>
+      </div>
+      <div>
+        <label className={labelClass}>{t("ageGroup")}</label>
+        <select
+          value={values.ageGroup}
+          onChange={(e) => set("ageGroup", e.target.value)}
+          className={`${inputClass} bg-white w-auto`}
+        >
+          {AGE_GROUPS.map((ag) => (
+            <option key={ag} value={ag}>
+              {t(ag)}
+            </option>
+          ))}
+        </select>
+        <p className="mt-1 text-[0.65rem] text-muted-foreground">
+          {t("ageGroupHint")}
+        </p>
       </div>
       <div className="flex items-center gap-2">
         <button

@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
+import { clubCanAccess } from "@/lib/tier";
 
 const STATUSES: CompetitionStatus[] = [
   "SCHEDULED",
@@ -58,6 +59,12 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "No club found. Create a club before adding competitions." },
       { status: 400 },
+    );
+  }
+  if (!clubCanAccess(club.tier, "competitions")) {
+    return NextResponse.json(
+      { error: "Competitions require the Pro plan." },
+      { status: 403 },
     );
   }
 

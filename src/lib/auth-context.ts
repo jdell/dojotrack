@@ -94,12 +94,28 @@ export async function requireAuth(): Promise<AuthContext | NextResponse> {
  * Whether the given email is in the comma-separated `ADMIN_EMAILS` env var,
  * granting platform-level admin access (the /admin section).
  */
-export function isPlatformAdmin(email: string | null | undefined): boolean {
-  if (!email) return false;
-  const raw = process.env.ADMIN_EMAILS ?? "";
-  const admins = raw
+/**
+ * Check if a user is a platform admin. Matches against ADMIN_EMAILS (email)
+ * and ADMIN_PHONES (phone number) env vars. This supports phone-OTP users
+ * who may not have an email on their Supabase auth record.
+ */
+export function isPlatformAdmin(
+  email: string | null | undefined,
+  phone?: string | null,
+): boolean {
+  const emailList = (process.env.ADMIN_EMAILS ?? "")
     .split(",")
     .map((e) => e.trim().toLowerCase())
     .filter(Boolean);
-  return admins.includes(email.toLowerCase());
+  const phoneList = (process.env.ADMIN_PHONES ?? "")
+    .split(",")
+    .map((p) => p.trim().replace(/\s/g, ""))
+    .filter(Boolean);
+
+  if (email && emailList.includes(email.toLowerCase())) return true;
+  if (phone) {
+    const normalised = phone.replace(/\s/g, "");
+    if (phoneList.includes(normalised)) return true;
+  }
+  return false;
 }

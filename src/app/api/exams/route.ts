@@ -5,6 +5,7 @@ import { getCurrentClub, getExams } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
 import { sendBeltExamScheduled } from "@/lib/notify";
 import { formatDate } from "@/lib/utils";
+import { clubCanAccess } from "@/lib/tier";
 
 /** GET /api/exams — the current club's grading exams (upcoming + past). */
 export async function GET() {
@@ -46,6 +47,12 @@ export async function POST(request: Request) {
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
+  }
+  if (!clubCanAccess(club.tier, "exams")) {
+    return NextResponse.json(
+      { error: "Grading exams require the Pro plan." },
+      { status: 403 },
+    );
   }
 
   let body: CreateBody;

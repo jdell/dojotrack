@@ -4,6 +4,8 @@ import { isDbConfigured } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-context";
 import { DISCIPLINES, TIMEZONES } from "@/lib/constants";
 
+const VALID_CURRENCIES = ["eur", "usd", "gbp", "mxn", "cop", "brl", "ars"];
+
 /**
  * PATCH /api/settings — update the authenticated club's profile.
  *
@@ -25,6 +27,7 @@ interface SettingsBody {
   youtubeUrl?: string | null;
   martialArt?: string | null;
   timezone?: string | null;
+  currency?: string | null;
 }
 
 /** Trim a string field; empty becomes null (clears it). Undefined = untouched. */
@@ -72,6 +75,10 @@ export async function PATCH(request: Request) {
       : body.timezone === null
         ? null
         : undefined;
+  const currency =
+    body.currency && VALID_CURRENCIES.includes(body.currency.toLowerCase())
+      ? body.currency.toLowerCase()
+      : undefined;
 
   // Keep the chosen default discipline present in the club's list of disciplines
   // without dropping any others it already teaches.
@@ -98,6 +105,7 @@ export async function PATCH(request: Request) {
         ...(martialArt ? { beltSystemId: martialArt } : {}),
         ...(disciplines ? { disciplines } : {}),
         ...(timezone !== undefined ? { timezone } : {}),
+        ...(currency !== undefined ? { currency } : {}),
       },
     });
     return NextResponse.json({ club: updated });

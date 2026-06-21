@@ -14,6 +14,30 @@ const STATUS_OPTIONS: TechniqueStatus[] = [
   "PASSED",
 ];
 
+function getAgeYears(dateOfBirth: string): number {
+  const dob = new Date(dateOfBirth);
+  const now = new Date();
+  let age = now.getFullYear() - dob.getFullYear();
+  const monthDiff = now.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+}
+
+function filterByAge(
+  requirements: RequirementProgress[],
+  dateOfBirth?: string | null,
+): RequirementProgress[] {
+  if (!dateOfBirth) return requirements;
+  const age = getAgeYears(dateOfBirth);
+  const group = age < 16 ? "children" : "adults";
+  return requirements.filter((rp) => {
+    const ag = rp.requirement.ageGroup ?? "common";
+    return ag === "common" || ag === group;
+  });
+}
+
 function fromStatus(status: TechniqueStatus): {
   state: ProgressState;
   detail: string;
@@ -33,21 +57,25 @@ export function BeltProgressChecklist({
   studentId,
   nextBeltName,
   requirements: initial,
-  totalCount,
+  totalCount: rawTotalCount,
+  studentDateOfBirth,
 }: {
   studentId: string;
   nextBeltName: string;
   requirements: RequirementProgress[];
   totalCount: number;
+  studentDateOfBirth?: string | null;
 }) {
   const t = useTranslations("Students");
   const tBelts = useTranslations("Belts");
   const router = useRouter();
-  const [requirements, setRequirements] =
+  const [allRequirements, setAllRequirements] =
     useState<RequirementProgress[]>(initial);
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState("");
 
+  const requirements = filterByAge(allRequirements, studentDateOfBirth);
+  const totalCount = requirements.length;
   const metCount = requirements.filter((r) => r.state === "met").length;
   const pct = totalCount > 0 ? Math.round((metCount / totalCount) * 100) : 0;
 
@@ -63,7 +91,7 @@ export function BeltProgressChecklist({
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? t("errorSave"));
       const { state, detail } = fromStatus(status);
-      setRequirements((prev) =>
+      setAllRequirements((prev) =>
         prev.map((r) =>
           r.requirement.id === requirementId
             ? { ...r, logStatus: status, state, detail: t(`status.${detail}`) }

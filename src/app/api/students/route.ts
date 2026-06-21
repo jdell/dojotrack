@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
+import { isAtStudentLimit } from "@/lib/tier";
 
 /**
  * GET /api/students — list the current club's students (newest first).
@@ -80,6 +81,19 @@ export async function POST(request: Request) {
     return NextResponse.json(
       { error: "Invalid request body." },
       { status: 400 },
+    );
+  }
+
+  const activeCount = await prisma.student.count({
+    where: { clubId: club.id, active: true },
+  });
+  if (isAtStudentLimit(club.tier, activeCount)) {
+    return NextResponse.json(
+      {
+        error:
+          "You've reached the student limit on the Free plan. Upgrade to Pro for unlimited students.",
+      },
+      { status: 403 },
     );
   }
 

@@ -110,7 +110,7 @@ export async function POST(request: Request) {
         studentId: student.id,
         planId: body.planId ?? null,
         amount: body.amount.toFixed(2),
-        currency: body.currency ?? "eur",
+        currency: body.currency ?? club.currency ?? "eur",
         status: "PAID",
         description,
         paymentMethod: body.paymentMethod,

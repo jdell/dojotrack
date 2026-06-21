@@ -50,6 +50,8 @@ export interface ClubSummary {
   disciplines: string[];
   /** Club's preferred language for outbound email (en/es/gl), or null. */
   locale: string | null;
+  /** ISO 4217 currency code (lowercase), e.g. "eur". */
+  currency: string;
   tier: "FREE" | "PRO";
 }
 
@@ -130,6 +132,7 @@ export async function getCurrentClub(): Promise<ClubSummary | null> {
     beltSystemId: club.beltSystemId,
     disciplines: club.disciplines,
     locale: club.locale,
+    currency: club.currency ?? "eur",
     tier: club.tier,
   };
 }
@@ -175,6 +178,8 @@ export interface ClubSettings {
   facebookUrl: string | null;
   youtubeUrl: string | null;
   timezone: string | null;
+  /** ISO 4217 currency code (lowercase), e.g. "eur". */
+  currency: string;
   description: string | null;
   beltSystemId: string | null;
   disciplines: string[];
@@ -204,6 +209,7 @@ export async function getClubSettings(): Promise<ClubSettings | null> {
     facebookUrl: c.facebookUrl,
     youtubeUrl: c.youtubeUrl,
     timezone: c.timezone,
+    currency: c.currency ?? "eur",
     description: c.description,
     beltSystemId: c.beltSystemId,
     disciplines: c.disciplines,
@@ -948,12 +954,14 @@ export interface DashboardData {
 
 /** Headline metrics + today's classes with live check-in counts. */
 export async function getDashboard(clubId: string): Promise<DashboardData> {
+  const clubRow = await prisma.club.findUnique({ where: { id: clubId }, select: { currency: true } }).catch(() => null);
+  const clubCurrency = clubRow?.currency ?? "eur";
   const empty: DashboardData = {
     totalStudents: 0,
     classesThisWeek: 0,
     eligibleForPromotion: 0,
     monthlyRevenue: 0,
-    currency: "usd",
+    currency: clubCurrency,
     todayClasses: [],
     upcomingExams: [],
   };
@@ -1015,9 +1023,65 @@ export async function getDashboard(clubId: string): Promise<DashboardData> {
       classesThisWeek,
       eligibleForPromotion,
       monthlyRevenue: Number(monthRevenue._sum.amount ?? 0),
-      currency: "usd",
+      currency: clubCurrency,
       todayClasses,
       upcomingExams,
+    };
+  } catch {
+    return empty;
+  }
+}
+
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Onboarding status (Feature 5)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface OnboardingStatus {
+  hasProfile: boolean;
+  hasBeltRanks: boolean;
+  hasClasses: boolean;
+  hasStudents: boolean;
+  hasPaymentPlans: boolean;
+  hasStripe: boolean;
+}
+
+/** Check completion of the six onboarding steps for the dashboard checklist. */
+export async function getOnboardingStatus(
+  clubId: string,
+): Promise<OnboardingStatus> {
+  const empty: OnboardingStatus = {
+    hasProfile: false,
+    hasBeltRanks: false,
+    hasClasses: false,
+    hasStudents: false,
+    hasPaymentPlans: false,
+    hasStripe: false,
+  };
+  if (!isDbConfigured()) return empty;
+  try {
+    const [club, beltRankCount, classCount, studentCount, planCount] =
+      await Promise.all([
+        prisma.club.findUnique({
+          where: { id: clubId },
+          select: {
+            description: true,
+            logoUrl: true,
+            stripeOnboarded: true,
+          },
+        }),
+        prisma.beltRank.count({ where: { clubId } }),
+        prisma.classSchedule.count({ where: { clubId, active: true } }),
+        prisma.student.count({ where: { clubId, active: true } }),
+        prisma.paymentPlan.count({ where: { clubId, active: true } }),
+      ]);
+    return {
+      hasProfile: Boolean(club?.description || club?.logoUrl),
+      hasBeltRanks: beltRankCount > 0,
+      hasClasses: classCount > 0,
+      hasStudents: studentCount > 0,
+      hasPaymentPlans: planCount > 0,
+      hasStripe: club?.stripeOnboarded ?? false,
     };
   } catch {
     return empty;
@@ -1096,6 +1160,7 @@ export interface RequirementDTO {
   type: RequirementType;
   targetValue: number | null;
   order: number;
+  ageGroup: string;
 }
 
 /** Whether a requirement type is auto-computed (vs instructor-assessed). */
@@ -1328,6 +1393,7 @@ function toRequirementDTO(r: {
   type: RequirementType;
   targetValue: number | null;
   order: number;
+  ageGroup: string;
 }): RequirementDTO {
   return {
     id: r.id,
@@ -1337,6 +1403,7 @@ function toRequirementDTO(r: {
     type: r.type,
     targetValue: r.targetValue,
     order: r.order,
+    ageGroup: r.ageGroup,
   };
 }
 
@@ -1473,6 +1540,7 @@ export interface BeltHistoryEntry {
 export interface BeltProgress {
   studentId: string;
   studentName: string;
+  dateOfBirth: string | null;
   currentBelt: BeltRef | null;
   nextBelt: BeltRef | null;
   monthsAtCurrentBelt: number;
@@ -1580,6 +1648,7 @@ export async function getBeltProgress(
     return {
       studentId: student.id,
       studentName: student.fullName,
+      dateOfBirth: student.dateOfBirth ? student.dateOfBirth.toISOString() : null,
       currentBelt: currentRank ? toRef(currentRank) : null,
       nextBelt: nextRank ? toRef(nextRank) : null,
       monthsAtCurrentBelt: ev.monthsAtBelt,
@@ -2148,9 +2217,11 @@ const ACTIVE_MEMBER_STATES: MembershipStatus[] = ["ACTIVE", "TRIALING"];
 export async function getPaymentDashboard(
   clubId: string,
 ): Promise<PaymentDashboard> {
+  const clubRow = await prisma.club.findUnique({ where: { id: clubId }, select: { currency: true } }).catch(() => null);
+  const clubCurrency = clubRow?.currency ?? "eur";
   const empty: PaymentDashboard = {
     stripeConfigured: isStripeConfigured(),
-    currency: "usd",
+    currency: clubCurrency,
     monthlyRevenue: 0,
     totalCollected: 0,
     activeMembers: 0,
@@ -2203,7 +2274,7 @@ export async function getPaymentDashboard(
         }),
       ]);
 
-    const currency = plans[0]?.currency ?? "usd";
+    const currency = plans[0]?.currency ?? clubCurrency;
     // Active members per plan, derived from the memberships we already loaded.
     const activeByPlan = new Map<string, number>();
     for (const m of memberships) {

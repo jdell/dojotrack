@@ -5,6 +5,7 @@ import { ArrowLeft } from "lucide-react";
 import { getCurrentClub, getNewExamData } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { ExamForm } from "./exam-form";
+import { ProGate } from "@/components/pro-gate";
 
 export async function generateMetadata({
   params,
@@ -51,24 +52,28 @@ export default async function NewExamPage({
 
       {!club ? (
         <Placeholder>{t("connectDbSchedule")}</Placeholder>
-      ) : data.targets.length === 0 || !data.targetRank ? (
-        <Placeholder>
-          {t.rich("noPromotableRanks", {
-            link: (chunks) => (
-              <Link href="/belts" className="font-medium text-brand-teal">
-                {chunks}
-              </Link>
-            ),
-          })}
-        </Placeholder>
       ) : (
-        <ExamForm
-          key={data.targetRank.id}
-          targets={data.targets}
-          targetRank={data.targetRank}
-          prevRankName={data.prevRankName}
-          suggestions={data.suggestions}
-        />
+        <ProGate feature="exams" clubTier={club.tier}>
+          {data.targets.length === 0 || !data.targetRank ? (
+            <Placeholder>
+              {t.rich("noPromotableRanks", {
+                link: (chunks) => (
+                  <Link href="/belts" className="font-medium text-brand-teal">
+                    {chunks}
+                  </Link>
+                ),
+              })}
+            </Placeholder>
+          ) : (
+            <ExamForm
+              key={data.targetRank.id}
+              targets={data.targets}
+              targetRank={data.targetRank}
+              prevRankName={data.prevRankName}
+              suggestions={data.suggestions}
+            />
+          )}
+        </ProGate>
       )}
     </div>
   );

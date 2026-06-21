@@ -5,7 +5,7 @@ import { getAuthUser, isPlatformAdmin } from "@/lib/auth-context";
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const user = await getAuthUser();
-  if (!user || !isPlatformAdmin(user.email)) {
+  if (!user || !isPlatformAdmin(user.email, user.phone)) {
     redirect("/login");
   }
 

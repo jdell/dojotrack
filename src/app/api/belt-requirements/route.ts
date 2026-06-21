@@ -53,6 +53,8 @@ export async function GET(request: Request) {
   }
 }
 
+const AGE_GROUPS = ["adults", "children", "common"] as const;
+
 interface CreateBody {
   beltRankId?: string;
   name?: string;
@@ -60,6 +62,7 @@ interface CreateBody {
   type?: string;
   targetValue?: number | string | null;
   order?: number | null;
+  ageGroup?: string;
 }
 
 /** POST /api/belt-requirements — add a requirement to one of the club's ranks. */
@@ -134,6 +137,11 @@ export async function POST(request: Request) {
             })
           )._max.order ?? -1) + 1;
 
+    const ageGroup =
+      body.ageGroup && AGE_GROUPS.includes(body.ageGroup as (typeof AGE_GROUPS)[number])
+        ? body.ageGroup
+        : "common";
+
     const requirement = await prisma.beltRequirement.create({
       data: {
         beltRankId: rank.id,
@@ -142,6 +150,7 @@ export async function POST(request: Request) {
         type,
         targetValue,
         order,
+        ageGroup,
       },
     });
     return NextResponse.json({ requirement }, { status: 201 });

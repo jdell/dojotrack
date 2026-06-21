@@ -99,6 +99,7 @@ export default async function StudentBeltPage({
           nextBeltName={progress.nextBelt.name}
           requirements={progress.requirements}
           totalCount={progress.totalCount}
+          studentDateOfBirth={progress.dateOfBirth}
         />
       ) : (
         <div className="rounded-xl border border-dashed border-border bg-card p-8 text-center">

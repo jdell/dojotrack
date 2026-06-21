@@ -158,6 +158,8 @@ model Club {
   /// The club's preferred language (en/es/gl) for outbound emails. Captured at
   /// registration from the UI locale; falls back to "en" when unset.
   locale       String?
+  /// ISO 4217 currency code for payments (lowercase). Defaults to EUR for Spain.
+  currency     String   @default("eur")
   disciplines  String[]
   beltSystemId String?  @map("belt_system_id")
   /// Stripe Connect Standard account id, set during onboarding.
@@ -401,6 +403,7 @@ model BeltRequirement {
   type        RequirementType @default(TECHNIQUE)
   targetValue Int?            @map("target_value")
   order       Int             @default(0)
+  ageGroup    String          @default("common") @map("age_group")
   createdAt   DateTime        @default(now()) @map("created_at")
 
   beltRank BeltRank              @relation(fields: [beltRankId], references: [id], onDelete: Cascade)

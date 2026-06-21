@@ -6,6 +6,7 @@ import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
 import { requireAuth } from "@/lib/auth-context";
 import { appUrl, getStripe, isStripeConfigured } from "@/lib/stripe";
+import { clubCanAccess } from "@/lib/tier";
 
 /** Stripe recurring config for a plan interval (undefined = one-time charge). */
 function recurringFor(
@@ -105,6 +106,12 @@ export async function POST(request: Request) {
   const club = await getCurrentClub();
   if (!club) {
     return NextResponse.json({ error: "No club found." }, { status: 400 });
+  }
+  if (!clubCanAccess(club.tier, "stripe_connect")) {
+    return NextResponse.json(
+      { error: "Online payments require the Pro plan." },
+      { status: 403 },
+    );
   }
 
   // Load Connect fields for the club.
