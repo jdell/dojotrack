@@ -35,5 +35,11 @@
         }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/onboarding",
+      "schedule": "0 9 * * *"
+    }
   ]
 }

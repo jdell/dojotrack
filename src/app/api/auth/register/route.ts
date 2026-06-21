@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-context";
 import { routing } from "@/i18n/routing";
+import { sendOnboardingEmail } from "@/lib/onboarding-emails";
 
 /**
  * POST /api/auth/register — provision a club + owner for a freshly verified user.
@@ -141,6 +142,20 @@ export async function POST(request: Request) {
       });
       return { club, user };
     });
+
+    // Fire Day 0 onboarding email (non-blocking — don't let email failure break registration)
+    const ownerEmail = authUser.email || result.user.email;
+    if (ownerEmail) {
+      sendOnboardingEmail(
+        result.club.id,
+        ownerEmail,
+        result.club.name,
+        0,
+        locale,
+      ).catch((err) =>
+        console.error("[register] onboarding email failed", err),
+      );
+    }
 
     return NextResponse.json(
       { club: result.club, user: result.user },

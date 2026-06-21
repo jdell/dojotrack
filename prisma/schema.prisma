@@ -176,6 +176,7 @@ model Club {
   platformCustomerId       String?  @map("platform_customer_id")
   platformSubscriptionId   String?  @unique @map("platform_subscription_id")
   platformCurrentPeriodEnd DateTime? @map("platform_current_period_end")
+  onboardingStep           Int       @default(0) @map("onboarding_step")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
