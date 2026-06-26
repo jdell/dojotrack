@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { requireAuth } from "@/lib/auth-context";
 import { appUrl, getStripe, isStripeConfigured } from "@/lib/stripe";
+import { notifySlack } from "@/lib/slack";
 
 /**
  * POST /api/stripe/connect — Create a Stripe Connect Standard account for the
@@ -114,6 +115,10 @@ export async function GET() {
         where: { id: club.id },
         data: { stripeOnboarded: onboarded },
       });
+      // Fire-and-forget Slack notification when onboarding completes
+      if (onboarded) {
+        notifySlack(`🔗 Stripe Connect completed: ${club.name}`).catch(() => {});
+      }
     }
 
     // Build a login link so the owner can reach their Stripe Express dashboard.

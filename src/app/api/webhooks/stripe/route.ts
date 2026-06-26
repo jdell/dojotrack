@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getStripe, isStripeConfigured, stripeWebhookSecret } from "@/lib/stripe";
 import { sendPaymentReceiptEmail } from "@/lib/email";
+import { notifySlack } from "@/lib/slack";
 
 // Stripe needs the raw, unparsed body to verify the signature.
 export const dynamic = "force-dynamic";
@@ -149,6 +150,8 @@ async function recordInvoice(
       currency: invoice.currency ?? "usd",
       description: invoice.description ?? "Subscription payment",
     });
+    // Fire-and-forget Slack notification for subscription payment
+    notifySlack(`💳 Payment received: $${amount} — ${invoice.description ?? "Subscription payment"}`).catch(() => {});
   } else {
     await prisma.membership.update({
       where: { id: membership.id },
@@ -314,6 +317,8 @@ export async function POST(request: Request) {
               currency: payment.currency,
               description: payment.description,
             });
+            // Fire-and-forget Slack notification for one-time payment
+            notifySlack(`💳 Payment received: $${Number(payment.amount)} — ${payment.description ?? "One-time payment"}`).catch(() => {});
           }
         } else if (session.subscription) {
           const subId =

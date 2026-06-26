@@ -89,6 +89,7 @@ export default function LandingPage() {
         { label: t("footerFeatures"), href: "#features" },
         { label: t("footerPricing"), href: "#pricing" },
         { label: t("footerRegister"), href: "/register" },
+        { label: t("footerBlog"), href: "/blog" },
       ],
     },
     {
@@ -101,8 +102,8 @@ export default function LandingPage() {
     {
       heading: t("footerCompany"),
       links: [
-        { label: t("footerAbout"), href: "#features" },
-        { label: t("footerContact"), href: "mailto:hello@entrenadojo.es" },
+        { label: t("footerAbout"), href: "/about" },
+        { label: t("footerContact"), href: "/contact" },
         { label: t("footerPrivacy"), href: "/privacy" },
       ],
     },
@@ -121,6 +122,9 @@ export default function LandingPage() {
             <a href="#pricing" className="transition-colors hover:text-foreground">
               {t("navPricing")}
             </a>
+            <Link href="/blog" className="transition-colors hover:text-foreground">
+              {t("navBlog")}
+            </Link>
             <a href="#testimonials" className="transition-colors hover:text-foreground">
               {t("navTestimonials")}
             </a>

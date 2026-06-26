@@ -4,6 +4,7 @@ import { isDbConfigured } from "@/lib/db";
 import { getAuthUser } from "@/lib/auth-context";
 import { routing } from "@/i18n/routing";
 import { sendOnboardingEmail } from "@/lib/onboarding-emails";
+import { notifySlack } from "@/lib/slack";
 
 /**
  * POST /api/auth/register — provision a club + owner for a freshly verified user.
@@ -142,6 +143,9 @@ export async function POST(request: Request) {
       });
       return { club, user };
     });
+
+    // Fire-and-forget Slack notification
+    notifySlack(`🥋 New club registered: ${clubName} — ${ownerName} (${phone ?? "no phone"})`).catch(() => {});
 
     // Fire Day 0 onboarding email (non-blocking — don't let email failure break registration)
     const ownerEmail = authUser.email || result.user.email;
