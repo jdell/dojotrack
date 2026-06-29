@@ -31,7 +31,9 @@ export async function GET(_request: Request, { params }: RouteContext) {
 interface UpdateClassBody {
   name?: string;
   discipline?: string;
+  styleId?: string | null;
   dayOfWeek?: string;
+  daysOfWeek?: string[];
   startTime?: string;
   endTime?: string;
   instructorId?: string | null;
@@ -87,7 +89,28 @@ export async function PUT(request: Request, { params }: RouteContext) {
     data.name = name;
   }
   if (body.discipline !== undefined) data.discipline = body.discipline.trim();
-  if (body.dayOfWeek !== undefined) {
+  if (body.styleId !== undefined) {
+    if (body.styleId) {
+      const style = await prisma.style.findFirst({
+        where: { id: body.styleId, clubId: club.id },
+        select: { id: true },
+      });
+      data.style = style ? { connect: { id: style.id } } : { disconnect: true };
+    } else {
+      data.style = { disconnect: true };
+    }
+  }
+  // Support both single dayOfWeek and multi-day daysOfWeek
+  const extraDays: DayOfWeek[] = [];
+  if (body.daysOfWeek && Array.isArray(body.daysOfWeek) && body.daysOfWeek.length > 0) {
+    const validDays = body.daysOfWeek.filter((d) => DAYS.includes(d as DayOfWeek)) as DayOfWeek[];
+    if (validDays.length === 0) {
+      return NextResponse.json({ error: "Pick at least one day." }, { status: 400 });
+    }
+    // First day updates this schedule; additional days create new schedules
+    data.dayOfWeek = validDays[0];
+    extraDays.push(...validDays.slice(1));
+  } else if (body.dayOfWeek !== undefined) {
     if (!DAYS.includes(body.dayOfWeek as DayOfWeek)) {
       return NextResponse.json({ error: "Invalid day." }, { status: 400 });
     }
@@ -130,7 +153,7 @@ export async function PUT(request: Request, { params }: RouteContext) {
         where: {
           id: body.instructorId,
           clubId: club.id,
-          role: { in: ["OWNER", "INSTRUCTOR"] },
+          role: { in: ["OWNER", "ADMIN", "INSTRUCTOR"] },
         },
         select: { id: true },
       });
@@ -143,7 +166,38 @@ export async function PUT(request: Request, { params }: RouteContext) {
 
   try {
     const updated = await prisma.classSchedule.update({ where: { id }, data });
-    return NextResponse.json({ class: updated });
+
+    // Create new schedules for additional days (same name/time/instructor/etc.)
+    let created: typeof updated[] = [];
+    if (extraDays.length > 0) {
+      const base = await prisma.classSchedule.findUnique({ where: { id } });
+      if (base) {
+        created = await prisma.$transaction(
+          extraDays.map((day) =>
+            prisma.classSchedule.create({
+              data: {
+                clubId: base.clubId,
+                name: base.name,
+                discipline: base.discipline,
+                styleId: base.styleId,
+                dayOfWeek: day,
+                startTime: base.startTime,
+                endTime: base.endTime,
+                instructorId: base.instructorId,
+                maxStudents: base.maxStudents,
+                location: base.location,
+                level: base.level,
+              },
+            })
+          )
+        );
+      }
+    }
+
+    return NextResponse.json({
+      class: updated,
+      created: created.length,
+    });
   } catch (err) {
     console.error("PUT /api/classes/[id] failed", err);
     return NextResponse.json(

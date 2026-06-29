@@ -1,0 +1,1 @@
+ALTER TABLE "invitations" ADD COLUMN "role" "Role" NOT NULL DEFAULT 'STUDENT';

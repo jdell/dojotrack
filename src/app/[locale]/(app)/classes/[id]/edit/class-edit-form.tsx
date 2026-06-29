@@ -15,12 +15,19 @@ interface DisciplineOption {
   emoji: string;
 }
 
+interface StyleOption {
+  id: string;
+  discipline: string;
+  name: string;
+}
+
 interface ClassEditFormProps {
   classId: string;
   initialData: {
     name: string;
     discipline: string;
     dayOfWeek: DayOfWeek;
+    daysOfWeek: DayOfWeek[];
     startTime: string;
     endTime: string;
     instructorId: string;
@@ -30,6 +37,7 @@ interface ClassEditFormProps {
   };
   disciplines: DisciplineOption[];
   instructors: InstructorOption[];
+  styles?: StyleOption[];
 }
 
 const LEVEL_ORDER: ClassLevel[] = [
@@ -49,15 +57,39 @@ export function ClassEditForm({
   initialData,
   disciplines,
   instructors,
+  styles = [],
 }: ClassEditFormProps) {
   const t = useTranslations("Classes");
+  const ts = useTranslations("Styles");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [form, setForm] = useState({ ...initialData });
+  const hasStyles = styles.length > 0;
+  const [form, setForm] = useState({
+    ...initialData,
+    styleId:
+      hasStyles
+        ? (styles.find((s) => s.discipline === initialData.discipline)?.id ??
+          styles[0]?.id ??
+          "")
+        : "",
+    daysOfWeek:
+      initialData.daysOfWeek.length > 0
+        ? initialData.daysOfWeek
+        : [initialData.dayOfWeek],
+  });
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  function toggleDay(day: DayOfWeek) {
+    setForm((f) => ({
+      ...f,
+      daysOfWeek: f.daysOfWeek.includes(day)
+        ? f.daysOfWeek.filter((d) => d !== day)
+        : [...f.daysOfWeek, day],
+    }));
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -71,7 +103,8 @@ export function ClassEditForm({
         body: JSON.stringify({
           name: form.name,
           discipline: form.discipline,
-          dayOfWeek: form.dayOfWeek,
+          styleId: form.styleId || null,
+          daysOfWeek: form.daysOfWeek,
           startTime: form.startTime,
           endTime: form.endTime,
           instructorId: form.instructorId || null,
@@ -118,18 +151,41 @@ export function ClassEditForm({
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>{t("discipline")}</label>
-            <select
-              value={form.discipline}
-              onChange={(e) => update("discipline", e.target.value)}
-              className={inputClass}
-            >
-              {disciplines.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.emoji} {d.label}
-                </option>
-              ))}
-            </select>
+            <label className={labelClass}>
+              {hasStyles ? ts("selectStyle") : t("discipline")}
+            </label>
+            {hasStyles ? (
+              <select
+                value={form.styleId}
+                onChange={(e) => {
+                  const style = styles.find((s) => s.id === e.target.value);
+                  setForm((f) => ({
+                    ...f,
+                    styleId: e.target.value,
+                    discipline: style?.discipline ?? f.discipline,
+                  }));
+                }}
+                className={inputClass}
+              >
+                {styles.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={form.discipline}
+                onChange={(e) => update("discipline", e.target.value)}
+                className={inputClass}
+              >
+                {disciplines.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.emoji} {d.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className={labelClass}>{t("level.label")}</label>
@@ -153,20 +209,32 @@ export function ClassEditForm({
           {t("whenWhere")}
         </legend>
         <div>
-          <label className={labelClass}>{t("dayOfWeek")}</label>
-          <select
-            value={form.dayOfWeek}
-            onChange={(e) => update("dayOfWeek", e.target.value)}
-            className={inputClass}
-          >
-            {DAY_ORDER.map((d) => (
-              <option key={d} value={d}>
-                {t(`day.${d}`)}
-              </option>
-            ))}
-          </select>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("recursWeekly")}
+          <label className={labelClass}>{t("selectDays")}</label>
+          <div className="flex flex-wrap gap-2">
+            {DAY_ORDER.map((d) => {
+              const checked = form.daysOfWeek.includes(d);
+              return (
+                <label
+                  key={d}
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
+                    checked
+                      ? "border-brand-teal bg-brand-teal/10 text-brand-teal font-medium"
+                      : "border-border text-muted-foreground hover:border-brand-teal/50"
+                  }`}
+                >
+                  <input
+                    type="checkbox"
+                    checked={checked}
+                    onChange={() => toggleDay(d)}
+                    className="sr-only"
+                  />
+                  {t(`day.${d}`)}
+                </label>
+              );
+            })}
+          </div>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            {t("multipleDaysHint")}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -240,7 +308,7 @@ export function ClassEditForm({
       <div className="flex items-center gap-3 pt-2">
         <button
           type="submit"
-          disabled={loading || !form.name.trim()}
+          disabled={loading || !form.name.trim() || form.daysOfWeek.length === 0}
           className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90 disabled:opacity-50 disabled:hover:bg-brand-teal"
         >
           {loading && <Loader2 size={16} className="animate-spin" />}

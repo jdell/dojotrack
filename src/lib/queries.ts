@@ -84,12 +84,19 @@ export interface FamilyOption {
   name: string;
 }
 
+export interface PublicClubStyle {
+  id: string;
+  name: string;
+  discipline: string;
+}
+
 export interface PublicClub {
   id: string;
   name: string;
   slug: string;
   description: string | null;
   disciplines: { value: string; label: string; emoji: string }[];
+  styles: PublicClubStyle[];
   address: string | null;
   city: string | null;
   country: string | null;
@@ -100,11 +107,13 @@ export interface PublicClub {
   instagramUrl: string | null;
   facebookUrl: string | null;
   youtubeUrl: string | null;
-  instructors: { id: string; name: string; role: string }[];
+  instructors: { id: string; name: string; role: string; bio: string | null; qualifications: string | null; photoUrl: string | null }[];
   classSchedules: {
     id: string;
     name: string;
     discipline: string;
+    styleId: string | null;
+    styleName: string | null;
     dayOfWeek: string;
     startTime: string;
     endTime: string;
@@ -332,14 +341,20 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
       where: { slug },
       include: {
         users: {
-          where: { role: { in: ["OWNER", "INSTRUCTOR"] } },
-          select: { id: true, fullName: true, role: true },
+          where: { role: { in: ["OWNER", "ADMIN", "INSTRUCTOR"] } },
+          select: { id: true, fullName: true, role: true, bio: true, qualifications: true, photoUrl: true },
+        },
+        styles: {
+          where: { active: true },
+          orderBy: { order: "asc" },
+          select: { id: true, name: true, discipline: true },
         },
         classSchedules: {
           where: { active: true },
           orderBy: [{ startTime: "asc" }],
           include: {
             instructor: { select: { fullName: true } },
+            style: { select: { id: true, name: true } },
           },
         },
       },
@@ -351,6 +366,11 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
       slug: club.slug,
       description: club.description,
       disciplines: club.disciplines.map(toDisciplineTag),
+      styles: club.styles.map((s) => ({
+        id: s.id,
+        name: s.name,
+        discipline: s.discipline,
+      })),
       address: club.address,
       city: club.city,
       country: club.country,
@@ -365,11 +385,16 @@ export async function getClubBySlug(slug: string): Promise<PublicClub | null> {
         id: u.id,
         name: u.fullName ?? "Instructor",
         role: u.role,
+        bio: u.bio,
+        qualifications: u.qualifications,
+        photoUrl: u.photoUrl,
       })),
       classSchedules: club.classSchedules.map((cs) => ({
         id: cs.id,
         name: cs.name,
         discipline: cs.discipline,
+        styleId: cs.style?.id ?? null,
+        styleName: cs.style?.name ?? null,
         dayOfWeek: cs.dayOfWeek,
         startTime: cs.startTime,
         endTime: cs.endTime,
@@ -406,7 +431,7 @@ export async function getInstructorOptions(
   if (!isDbConfigured()) return [];
   try {
     const users = await prisma.user.findMany({
-      where: { clubId, role: { in: ["OWNER", "INSTRUCTOR"] } },
+      where: { clubId, role: { in: ["OWNER", "ADMIN", "INSTRUCTOR"] } },
       orderBy: { fullName: "asc" },
       select: { id: true, fullName: true },
     });
@@ -1103,6 +1128,7 @@ export interface InviteLookup {
   clubName: string | null;
   clubSlug: string | null;
   unitLabel: string | null;
+  role: Role | null;
 }
 
 /**
@@ -1113,7 +1139,7 @@ export interface InviteLookup {
 export async function getInvitationByToken(
   token: string,
 ): Promise<InviteLookup> {
-  const empty = { clubName: null, clubSlug: null, unitLabel: null };
+  const empty = { clubName: null, clubSlug: null, unitLabel: null, role: null };
   if (!isDbConfigured()) return { status: "unavailable", ...empty };
   try {
     const invitation = await prisma.invitation.findUnique({
@@ -1126,6 +1152,7 @@ export async function getInvitationByToken(
       clubName: invitation.club.name,
       clubSlug: invitation.club.slug,
       unitLabel: invitation.unitLabel,
+      role: invitation.role,
     };
     if (invitation.status === "ACCEPTED")
       return { status: "accepted", ...base };
@@ -1363,12 +1390,12 @@ export async function getCurrentInstructor(
     if (
       ctx &&
       ctx.club.id === clubId &&
-      (ctx.user.role === "OWNER" || ctx.user.role === "INSTRUCTOR")
+      (ctx.user.role === "OWNER" || ctx.user.role === "ADMIN" || ctx.user.role === "INSTRUCTOR")
     ) {
       return { id: ctx.user.id, name: ctx.user.fullName ?? "Instructor" };
     }
     const user = await prisma.user.findFirst({
-      where: { clubId, role: { in: ["OWNER", "INSTRUCTOR"] } },
+      where: { clubId, role: { in: ["OWNER", "ADMIN", "INSTRUCTOR"] } },
       orderBy: { createdAt: "asc" },
       select: { id: true, fullName: true },
     });
@@ -1384,6 +1411,7 @@ export interface BeltRankWithRequirements {
   name: string;
   color: string;
   order: number;
+  styleId: string | null;
   studentCount: number;
   requirements: RequirementDTO[];
 }
@@ -1429,6 +1457,7 @@ export async function getBeltRanksWithRequirements(
       name: rank.name,
       color: rank.hexColor,
       order: rank.order,
+      styleId: rank.styleId ?? null,
       studentCount: rank._count.students,
       requirements: rank.requirements.map(toRequirementDTO),
     }));
@@ -2831,5 +2860,120 @@ export async function getPublicPaymentData(
     };
   } catch {
     return null;
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Styles (Feature 3 — multiple styles per club)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface ClubStyle {
+  id: string;
+  discipline: string;
+  name: string;
+  active: boolean;
+  order: number;
+  beltRankCount: number;
+  classCount: number;
+  studentCount: number;
+}
+
+/** All styles for a club, ordered by `order`, with linked-entity counts. */
+export async function getClubStyles(clubId: string): Promise<ClubStyle[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const styles = await prisma.style.findMany({
+      where: { clubId },
+      orderBy: { order: "asc" },
+      include: {
+        _count: {
+          select: { beltRanks: true, classSchedules: true, studentStyles: true },
+        },
+      },
+    });
+    return styles.map((s) => ({
+      id: s.id,
+      discipline: s.discipline,
+      name: s.name,
+      active: s.active,
+      order: s.order,
+      beltRankCount: s._count.beltRanks,
+      classCount: s._count.classSchedules,
+      studentCount: s._count.studentStyles,
+    }));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Auto-create `Style` records from a club's flat `disciplines` array when the
+ * club has disciplines set but no Style rows yet. Idempotent — no-op when
+ * styles already exist or the DB isn't configured.
+ */
+export async function ensureStyles(club: ClubSummary): Promise<void> {
+  if (!isDbConfigured()) return;
+  try {
+    const count = await prisma.style.count({ where: { clubId: club.id } });
+    if (count > 0) return;
+    if (club.disciplines.length === 0) return;
+    await prisma.style.createMany({
+      data: club.disciplines.map((d, i) => {
+        const meta = DISCIPLINES.find((x) => x.value === d);
+        return {
+          clubId: club.id,
+          discipline: d,
+          name: meta?.label ?? d,
+          order: i,
+        };
+      }),
+      skipDuplicates: true,
+    });
+  } catch {
+    // best-effort
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Team management (Feature 1 — multiple admins)
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface TeamMember {
+  id: string;
+  fullName: string | null;
+  email: string | null;
+  phone: string | null;
+  role: Role;
+  bio: string | null;
+  qualifications: string | null;
+  photoUrl: string | null;
+  createdAt: string;
+}
+
+/** All staff/admin/owner users in a club, ordered by role then join date. */
+export async function getTeamMembers(clubId: string): Promise<TeamMember[]> {
+  if (!isDbConfigured()) return [];
+  try {
+    const users = await prisma.user.findMany({
+      where: { clubId },
+      orderBy: [{ role: "asc" }, { createdAt: "asc" }],
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        role: true,
+        bio: true,
+        qualifications: true,
+        photoUrl: true,
+        createdAt: true,
+      },
+    });
+    return users.map((u) => ({
+      ...u,
+      createdAt: u.createdAt.toISOString(),
+    }));
+  } catch {
+    return [];
   }
 }

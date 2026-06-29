@@ -64,16 +64,24 @@
     "featuresSubtitle": "Desde la primera clase de prueba de un alumno hasta su cinturón negro, con cada pago, examen y competición por el camino.",
     "features": [
       {
+        "title": "Múltiples estilos",
+        "desc": "Enseña BJJ, kárate y judo bajo un mismo techo. Cada estilo tiene su propio sistema de cinturones, requisitos, clases y progresión — todo desde un solo panel."
+      },
+      {
         "title": "Gestión de alumnos",
-        "desc": "Una lista completa con familias, datos de contacto, notas médicas e invitaciones con un toque."
+        "desc": "Una lista completa con familias, datos de contacto, notas médicas e invitaciones con un toque. Los alumnos siguen su cinturón por estilo."
       },
       {
         "title": "Seguimiento de cinturones",
-        "desc": "Listas visuales de requisitos de blanco a negro en BJJ, kárate, judo y más."
+        "desc": "Listas visuales de requisitos de blanco a negro. Explora una biblioteca de requisitos comunes por disciplina o crea los tuyos. Progreso por alumno y estilo."
+      },
+      {
+        "title": "Gestión de equipo",
+        "desc": "Invita administradores e instructores para ayudar a gestionar tu club. Los instructores ven sus clases y alumnos. Los administradores gestionan todo excepto la facturación."
       },
       {
         "title": "Horario de clases",
-        "desc": "Crea un horario semanal, gestiona las reservas y controla la asistencia desde cualquier dispositivo."
+        "desc": "Crea un horario semanal con múltiples estilos, asigna instructores, gestiona las reservas y controla la asistencia desde cualquier dispositivo."
       },
       {
         "title": "Registro con QR",
@@ -273,6 +281,63 @@
     "whatsappConfigured": "WhatsApp está configurado y listo para enviar notificaciones.",
     "whatsappNotConfigured": "WhatsApp no está configurado. Añade las variables de entorno WHATSAPP_API_TOKEN y WHATSAPP_PHONE_ID para activar las notificaciones de WhatsApp.",
     "whatsappSetupInstructions": "Para configurar las notificaciones de WhatsApp, crea una cuenta de WhatsApp Business y añade tu token de API y tu Phone ID como variables de entorno."
+  },
+  "Team": {
+    "title": "Equipo",
+    "subtitle": "Gestiona el personal y los instructores de tu club.",
+    "inviteAdmin": "Invitar administrador",
+    "inviteInstructor": "Invitar instructor",
+    "inviteStaff": "Invitar personal",
+    "teamMembers": "Miembros del equipo",
+    "changeRole": "Cambiar rol",
+    "removeFromClub": "Eliminar del club",
+    "confirmRemove": "¿Estás seguro de que quieres eliminar a {name} del club?",
+    "roleOwner": "Propietario",
+    "roleAdmin": "Administrador",
+    "roleInstructor": "Instructor",
+    "roleStudent": "Estudiante",
+    "roleParent": "Padre/Madre",
+    "noTeamMembers": "Aún no hay miembros del equipo.",
+    "inviteEmailPlaceholder": "Email o teléfono",
+    "selectRole": "Seleccionar rol",
+    "sendInvite": "Enviar invitación",
+    "inviteSent": "¡Invitación enviada!",
+    "errorInvite": "No se pudo enviar la invitación.",
+    "errorChangeRole": "No se pudo cambiar el rol.",
+    "errorRemove": "No se pudo eliminar al usuario.",
+    "onlyOwnerCanChange": "Solo el propietario puede cambiar este rol.",
+    "bio": "Biografía",
+    "qualifications": "Cualificaciones",
+    "instructorProfile": "Perfil de instructor",
+    "photoUrl": "URL de foto",
+    "editProfile": "Editar perfil",
+    "saveProfile": "Guardar perfil"
+  },
+  "Styles": {
+    "title": "Estilos",
+    "subtitle": "Artes marciales que enseña tu club.",
+    "addStyle": "Añadir estilo",
+    "styleName": "Nombre del estilo",
+    "discipline": "Disciplina",
+    "styleOrder": "Orden",
+    "deactivateStyle": "Desactivar",
+    "activateStyle": "Activar",
+    "deleteStyle": "Eliminar estilo",
+    "confirmDelete": "¿Estás seguro? Esta acción no se puede deshacer.",
+    "cannotDelete": "No se puede eliminar un estilo que tiene cinturones, clases o alumnos. Desactívalo en su lugar.",
+    "noStyles": "Aún no hay estilos. Añade tu primer arte marcial.",
+    "beltsByStyle": "Cinturones por estilo",
+    "studentBelts": "Cinturones del alumno",
+    "allStyles": "Todos los estilos",
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "beltRanks": "{count, plural, =0 {Sin cinturones} one {1 cinturón} other {# cinturones}}",
+    "classes": "{count, plural, =0 {Sin clases} one {1 clase} other {# clases}}",
+    "students": "{count, plural, =0 {Sin alumnos} one {1 alumno} other {# alumnos}}",
+    "selectStyle": "Seleccionar estilo",
+    "errorAdd": "No se pudo añadir el estilo.",
+    "errorUpdate": "No se pudo actualizar el estilo.",
+    "errorDelete": "No se pudo eliminar el estilo."
   },
   "Students": {
     "eyebrow": "Lista",

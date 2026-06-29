@@ -1,13 +1,15 @@
 import { NextResponse } from "next/server";
-import type { Student } from "@prisma/client";
+import type { Student, User } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
+import { getAuthContext } from "@/lib/auth-context";
 
 type RouteContext = { params: Promise<{ token: string }> };
 
 type AcceptOutcome =
-  | { ok: false; reason: "not_found" | "accepted" | "expired" }
-  | { ok: true; student: Student };
+  | { ok: false; reason: "not_found" | "accepted" | "expired" | "auth_required" }
+  | { ok: true; student: Student }
+  | { ok: true; user: User };
 
 /**
  * GET /api/invitations/[token] — validate an invite token. Returns the club it
@@ -45,6 +47,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
       status: "valid",
       club: invitation.club,
       unitLabel: invitation.unitLabel,
+      role: invitation.role,
     });
   } catch (err) {
     console.error("GET /api/invitations/[token] failed", err);
@@ -108,6 +111,28 @@ export async function POST(request: Request, { params }: RouteContext) {
           return { ok: false, reason: "accepted" };
         if (expired) return { ok: false, reason: "expired" };
 
+        // Staff invitations (ADMIN or INSTRUCTOR) require an authenticated user.
+        if (invitation.role === "ADMIN" || invitation.role === "INSTRUCTOR") {
+          const ctx = await getAuthContext();
+          if (!ctx) return { ok: false, reason: "auth_required" };
+
+          // Update the existing user's role and club.
+          const user = await tx.user.update({
+            where: { id: ctx.user.id },
+            data: {
+              role: invitation.role,
+              clubId: invitation.clubId,
+              fullName: fullName || ctx.user.fullName,
+            },
+          });
+          await tx.invitation.update({
+            where: { id: invitation.id },
+            data: { status: "ACCEPTED" },
+          });
+          return { ok: true, user };
+        }
+
+        // Student invitations — create a Student record (no auth needed).
         const student = await tx.student.create({
           data: {
             clubId: invitation.clubId,
@@ -130,11 +155,15 @@ export async function POST(request: Request, { params }: RouteContext) {
         not_found: { msg: "This invite link is invalid.", code: 404 },
         accepted: { msg: "This invite has already been used.", code: 410 },
         expired: { msg: "This invite has expired.", code: 410 },
+        auth_required: { msg: "Staff invitations require you to be logged in. Please sign in first.", code: 401 },
       } as const;
       const { msg, code } = map[result.reason];
       return NextResponse.json({ error: msg }, { status: code });
     }
 
+    if ("user" in result) {
+      return NextResponse.json({ user: result.user }, { status: 201 });
+    }
     return NextResponse.json({ student: result.student }, { status: 201 });
   } catch (err) {
     console.error("POST /api/invitations/[token] failed", err);

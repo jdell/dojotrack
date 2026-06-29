@@ -83,6 +83,40 @@ const ADMIN_NAV_ITEMS: NavItem[] = [
   },
 ];
 
+/** Nav for instructors — no payments, competitions, or sparring. */
+const INSTRUCTOR_NAV_ITEMS: NavItem[] = [
+  {
+    key: "dashboard",
+    href: "/dashboard",
+    icon: LayoutDashboard,
+    matches: (p) => p === "/" || p.startsWith("/dashboard"),
+  },
+  {
+    key: "classes",
+    href: "/classes",
+    icon: Calendar,
+    matches: (p) => p.startsWith("/classes"),
+  },
+  {
+    key: "students",
+    href: "/students",
+    icon: Users,
+    matches: (p) => p.startsWith("/students"),
+  },
+  {
+    key: "belts",
+    href: "/belts",
+    icon: Award,
+    matches: (p) => p.startsWith("/belts"),
+  },
+  {
+    key: "settings",
+    href: "/settings",
+    icon: Settings,
+    matches: (p) => p.startsWith("/settings"),
+  },
+];
+
 /** Simplified nav for students and parents. */
 const STUDENT_NAV_ITEMS: NavItem[] = [
   {
@@ -123,7 +157,8 @@ export function Sidebar({
   const [collapsed, setCollapsed] = useState(false);
 
   const isStudentRole = userRole === "STUDENT" || userRole === "PARENT";
-  const navItems = isStudentRole ? STUDENT_NAV_ITEMS : ADMIN_NAV_ITEMS;
+  const isInstructor = userRole === "INSTRUCTOR";
+  const navItems = isStudentRole ? STUDENT_NAV_ITEMS : isInstructor ? INSTRUCTOR_NAV_ITEMS : ADMIN_NAV_ITEMS;
 
   return (
     <aside

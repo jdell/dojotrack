@@ -17,7 +17,11 @@ import {
   Trash2,
   X,
 } from "lucide-react";
-import type { BeltRankWithRequirements, RequirementDTO } from "@/lib/queries";
+import type {
+  BeltRankWithRequirements,
+  ClubStyle,
+  RequirementDTO,
+} from "@/lib/queries";
 import { REQUIREMENT_TYPES, requirementTypeMeta } from "@/lib/constants";
 import { RequirementsLibraryModal } from "./[rankId]/requirements-library-modal";
 
@@ -53,11 +57,14 @@ const EMPTY_FORM: FormValues = {
 export function BeltsManager({
   ranks: initialRanks,
   discipline,
+  styles = [],
 }: {
   ranks: BeltRankWithRequirements[];
   discipline: string;
+  styles?: ClubStyle[];
 }) {
   const t = useTranslations("Belts");
+  const ts = useTranslations("Styles");
   const tc = useTranslations("Common");
   const router = useRouter();
   const [ranks, setRanks] = useState(initialRanks);
@@ -67,6 +74,26 @@ export function BeltsManager({
   const [rankBusy, setRankBusy] = useState(false);
   const [rankError, setRankError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  // Style tab filtering — "all" shows everything (the default/no-styles fallback).
+  const activeStyles = styles.filter((s) => s.active);
+  const hasStyles = activeStyles.length > 0;
+  const [selectedStyleId, setSelectedStyleId] = useState<string | "all">(
+    activeStyles[0]?.id ?? "all",
+  );
+
+  // Filter ranks by selected style.
+  const filteredRanks =
+    hasStyles && selectedStyleId !== "all"
+      ? ranks.filter((r) => r.styleId === selectedStyleId)
+      : ranks;
+
+  // Resolve the discipline for the selected style (for the library modal).
+  const activeDiscipline =
+    hasStyles && selectedStyleId !== "all"
+      ? (activeStyles.find((s) => s.id === selectedStyleId)?.discipline ??
+        discipline)
+      : discipline;
 
   async function moveRank(rankId: string, direction: "up" | "down") {
     setRankBusy(true);
@@ -122,75 +149,112 @@ export function BeltsManager({
 
   return (
     <div className="space-y-3">
+      {/* Style tabs — shown when the club has multiple styles */}
+      {hasStyles && (
+        <div className="flex flex-wrap gap-1.5 rounded-lg border border-border bg-muted/30 p-1.5">
+          <button
+            type="button"
+            onClick={() => setSelectedStyleId("all")}
+            className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+              selectedStyleId === "all"
+                ? "bg-brand-teal text-white shadow-sm"
+                : "text-muted-foreground hover:bg-background hover:text-brand-navy"
+            }`}
+          >
+            {ts("allStyles")}
+          </button>
+          {activeStyles.map((style) => (
+            <button
+              key={style.id}
+              type="button"
+              onClick={() => setSelectedStyleId(style.id)}
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors ${
+                selectedStyleId === style.id
+                  ? "bg-brand-teal text-white shadow-sm"
+                  : "text-muted-foreground hover:bg-background hover:text-brand-navy"
+              }`}
+            >
+              {style.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {rankError && (
         <p className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
           {rankError}
         </p>
       )}
-      {ranks.map((rank, i) => (
-        <div key={rank.id} className="relative">
-          <RankRow
-            rank={rank}
-            discipline={discipline}
-            open={expanded === rank.id}
-            onToggle={() =>
-              setExpanded((cur) => (cur === rank.id ? null : rank.id))
-            }
-            rankActions={
-              <div
-                className="flex items-center gap-0.5"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <IconButton
-                  label={t("moveUp")}
-                  disabled={rankBusy || i === 0}
-                  onClick={() => moveRank(rank.id, "up")}
+      {filteredRanks.length === 0 && hasStyles && selectedStyleId !== "all" ? (
+        <p className="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
+          {t("settingUp")}
+        </p>
+      ) : (
+        filteredRanks.map((rank, i) => (
+          <div key={rank.id} className="relative">
+            <RankRow
+              rank={rank}
+              discipline={activeDiscipline}
+              open={expanded === rank.id}
+              onToggle={() =>
+                setExpanded((cur) => (cur === rank.id ? null : rank.id))
+              }
+              rankActions={
+                <div
+                  className="flex items-center gap-0.5"
+                  onClick={(e) => e.stopPropagation()}
                 >
-                  <ArrowUp size={14} />
-                </IconButton>
-                <IconButton
-                  label={t("moveDown")}
-                  disabled={rankBusy || i === ranks.length - 1}
-                  onClick={() => moveRank(rank.id, "down")}
-                >
-                  <ArrowDown size={14} />
-                </IconButton>
-                {confirmDeleteId === rank.id ? (
-                  <span className="ml-1 flex items-center gap-1.5">
-                    <span className="text-xs text-muted-foreground">
-                      {t("confirmDeleteRank")}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => deleteRank(rank.id)}
-                      disabled={rankBusy}
-                      className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
-                    >
-                      {tc("delete")}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmDeleteId(null)}
-                      className="text-xs font-medium text-muted-foreground hover:text-brand-navy"
-                    >
-                      {tc("cancel")}
-                    </button>
-                  </span>
-                ) : (
                   <IconButton
-                    label={t("deleteRank")}
-                    disabled={rankBusy}
-                    danger
-                    onClick={() => setConfirmDeleteId(rank.id)}
+                    label={t("moveUp")}
+                    disabled={rankBusy || i === 0}
+                    onClick={() => moveRank(rank.id, "up")}
                   >
-                    <Trash2 size={14} />
+                    <ArrowUp size={14} />
                   </IconButton>
-                )}
-              </div>
-            }
-          />
-        </div>
-      ))}
+                  <IconButton
+                    label={t("moveDown")}
+                    disabled={rankBusy || i === filteredRanks.length - 1}
+                    onClick={() => moveRank(rank.id, "down")}
+                  >
+                    <ArrowDown size={14} />
+                  </IconButton>
+                  {confirmDeleteId === rank.id ? (
+                    <span className="ml-1 flex items-center gap-1.5">
+                      <span className="text-xs text-muted-foreground">
+                        {t("confirmDeleteRank")}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => deleteRank(rank.id)}
+                        disabled={rankBusy}
+                        className="rounded-md bg-red-600 px-2 py-0.5 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-50"
+                      >
+                        {tc("delete")}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteId(null)}
+                        className="text-xs font-medium text-muted-foreground hover:text-brand-navy"
+                      >
+                        {tc("cancel")}
+                      </button>
+                    </span>
+                  ) : (
+                    <IconButton
+                      label={t("deleteRank")}
+                      disabled={rankBusy}
+                      danger
+                      onClick={() => setConfirmDeleteId(rank.id)}
+                    >
+                      <Trash2 size={14} />
+                    </IconButton>
+                  )}
+                </div>
+              }
+            />
+          </div>
+        ))
+      )}
     </div>
   );
 }

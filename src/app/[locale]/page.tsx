@@ -7,7 +7,9 @@ import {
   CalendarDays,
   Check,
   CreditCard,
+  Layers,
   QrCode,
+  Shield,
   Star,
   Swords,
   Trophy,
@@ -33,13 +35,15 @@ export async function generateMetadata({
 
 /** Feature icons, paired by index with the translated `Landing.features` array. */
 const FEATURE_ICONS: LucideIcon[] = [
-  Users,
-  Award,
-  CalendarDays,
-  QrCode,
-  CreditCard,
-  Trophy,
-  Swords,
+  Layers,        // Multiple styles
+  Users,         // Student management
+  Award,         // Belt progression
+  Shield,        // Team management
+  CalendarDays,  // Class scheduling
+  QrCode,        // QR check-in
+  CreditCard,    // Flexible payments
+  Trophy,        // Competition tracking
+  Swords,        // Sparring pairing
 ];
 
 interface TextItem {

@@ -44,6 +44,7 @@ export async function GET() {
 interface CreateClassBody {
   name?: string;
   discipline?: string;
+  styleId?: string | null;
   dayOfWeek?: string;
   daysOfWeek?: string[];
   startTime?: string;
@@ -146,11 +147,21 @@ export async function POST(request: Request) {
         where: {
           id: body.instructorId,
           clubId: club.id,
-          role: { in: ["OWNER", "INSTRUCTOR"] },
+          role: { in: ["OWNER", "ADMIN", "INSTRUCTOR"] },
         },
         select: { id: true },
       });
       instructorId = instructor?.id ?? null;
+    }
+
+    // Validate styleId belongs to this club when provided.
+    let styleId: string | null = null;
+    if (body.styleId) {
+      const style = await prisma.style.findFirst({
+        where: { id: body.styleId, clubId: club.id },
+        select: { id: true },
+      });
+      styleId = style?.id ?? null;
     }
 
     const created = await prisma.$transaction(
@@ -160,6 +171,7 @@ export async function POST(request: Request) {
             clubId: club.id,
             name,
             discipline,
+            styleId,
             dayOfWeek: day,
             startTime,
             endTime,

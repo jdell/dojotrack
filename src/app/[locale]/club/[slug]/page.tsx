@@ -267,47 +267,107 @@ export default async function ClubPublicPage({
               {t("schedule")}
             </h2>
             {club.classSchedules.length > 0 ? (
-              <div className="mt-3 space-y-2">
-                {DAY_ORDER.filter((day) =>
-                  club.classSchedules.some((cs) => cs.dayOfWeek === day)
-                ).map((day) => (
-                  <div key={day}>
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                      {t(`dayShort.${day}`)}
-                    </p>
-                    {club.classSchedules
-                      .filter((cs) => cs.dayOfWeek === day)
-                      .map((cs) => (
-                        <div
-                          key={cs.id}
-                          className="flex items-center gap-3 rounded-lg bg-slate-50 dark:bg-slate-800 px-3 py-2 mb-1"
-                        >
-                          <Clock size={14} className="text-brand-teal shrink-0" />
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-medium text-brand-navy truncate">
-                              {cs.name}
-                            </p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">
-                              {cs.startTime} – {cs.endTime}
-                              {cs.location && ` · ${cs.location}`}
-                              {cs.instructorName && ` · ${cs.instructorName}`}
-                            </p>
-                          </div>
-                          <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
-                            {cs.level.replace("_", " ")}
-                          </span>
-                          <TrialRequestForm
-                            clubSlug={slug}
-                            classScheduleId={cs.id}
-                            className={cs.name}
-                          />
+              club.styles.length > 0 ? (
+                /* When the club has styles, group schedules by style. */
+                <div className="mt-3 space-y-4">
+                  {club.styles.map((style) => {
+                    const styleClasses = club.classSchedules.filter(
+                      (cs) => cs.styleId === style.id,
+                    );
+                    if (styleClasses.length === 0) return null;
+                    return (
+                      <div key={style.id}>
+                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-brand-teal">
+                          {style.name}
+                        </p>
+                        <div className="space-y-2">
+                          {DAY_ORDER.filter((day) =>
+                            styleClasses.some((cs) => cs.dayOfWeek === day),
+                          ).map((day) => (
+                            <div key={day}>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                {t(`dayShort.${day}`)}
+                              </p>
+                              {styleClasses
+                                .filter((cs) => cs.dayOfWeek === day)
+                                .map((cs) => (
+                                  <ScheduleCard
+                                    key={cs.id}
+                                    cs={cs}
+                                    slug={slug}
+
+                                  />
+                                ))}
+                            </div>
+                          ))}
                         </div>
-                      ))}
-                  </div>
-                ))}
-              </div>
+                      </div>
+                    );
+                  })}
+                  {/* Classes with no style assigned */}
+                  {(() => {
+                    const styleIds = new Set(
+                      club.styles.map((s) => s.id),
+                    );
+                    const unassigned = club.classSchedules.filter(
+                      (cs) => !cs.styleId || !styleIds.has(cs.styleId),
+                    );
+                    if (unassigned.length === 0) return null;
+                    return (
+                      <div>
+                        <div className="space-y-2">
+                          {DAY_ORDER.filter((day) =>
+                            unassigned.some((cs) => cs.dayOfWeek === day),
+                          ).map((day) => (
+                            <div key={day}>
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                                {t(`dayShort.${day}`)}
+                              </p>
+                              {unassigned
+                                .filter((cs) => cs.dayOfWeek === day)
+                                .map((cs) => (
+                                  <ScheduleCard
+                                    key={cs.id}
+                                    cs={cs}
+                                    slug={slug}
+
+                                  />
+                                ))}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </div>
+              ) : (
+                /* No styles — flat day-based listing. */
+                <div className="mt-3 space-y-2">
+                  {DAY_ORDER.filter((day) =>
+                    club.classSchedules.some((cs) => cs.dayOfWeek === day),
+                  ).map((day) => (
+                    <div key={day}>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
+                        {t(`dayShort.${day}`)}
+                      </p>
+                      {club.classSchedules
+                        .filter((cs) => cs.dayOfWeek === day)
+                        .map((cs) => (
+                          <ScheduleCard
+                            key={cs.id}
+                            cs={cs}
+                            slug={slug}
+                            t={t}
+                          />
+                        ))}
+                    </div>
+                  ))}
+                </div>
+              )
             ) : (
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">{t("scheduleSoon")}</p>
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                {t("scheduleSoon")}
+              </p>
             )}
           </section>
 
@@ -317,12 +377,21 @@ export default async function ClubPublicPage({
               <Users size={16} className="text-brand-teal" /> {t("instructors")}
             </h2>
             {club.instructors.length > 0 ? (
-              <ul className="mt-3 space-y-2">
+              <ul className="mt-3 space-y-3">
                 {club.instructors.map((i) => (
-                  <li key={i.id} className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-full bg-brand-teal/10 text-xs font-semibold text-brand-teal">
-                      {initials(i.name)}
-                    </span>
+                  <li key={i.id} className="flex items-start gap-3">
+                    {i.photoUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={i.photoUrl}
+                        alt={i.name}
+                        className="h-10 w-10 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover"
+                      />
+                    ) : (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-xs font-semibold text-brand-teal">
+                        {initials(i.name)}
+                      </span>
+                    )}
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium text-brand-navy">
                         {i.name}
@@ -330,6 +399,16 @@ export default async function ClubPublicPage({
                       <p className="text-xs capitalize text-slate-400">
                         {i.role.toLowerCase()}
                       </p>
+                      {i.bio && (
+                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
+                          {i.bio}
+                        </p>
+                      )}
+                      {i.qualifications && (
+                        <p className="mt-0.5 text-[11px] text-slate-400">
+                          {i.qualifications}
+                        </p>
+                      )}
                     </div>
                   </li>
                 ))}
@@ -344,6 +423,39 @@ export default async function ClubPublicPage({
       </div>
 
       <ClubFooter />
+    </div>
+  );
+}
+
+/** A single class-schedule row. */
+function ScheduleCard({
+  cs,
+  slug,
+}: {
+  cs: PublicClub["classSchedules"][number];
+  slug: string;
+}) {
+  return (
+    <div className="flex items-center gap-3 rounded-lg bg-slate-50 dark:bg-slate-800 px-3 py-2 mb-1">
+      <Clock size={14} className="text-brand-teal shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-brand-navy truncate">
+          {cs.name}
+        </p>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {cs.startTime} – {cs.endTime}
+          {cs.location && ` · ${cs.location}`}
+          {cs.instructorName && ` · ${cs.instructorName}`}
+        </p>
+      </div>
+      <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+        {cs.level.replace("_", " ")}
+      </span>
+      <TrialRequestForm
+        clubSlug={slug}
+        classScheduleId={cs.id}
+        className={cs.name}
+      />
     </div>
   );
 }

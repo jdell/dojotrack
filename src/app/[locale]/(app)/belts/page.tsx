@@ -4,7 +4,9 @@ import { Link } from "@/i18n/navigation";
 import { GraduationCap } from "lucide-react";
 import {
   ensureBeltRanks,
+  ensureStyles,
   getBeltRanksWithRequirements,
+  getClubStyles,
   getCurrentClub,
 } from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
@@ -32,8 +34,12 @@ const SYSTEMS: BeltSystem[] = Object.values(BELT_SYSTEMS).filter(
 export default async function BeltsPage() {
   const t = await getTranslations("Belts");
   const club = isDbConfigured() ? await getCurrentClub() : null;
-  if (club) await ensureBeltRanks(club);
+  if (club) {
+    await ensureStyles(club);
+    await ensureBeltRanks(club);
+  }
   const ranks = club ? await getBeltRanksWithRequirements(club.id) : [];
+  const styles = club ? await getClubStyles(club.id) : [];
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
@@ -57,7 +63,11 @@ export default async function BeltsPage() {
       </div>
 
       {club && ranks.length > 0 ? (
-        <BeltsManager ranks={ranks} discipline={club.disciplines?.[0] ?? "custom"} />
+        <BeltsManager
+          ranks={ranks}
+          discipline={club.disciplines?.[0] ?? "custom"}
+          styles={styles}
+        />
       ) : club ? (
         <p className="rounded-xl border border-dashed border-border bg-card p-10 text-center text-sm text-muted-foreground">
           {t("settingUp")}

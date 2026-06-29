@@ -15,9 +15,16 @@ interface DisciplineOption {
   emoji: string;
 }
 
+interface StyleOption {
+  id: string;
+  discipline: string;
+  name: string;
+}
+
 interface ClassFormProps {
   disciplines: DisciplineOption[];
   instructors: InstructorOption[];
+  styles?: StyleOption[];
 }
 
 const LEVEL_ORDER: ClassLevel[] = [
@@ -32,14 +39,23 @@ const inputClass =
 const labelClass = "mb-1.5 block text-sm font-medium text-foreground";
 
 /** Create-class form. Submits to POST /api/classes, then returns to schedule. */
-export function ClassForm({ disciplines, instructors }: ClassFormProps) {
+export function ClassForm({
+  disciplines,
+  instructors,
+  styles = [],
+}: ClassFormProps) {
   const t = useTranslations("Classes");
+  const ts = useTranslations("Styles");
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const hasStyles = styles.length > 0;
   const [form, setForm] = useState({
     name: "",
-    discipline: disciplines[0]?.value ?? "",
+    discipline: hasStyles
+      ? styles[0]?.discipline ?? disciplines[0]?.value ?? ""
+      : disciplines[0]?.value ?? "",
+    styleId: hasStyles ? styles[0]?.id ?? "" : "",
     daysOfWeek: ["MON"] as DayOfWeek[],
     startTime: "18:00",
     endTime: "19:00",
@@ -64,6 +80,7 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         body: JSON.stringify({
           name: form.name,
           discipline: form.discipline,
+          styleId: form.styleId || null,
           daysOfWeek: form.daysOfWeek,
           startTime: form.startTime,
           endTime: form.endTime,
@@ -111,18 +128,41 @@ export function ClassForm({ disciplines, instructors }: ClassFormProps) {
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>{t("discipline")}</label>
-            <select
-              value={form.discipline}
-              onChange={(e) => update("discipline", e.target.value)}
-              className={`${inputClass} bg-background`}
-            >
-              {disciplines.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.emoji} {d.label}
-                </option>
-              ))}
-            </select>
+            <label className={labelClass}>
+              {hasStyles ? ts("selectStyle") : t("discipline")}
+            </label>
+            {hasStyles ? (
+              <select
+                value={form.styleId}
+                onChange={(e) => {
+                  const style = styles.find((s) => s.id === e.target.value);
+                  setForm((f) => ({
+                    ...f,
+                    styleId: e.target.value,
+                    discipline: style?.discipline ?? f.discipline,
+                  }));
+                }}
+                className={`${inputClass} bg-background`}
+              >
+                {styles.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <select
+                value={form.discipline}
+                onChange={(e) => update("discipline", e.target.value)}
+                className={`${inputClass} bg-background`}
+              >
+                {disciplines.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.emoji} {d.label}
+                  </option>
+                ))}
+              </select>
+            )}
           </div>
           <div>
             <label className={labelClass}>{t("level.label")}</label>

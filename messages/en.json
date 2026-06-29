@@ -64,16 +64,24 @@
     "featuresSubtitle": "From a student's first trial class to their black belt — and every payment, grading, and competition in between.",
     "features": [
       {
+        "title": "Multiple styles",
+        "desc": "Teach BJJ, Karate, and Judo under one roof. Each style has its own belt system, requirements, classes, and progression — all managed from one dashboard."
+      },
+      {
         "title": "Student management",
-        "desc": "A complete roster with families, contact details, medical notes, and one-tap invites."
+        "desc": "A complete roster with families, contact details, medical notes, and one-tap invites. Students track their belt rank per style."
       },
       {
         "title": "Belt progression tracking",
-        "desc": "Visual requirement checklists from white to black across BJJ, Karate, Judo, and more."
+        "desc": "Visual requirement checklists from white to black. Browse a library of common requirements by discipline, or create your own. Track progress per student per style."
+      },
+      {
+        "title": "Team management",
+        "desc": "Invite admins and instructors to help run your club. Instructors see their classes and students. Admins manage everything except billing."
       },
       {
         "title": "Class scheduling",
-        "desc": "Build a weekly timetable, manage bookings, and track attendance from any device."
+        "desc": "Build a weekly timetable across multiple styles, assign instructors, manage bookings, and track attendance from any device."
       },
       {
         "title": "QR check-in",
@@ -273,6 +281,63 @@
     "whatsappConfigured": "WhatsApp is configured and ready to send notifications.",
     "whatsappNotConfigured": "WhatsApp is not configured. Add WHATSAPP_API_TOKEN and WHATSAPP_PHONE_ID environment variables to enable WhatsApp notifications.",
     "whatsappSetupInstructions": "To set up WhatsApp notifications, create a WhatsApp Business account and add your API token and Phone ID as environment variables."
+  },
+  "Team": {
+    "title": "Team",
+    "subtitle": "Manage your club's staff and instructors.",
+    "inviteAdmin": "Invite admin",
+    "inviteInstructor": "Invite instructor",
+    "inviteStaff": "Invite staff",
+    "teamMembers": "Team members",
+    "changeRole": "Change role",
+    "removeFromClub": "Remove from club",
+    "confirmRemove": "Are you sure you want to remove {name} from the club?",
+    "roleOwner": "Owner",
+    "roleAdmin": "Admin",
+    "roleInstructor": "Instructor",
+    "roleStudent": "Student",
+    "roleParent": "Parent",
+    "noTeamMembers": "No team members yet.",
+    "inviteEmailPlaceholder": "Email or phone",
+    "selectRole": "Select role",
+    "sendInvite": "Send invite",
+    "inviteSent": "Invitation sent!",
+    "errorInvite": "Could not send the invitation.",
+    "errorChangeRole": "Could not change the role.",
+    "errorRemove": "Could not remove the user.",
+    "onlyOwnerCanChange": "Only the owner can change this role.",
+    "bio": "Bio",
+    "qualifications": "Qualifications",
+    "instructorProfile": "Instructor profile",
+    "photoUrl": "Photo URL",
+    "editProfile": "Edit profile",
+    "saveProfile": "Save profile"
+  },
+  "Styles": {
+    "title": "Styles",
+    "subtitle": "Martial art styles your club teaches.",
+    "addStyle": "Add style",
+    "styleName": "Style name",
+    "discipline": "Discipline",
+    "styleOrder": "Order",
+    "deactivateStyle": "Deactivate",
+    "activateStyle": "Activate",
+    "deleteStyle": "Delete style",
+    "confirmDelete": "Are you sure? This cannot be undone.",
+    "cannotDelete": "Cannot delete a style that has belt ranks, classes, or students. Deactivate it instead.",
+    "noStyles": "No styles yet. Add your first martial art style.",
+    "beltsByStyle": "Belts by style",
+    "studentBelts": "Student belts",
+    "allStyles": "All styles",
+    "active": "Active",
+    "inactive": "Inactive",
+    "beltRanks": "{count, plural, =0 {No belts} one {1 belt} other {# belts}}",
+    "classes": "{count, plural, =0 {No classes} one {1 class} other {# classes}}",
+    "students": "{count, plural, =0 {No students} one {1 student} other {# students}}",
+    "selectStyle": "Select a style",
+    "errorAdd": "Could not add the style.",
+    "errorUpdate": "Could not update the style.",
+    "errorDelete": "Could not delete the style."
   },
   "Students": {
     "eyebrow": "Roster",

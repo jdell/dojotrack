@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import {
   getClassDetail,
+  getClubStyles,
   getCurrentClub,
   getInstructorOptions,
 } from "@/lib/queries";
@@ -40,6 +41,10 @@ export default async function ClassEditPage({
   if (!detail) notFound();
 
   const instructors = await getInstructorOptions(club.id);
+  const clubStyles = await getClubStyles(club.id);
+  const activeStyles = clubStyles
+    .filter((s) => s.active)
+    .map((s) => ({ id: s.id, discipline: s.discipline, name: s.name }));
   const disciplines = DISCIPLINES.filter(
     (d) => club.disciplines.includes(d.value) || d.value === detail.discipline,
   );
@@ -66,6 +71,7 @@ export default async function ClassEditPage({
           name: detail.name,
           discipline: detail.discipline,
           dayOfWeek: detail.dayOfWeek,
+          daysOfWeek: [detail.dayOfWeek],
           startTime: detail.startTime,
           endTime: detail.endTime,
           instructorId: detail.instructorId ?? "",
@@ -75,6 +81,7 @@ export default async function ClassEditPage({
         }}
         disciplines={disciplines}
         instructors={instructors}
+        styles={activeStyles.length > 0 ? activeStyles : undefined}
       />
     </div>
   );

@@ -1,16 +1,24 @@
 import type { Metadata } from "next";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { getClubSettings } from "@/lib/queries";
+import {
+  getClubSettings,
+  getTeamMembers,
+  getCurrentUser,
+  getClubStyles,
+  ensureStyles,
+} from "@/lib/queries";
 import { isDbConfigured } from "@/lib/db";
 import { isStripeConfigured } from "@/lib/stripe";
 import { isWhatsAppConfigured } from "@/lib/notify";
 import { prisma } from "@/lib/prisma";
-import { BRAND } from "@/lib/constants";
+import { BRAND, DISCIPLINES } from "@/lib/constants";
 import { SettingsForm } from "./settings-form";
 import { StripeConnect } from "./stripe-connect";
 import { UpgradeBanner } from "./upgrade-banner";
 import { WhatsAppStatus } from "./whatsapp-status";
+import { TeamSection } from "./team-section";
+import { StylesSection } from "./styles-section";
 
 export async function generateMetadata({
   params,
@@ -39,6 +47,46 @@ export default async function SettingsPage() {
 
   // Load club tier for upgrade banner
   let clubTier: "FREE" | "PRO" = "FREE";
+  const currentUser = isDbConfigured() ? await getCurrentUser() : null;
+  const teamMembers =
+    isDbConfigured() && settings ? await getTeamMembers(settings.id) : [];
+
+  // Styles: ensure auto-created from disciplines, then load.
+  let clubStyles: Awaited<ReturnType<typeof getClubStyles>> = [];
+  if (isDbConfigured() && settings) {
+    try {
+      // Build a minimal ClubSummary for ensureStyles.
+      const clubForStyles = await prisma.club.findUnique({
+        where: { id: settings.id },
+        select: {
+          id: true,
+          name: true,
+          slug: true,
+          beltSystemId: true,
+          disciplines: true,
+          locale: true,
+          currency: true,
+          tier: true,
+        },
+      });
+      if (clubForStyles) {
+        await ensureStyles({
+          id: clubForStyles.id,
+          name: clubForStyles.name,
+          slug: clubForStyles.slug,
+          beltSystemId: clubForStyles.beltSystemId,
+          disciplines: clubForStyles.disciplines,
+          locale: clubForStyles.locale,
+          currency: clubForStyles.currency ?? "eur",
+          tier: clubForStyles.tier,
+        });
+      }
+    } catch {
+      // best effort
+    }
+    clubStyles = await getClubStyles(settings.id);
+  }
+
   if (isDbConfigured() && settings) {
     try {
       const club = await prisma.club.findUnique({
@@ -62,6 +110,21 @@ export default async function SettingsPage() {
       {settings ? (
         <>
           <SettingsForm settings={settings} publicHost={publicHost()} />
+          {currentUser && (
+            <TeamSection
+              members={teamMembers}
+              currentUserId={currentUser.id}
+              currentUserRole={currentUser.role}
+            />
+          )}
+          <StylesSection
+            styles={clubStyles}
+            disciplines={DISCIPLINES.map((d) => ({
+              value: d.value,
+              label: d.label,
+              emoji: d.emoji,
+            }))}
+          />
           <UpgradeBanner clubTier={clubTier} />
           {isStripeConfigured() && clubTier === "PRO" && (
             <StripeConnect

@@ -63,19 +63,33 @@ export async function POST(request: Request) {
   let unitLabel: string | null = null;
   let email: string | null = null;
   let recipientName: string | null = null;
+  let role: "ADMIN" | "INSTRUCTOR" | "STUDENT" = "STUDENT";
   try {
     const body = await request.json().catch(() => ({}));
     unitLabel = body?.unitLabel?.trim() || null;
     email = body?.email?.trim() || null;
     recipientName = body?.recipientName?.trim() || body?.name?.trim() || null;
+    if (body?.role && ["ADMIN", "INSTRUCTOR", "STUDENT"].includes(body.role)) {
+      role = body.role;
+    }
   } catch {
     // Body is optional — ignore parse errors.
+  }
+
+  // Only OWNER and ADMIN can invite staff (ADMIN or INSTRUCTOR).
+  if (role !== "STUDENT") {
+    if (auth.user.role !== "OWNER" && auth.user.role !== "ADMIN") {
+      return NextResponse.json(
+        { error: "Only owners and admins can invite staff." },
+        { status: 403 },
+      );
+    }
   }
 
   try {
     const expiresAt = new Date(Date.now() + INVITE_TTL_DAYS * 86_400_000);
     const invitation = await prisma.invitation.create({
-      data: { clubId: club.id, unitLabel, email, recipientName, expiresAt },
+      data: { clubId: club.id, unitLabel, email, recipientName, role, expiresAt },
     });
 
     // When an email was supplied, actually deliver the invite (logged in dev
