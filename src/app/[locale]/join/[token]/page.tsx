@@ -5,6 +5,7 @@ import { CalendarX, Clock, Link2Off } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { getInvitationByToken } from "@/lib/queries";
 import { JoinForm } from "./join-form";
+import { StaffInvite } from "./staff-invite";
 
 export const dynamic = "force-dynamic";
 
@@ -43,31 +44,39 @@ export default async function JoinPage({
       <main className="flex flex-1 items-center justify-center px-4 py-10">
         <div className="w-full max-w-md rounded-2xl border border-slate-100 bg-white p-8 shadow-xl shadow-slate-900/[0.04]">
           {invite.status === "valid" ? (
-            <>
-              <p className="eyebrow">{t("eyebrow")}</p>
-              <h1 className="mt-1 text-xl font-bold text-brand-navy">
-                {t("heading", { club: invite.clubName ?? t("fallbackClub") })}
-              </h1>
-              <p className="mb-6 mt-1 text-sm text-slate-500">
-                {invite.unitLabel ? (
-                  t.rich("enrolNamed", {
-                    name: (chunks) => (
-                      <span className="font-medium text-brand-navy">
-                        {chunks}
-                      </span>
-                    ),
-                    label: invite.unitLabel,
-                  })
-                ) : (
-                  t("enrolMember")
-                )}
-              </p>
-              <JoinForm
+            invite.role === "ADMIN" || invite.role === "INSTRUCTOR" ? (
+              <StaffInvite
                 token={token}
                 clubName={invite.clubName ?? t("fallbackClub")}
-                unitLabel={invite.unitLabel}
+                role={invite.role}
               />
-            </>
+            ) : (
+              <>
+                <p className="eyebrow">{t("eyebrow")}</p>
+                <h1 className="mt-1 text-xl font-bold text-brand-navy">
+                  {t("heading", { club: invite.clubName ?? t("fallbackClub") })}
+                </h1>
+                <p className="mb-6 mt-1 text-sm text-slate-500">
+                  {invite.unitLabel ? (
+                    t.rich("enrolNamed", {
+                      name: (chunks) => (
+                        <span className="font-medium text-brand-navy">
+                          {chunks}
+                        </span>
+                      ),
+                      label: invite.unitLabel,
+                    })
+                  ) : (
+                    t("enrolMember")
+                  )}
+                </p>
+                <JoinForm
+                  token={token}
+                  clubName={invite.clubName ?? t("fallbackClub")}
+                  unitLabel={invite.unitLabel}
+                />
+              </>
+            )
           ) : (
             <InviteProblem status={invite.status} />
           )}
