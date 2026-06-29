@@ -2,15 +2,15 @@
 -- Creates the Style and StudentStyle tables, adds style_id FKs to belt_ranks
 -- and class_schedules.
 
--- 1. Create styles table
+-- 1. Create styles table (TEXT ids to match existing schema convention)
 CREATE TABLE "styles" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "club_id" UUID NOT NULL,
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid()::TEXT,
+  "club_id" TEXT NOT NULL,
   "discipline" TEXT NOT NULL,
   "name" TEXT NOT NULL,
   "active" BOOLEAN NOT NULL DEFAULT true,
   "order" INTEGER NOT NULL DEFAULT 0,
-  "created_at" TIMESTAMPTZ NOT NULL DEFAULT now(),
+  "created_at" TIMESTAMP(3) WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "styles_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "styles_club_id_fkey" FOREIGN KEY ("club_id") REFERENCES "clubs"("id") ON DELETE RESTRICT
 );
@@ -18,11 +18,11 @@ CREATE INDEX "styles_club_id_idx" ON "styles"("club_id");
 
 -- 2. Create student_styles join table
 CREATE TABLE "student_styles" (
-  "id" UUID NOT NULL DEFAULT gen_random_uuid(),
-  "student_id" UUID NOT NULL,
-  "style_id" UUID NOT NULL,
-  "belt_rank_id" UUID,
-  "join_date" TIMESTAMPTZ NOT NULL DEFAULT now(),
+  "id" TEXT NOT NULL DEFAULT gen_random_uuid()::TEXT,
+  "student_id" TEXT NOT NULL,
+  "style_id" TEXT NOT NULL,
+  "belt_rank_id" TEXT,
+  "join_date" TIMESTAMP(3) WITHOUT TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
   CONSTRAINT "student_styles_pkey" PRIMARY KEY ("id"),
   CONSTRAINT "student_styles_student_id_fkey" FOREIGN KEY ("student_id") REFERENCES "students"("id") ON DELETE RESTRICT,
   CONSTRAINT "student_styles_style_id_fkey" FOREIGN KEY ("style_id") REFERENCES "styles"("id") ON DELETE RESTRICT,
@@ -31,12 +31,12 @@ CREATE TABLE "student_styles" (
 CREATE UNIQUE INDEX "student_styles_student_id_style_id_key" ON "student_styles"("student_id", "style_id");
 
 -- 3. Add style_id to belt_ranks (nullable for migration)
-ALTER TABLE "belt_ranks" ADD COLUMN "style_id" UUID;
+ALTER TABLE "belt_ranks" ADD COLUMN "style_id" TEXT;
 ALTER TABLE "belt_ranks" ADD CONSTRAINT "belt_ranks_style_id_fkey"
   FOREIGN KEY ("style_id") REFERENCES "styles"("id") ON DELETE SET NULL;
 
 -- 4. Add style_id to class_schedules (nullable for migration)
-ALTER TABLE "class_schedules" ADD COLUMN "style_id" UUID;
+ALTER TABLE "class_schedules" ADD COLUMN "style_id" TEXT;
 ALTER TABLE "class_schedules" ADD CONSTRAINT "class_schedules_style_id_fkey"
   FOREIGN KEY ("style_id") REFERENCES "styles"("id") ON DELETE SET NULL;
 

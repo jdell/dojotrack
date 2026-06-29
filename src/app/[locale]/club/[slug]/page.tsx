@@ -357,7 +357,6 @@ export default async function ClubPublicPage({
                             key={cs.id}
                             cs={cs}
                             slug={slug}
-                            t={t}
                           />
                         ))}
                     </div>
