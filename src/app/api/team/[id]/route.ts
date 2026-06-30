@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
-import { requireAuth } from "@/lib/auth-context";
+import { requireAuth, isClubAdmin } from "@/lib/auth-context";
 import type { Role } from "@prisma/client";
 
 type RouteContext = { params: Promise<{ id: string }> };
@@ -31,7 +31,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
   }
 
   // Only OWNER and ADMIN can change roles.
-  if (auth.user.role !== "OWNER" && auth.user.role !== "ADMIN") {
+  if (!(await isClubAdmin(auth))) {
     return NextResponse.json(
       { error: "Only owners and admins can change roles." },
       { status: 403 },
@@ -152,7 +152,7 @@ export async function DELETE(_request: Request, { params }: RouteContext) {
   }
 
   // Only OWNER and ADMIN can remove members.
-  if (auth.user.role !== "OWNER" && auth.user.role !== "ADMIN") {
+  if (!(await isClubAdmin(auth))) {
     return NextResponse.json(
       { error: "Only owners and admins can remove team members." },
       { status: 403 },

@@ -110,9 +110,21 @@ export async function requireAuth(): Promise<AuthContext | NextResponse> {
 }
 
 /**
- * Whether the given email is in the comma-separated `ADMIN_EMAILS` env var,
- * granting platform-level admin access (the /admin section).
+ * Whether the current request is from a club owner/admin — either by role
+ * or by platform admin impersonation. Use this in API routes instead of
+ * manually checking `auth.user.role`.
  */
+export async function isClubAdmin(auth: AuthContext): Promise<boolean> {
+  if (["OWNER", "ADMIN"].includes(auth.user.role)) return true;
+  // Platform admins impersonating a club can do anything an owner can.
+  const impersonatedClubId = await getImpersonatedClubId();
+  if (impersonatedClubId) {
+    const authUser = await getAuthUser();
+    if (authUser && isPlatformAdmin(authUser.email, authUser.phone)) return true;
+  }
+  return false;
+}
+
 /**
  * Check if a user is a platform admin. Matches against ADMIN_EMAILS (email)
  * and ADMIN_PHONES (phone number) env vars. This supports phone-OTP users

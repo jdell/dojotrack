@@ -12,7 +12,6 @@ import {
   Users,
 } from "lucide-react";
 import { DAY_ORDER } from "@/lib/schedule";
-import type { DayOfWeek } from "@prisma/client";
 import { Logo } from "@/components/logo";
 import { getClubBySlug, type PublicClub } from "@/lib/queries";
 import { baseUrl } from "@/lib/invite";
@@ -259,166 +258,111 @@ export default async function ClubPublicPage({
           </section>
         )}
 
-        <div className="grid gap-6 sm:grid-cols-2">
-          {/* Schedule */}
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
-              <CalendarDays size={16} className="text-brand-teal" />{" "}
-              {t("schedule")}
-            </h2>
-            {club.classSchedules.length > 0 ? (
-              club.styles.length > 0 ? (
-                /* When the club has styles, group schedules by style. */
-                <div className="mt-3 space-y-4">
-                  {club.styles.map((style) => {
-                    const styleClasses = club.classSchedules.filter(
-                      (cs) => cs.styleId === style.id,
-                    );
-                    if (styleClasses.length === 0) return null;
-                    return (
-                      <div key={style.id}>
-                        <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-brand-teal">
-                          {style.name}
-                        </p>
-                        <div className="space-y-2">
-                          {DAY_ORDER.filter((day) =>
-                            styleClasses.some((cs) => cs.dayOfWeek === day),
-                          ).map((day) => (
-                            <div key={day}>
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                                {t(`dayShort.${day}`)}
-                              </p>
-                              {styleClasses
-                                .filter((cs) => cs.dayOfWeek === day)
-                                .map((cs) => (
-                                  <ScheduleCard
-                                    key={cs.id}
-                                    cs={cs}
-                                    slug={slug}
-
-                                  />
-                                ))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })}
-                  {/* Classes with no style assigned */}
-                  {(() => {
-                    const styleIds = new Set(
-                      club.styles.map((s) => s.id),
-                    );
-                    const unassigned = club.classSchedules.filter(
-                      (cs) => !cs.styleId || !styleIds.has(cs.styleId),
-                    );
-                    if (unassigned.length === 0) return null;
-                    return (
-                      <div>
-                        <div className="space-y-2">
-                          {DAY_ORDER.filter((day) =>
-                            unassigned.some((cs) => cs.dayOfWeek === day),
-                          ).map((day) => (
-                            <div key={day}>
-                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                                {t(`dayShort.${day}`)}
-                              </p>
-                              {unassigned
-                                .filter((cs) => cs.dayOfWeek === day)
-                                .map((cs) => (
-                                  <ScheduleCard
-                                    key={cs.id}
-                                    cs={cs}
-                                    slug={slug}
-
-                                  />
-                                ))}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    );
-                  })()}
-                </div>
-              ) : (
-                /* No styles — flat day-based listing. */
-                <div className="mt-3 space-y-2">
-                  {DAY_ORDER.filter((day) =>
-                    club.classSchedules.some((cs) => cs.dayOfWeek === day),
-                  ).map((day) => (
-                    <div key={day}>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-400 mb-1">
-                        {t(`dayShort.${day}`)}
-                      </p>
-                      {club.classSchedules
-                        .filter((cs) => cs.dayOfWeek === day)
-                        .map((cs) => (
-                          <ScheduleCard
-                            key={cs.id}
-                            cs={cs}
-                            slug={slug}
-                          />
-                        ))}
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                {t("scheduleSoon")}
-              </p>
-            )}
-          </section>
-
-          {/* Instructors */}
-          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-6">
-            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy">
+        {/* Instructors — compact horizontal strip */}
+        {club.instructors.length > 0 ? (
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy mb-3">
               <Users size={16} className="text-brand-teal" /> {t("instructors")}
             </h2>
-            {club.instructors.length > 0 ? (
-              <ul className="mt-3 space-y-3">
-                {club.instructors.map((i) => (
-                  <li key={i.id} className="flex items-start gap-3">
-                    {i.photoUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={i.photoUrl}
-                        alt={i.name}
-                        className="h-10 w-10 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover"
-                      />
-                    ) : (
-                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-xs font-semibold text-brand-teal">
-                        {initials(i.name)}
-                      </span>
-                    )}
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium text-brand-navy">
-                        {i.name}
-                      </p>
-                      <p className="text-xs capitalize text-slate-400">
+            <div className="flex flex-wrap gap-x-5 gap-y-2">
+              {club.instructors.map((i) => (
+                <div key={i.id} className="group relative flex items-center gap-2">
+                  {i.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={i.photoUrl}
+                      alt={i.name}
+                      className="h-8 w-8 shrink-0 rounded-full border border-slate-200 dark:border-slate-800 object-cover"
+                    />
+                  ) : (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-teal/10 text-[11px] font-semibold text-brand-teal">
+                      {initials(i.name)}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-brand-navy leading-tight">
+                      {i.name}
+                      <span className="ml-1.5 text-xs font-normal capitalize text-slate-400">
                         {i.role.toLowerCase()}
+                      </span>
+                    </p>
+                    {(i.bio || i.qualifications) && (
+                      <p className="text-[11px] text-slate-400 leading-tight truncate max-w-[220px]">
+                        {i.qualifications || i.bio}
                       </p>
-                      {i.bio && (
-                        <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400 line-clamp-2">
-                          {i.bio}
-                        </p>
-                      )}
-                      {i.qualifications && (
-                        <p className="mt-0.5 text-[11px] text-slate-400">
-                          {i.qualifications}
-                        </p>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
-                {t("instructorsSoon")}
-              </p>
-            )}
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
           </section>
-        </div>
+        ) : (
+          <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-5">
+            <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy mb-2">
+              <Users size={16} className="text-brand-teal" /> {t("instructors")}
+            </h2>
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t("instructorsSoon")}
+            </p>
+          </section>
+        )}
+
+        {/* Schedule — full-width weekly timetable */}
+        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6">
+          <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy mb-4">
+            <CalendarDays size={16} className="text-brand-teal" />{" "}
+            {t("schedule")}
+          </h2>
+          {club.classSchedules.length > 0 ? (
+            club.styles.length > 0 ? (
+              /* Styles exist — one timetable per style */
+              <div className="space-y-8">
+                {club.styles.map((style) => {
+                  const styleClasses = club.classSchedules.filter(
+                    (cs) => cs.styleId === style.id,
+                  );
+                  if (styleClasses.length === 0) return null;
+                  return (
+                    <WeeklyTimetable
+                      key={style.id}
+                      title={style.name}
+                      classes={styleClasses}
+                      slug={slug}
+                      t={t}
+                    />
+                  );
+                })}
+                {/* Classes with no style assigned */}
+                {(() => {
+                  const styleIds = new Set(club.styles.map((s) => s.id));
+                  const unassigned = club.classSchedules.filter(
+                    (cs) => !cs.styleId || !styleIds.has(cs.styleId),
+                  );
+                  if (unassigned.length === 0) return null;
+                  return (
+                    <WeeklyTimetable
+                      title={t("otherClasses")}
+                      classes={unassigned}
+                      slug={slug}
+                      t={t}
+                    />
+                  );
+                })()}
+              </div>
+            ) : (
+              /* No styles — single flat timetable */
+              <WeeklyTimetable
+                classes={club.classSchedules}
+                slug={slug}
+                t={t}
+              />
+            )
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              {t("scheduleSoon")}
+            </p>
+          )}
+        </section>
       </div>
 
       <ClubFooter />
@@ -426,7 +370,77 @@ export default async function ClubPublicPage({
   );
 }
 
-/** A single class-schedule row. */
+/**
+ * Weekly timetable grid — columns per day, stacked class cards.
+ * On mobile (<sm), days stack vertically. On tablet+, a column grid.
+ */
+function WeeklyTimetable({
+  title,
+  classes,
+  slug,
+  t,
+}: {
+  title?: string;
+  classes: PublicClub["classSchedules"][number][];
+  slug: string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  t: any;
+}) {
+  const activeDays = DAY_ORDER.filter((day) =>
+    classes.some((cs) => cs.dayOfWeek === day),
+  );
+
+  return (
+    <div>
+      {title && (
+        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-teal">
+          {title}
+        </h3>
+      )}
+      {/* Desktop/tablet: column grid */}
+      <div
+        className="hidden sm:grid gap-2"
+        style={{
+          gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))`,
+        }}
+      >
+        {activeDays.map((day) => (
+          <div key={day} className="min-w-0">
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+              {t(`dayShort.${day}`)}
+            </p>
+            <div className="space-y-1.5">
+              {classes
+                .filter((cs) => cs.dayOfWeek === day)
+                .map((cs) => (
+                  <ScheduleCard key={cs.id} cs={cs} slug={slug} />
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Mobile: stacked by day */}
+      <div className="sm:hidden space-y-3">
+        {activeDays.map((day) => (
+          <div key={day}>
+            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
+              {t(`dayShort.${day}`)}
+            </p>
+            <div className="space-y-1.5">
+              {classes
+                .filter((cs) => cs.dayOfWeek === day)
+                .map((cs) => (
+                  <ScheduleCard key={cs.id} cs={cs} slug={slug} />
+                ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/** A single class card within the timetable grid. */
 function ScheduleCard({
   cs,
   slug,
@@ -435,26 +449,30 @@ function ScheduleCard({
   slug: string;
 }) {
   return (
-    <div className="flex items-center gap-3 rounded-lg bg-slate-50 dark:bg-slate-800 px-3 py-2 mb-1">
-      <Clock size={14} className="text-brand-teal shrink-0" />
-      <div className="min-w-0 flex-1">
-        <p className="text-sm font-medium text-brand-navy truncate">
-          {cs.name}
+    <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5">
+      <p className="text-sm font-medium text-brand-navy truncate leading-tight">
+        {cs.name}
+      </p>
+      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+        <Clock size={11} className="text-brand-teal shrink-0" />
+        {cs.startTime} – {cs.endTime}
+      </p>
+      {cs.location && (
+        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
+          <MapPin size={10} className="shrink-0" />
+          <span className="truncate">{cs.location}</span>
         </p>
-        <p className="text-xs text-slate-500 dark:text-slate-400">
-          {cs.startTime} – {cs.endTime}
-          {cs.location && ` · ${cs.location}`}
-          {cs.instructorName && ` · ${cs.instructorName}`}
-        </p>
+      )}
+      <div className="mt-1.5 flex items-center justify-between gap-1">
+        <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
+          {cs.level.replace("_", " ")}
+        </span>
+        <TrialRequestForm
+          clubSlug={slug}
+          classScheduleId={cs.id}
+          className={cs.name}
+        />
       </div>
-      <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
-        {cs.level.replace("_", " ")}
-      </span>
-      <TrialRequestForm
-        clubSlug={slug}
-        classScheduleId={cs.id}
-        className={cs.name}
-      />
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
-import { requireAuth } from "@/lib/auth-context";
+import { requireAuth, isClubAdmin } from "@/lib/auth-context";
 import { inviteLink, whatsappShare } from "@/lib/invite";
 import { sendInvitationEmail } from "@/lib/email";
 
@@ -78,7 +78,7 @@ export async function POST(request: Request) {
 
   // Only OWNER and ADMIN can invite staff (ADMIN or INSTRUCTOR).
   if (role !== "STUDENT") {
-    if (auth.user.role !== "OWNER" && auth.user.role !== "ADMIN") {
+    if (!(await isClubAdmin(auth))) {
       return NextResponse.json(
         { error: "Only owners and admins can invite staff." },
         { status: 403 },

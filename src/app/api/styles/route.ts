@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
 import { getCurrentClub } from "@/lib/queries";
-import { requireAuth } from "@/lib/auth-context";
+import { requireAuth, isClubAdmin } from "@/lib/auth-context";
 import { DISCIPLINES } from "@/lib/constants";
 
 /** GET /api/styles — list the current club's styles. */
@@ -40,8 +40,8 @@ export async function POST(request: Request) {
   const auth = await requireAuth();
   if (auth instanceof NextResponse) return auth;
 
-  // Only OWNER and ADMIN can manage styles.
-  if (!["OWNER", "ADMIN"].includes(auth.user.role)) {
+  // Only OWNER, ADMIN, or impersonating platform admin can manage styles.
+  if (!(await isClubAdmin(auth))) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
