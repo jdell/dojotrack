@@ -399,7 +399,7 @@ function WeeklyTimetable({
       )}
       {/* Desktop/tablet: column grid */}
       <div
-        className="hidden sm:grid gap-2"
+        className="hidden sm:grid gap-3"
         style={{
           gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))`,
         }}
@@ -409,7 +409,7 @@ function WeeklyTimetable({
             <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
               {t(`dayShort.${day}`)}
             </p>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {classes
                 .filter((cs) => cs.dayOfWeek === day)
                 .map((cs) => (
@@ -426,7 +426,7 @@ function WeeklyTimetable({
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
               {t(`dayShort.${day}`)}
             </p>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {classes
                 .filter((cs) => cs.dayOfWeek === day)
                 .map((cs) => (
@@ -448,23 +448,35 @@ const LEVEL_SHORT: Record<string, string> = {
   ADVANCED: "Adv",
 };
 
+const LEVEL_COLOR: Record<string, string> = {
+  ALL_LEVELS: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  BEGINNER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  INTERMEDIATE: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  ADVANCED: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+};
+
 function ScheduleCard({
   cs,
 }: {
   cs: PublicClub["classSchedules"][number];
 }) {
+  const levelLabel = LEVEL_SHORT[cs.level] ?? cs.level.replace("_", " ");
+  const levelColor = LEVEL_COLOR[cs.level] ?? "bg-slate-100 text-slate-600";
+
   return (
-    <div className="rounded-md border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1.5">
-      <p className="text-xs font-medium text-brand-navy leading-tight">
+    <div className="rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
+      <span
+        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${levelColor}`}
+      >
+        {levelLabel}
+      </span>
+      <p className="mt-1.5 text-sm font-medium text-brand-navy leading-snug">
         {cs.name}
       </p>
-      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
-        <Clock size={10} className="text-brand-teal shrink-0" />
+      <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+        <Clock size={12} className="text-brand-teal shrink-0" />
         {cs.startTime} – {cs.endTime}
       </p>
-      <span className="mt-1 inline-block rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-1.5 py-px text-[9px] font-medium text-slate-500 dark:text-slate-400">
-        {LEVEL_SHORT[cs.level] ?? cs.level.replace("_", " ")}
-      </span>
     </div>
   );
 }
