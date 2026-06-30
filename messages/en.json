@@ -1204,6 +1204,10 @@
     "capoeira": "Capoeira",
     "kenpo": "Kempo / Kenpo",
     "tang_soo_do": "Tang Soo Do",
+    "boxing": "Boxing",
+    "muay_thai": "Muay Thai",
+    "mma": "MMA",
+    "wrestling": "Wrestling",
     "custom": "Custom",
     "other": "Other"
   },
@@ -1219,6 +1223,10 @@
     "capoeira": "Capoeira",
     "kenpo": "Kempo / Kenpo",
     "tang_soo_do": "Tang Soo Do",
+    "boxing": "Boxing",
+    "muay_thai": "Muay Thai",
+    "mma": "MMA",
+    "wrestling": "Wrestling",
     "custom": "Custom"
   },
   "Admin": {

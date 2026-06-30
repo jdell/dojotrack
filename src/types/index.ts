@@ -17,6 +17,10 @@ export type Discipline =
   | "capoeira"
   | "kenpo"
   | "tang_soo_do"
+  | "boxing"
+  | "muay_thai"
+  | "mma"
+  | "wrestling"
   | "custom";
 
 /** 0 = Sunday … 6 = Saturday (matches JS `Date.getDay()`). */

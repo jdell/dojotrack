@@ -413,7 +413,7 @@ function WeeklyTimetable({
               {classes
                 .filter((cs) => cs.dayOfWeek === day)
                 .map((cs) => (
-                  <ScheduleCard key={cs.id} cs={cs} slug={slug} />
+                  <ScheduleCard key={cs.id} cs={cs} />
                 ))}
             </div>
           </div>
@@ -430,7 +430,7 @@ function WeeklyTimetable({
               {classes
                 .filter((cs) => cs.dayOfWeek === day)
                 .map((cs) => (
-                  <ScheduleCard key={cs.id} cs={cs} slug={slug} />
+                  <ScheduleCard key={cs.id} cs={cs} />
                 ))}
             </div>
           </div>
@@ -441,38 +441,30 @@ function WeeklyTimetable({
 }
 
 /** A single class card within the timetable grid. */
+const LEVEL_SHORT: Record<string, string> = {
+  ALL_LEVELS: "All",
+  BEGINNER: "Beg",
+  INTERMEDIATE: "Int",
+  ADVANCED: "Adv",
+};
+
 function ScheduleCard({
   cs,
-  slug,
 }: {
   cs: PublicClub["classSchedules"][number];
-  slug: string;
 }) {
   return (
-    <div className="rounded-lg border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-2.5">
-      <p className="text-sm font-medium text-brand-navy truncate leading-tight">
+    <div className="rounded-md border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-2 py-1.5">
+      <p className="text-xs font-medium text-brand-navy leading-tight">
         {cs.name}
       </p>
-      <p className="mt-0.5 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-        <Clock size={11} className="text-brand-teal shrink-0" />
+      <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-500 dark:text-slate-400">
+        <Clock size={10} className="text-brand-teal shrink-0" />
         {cs.startTime} – {cs.endTime}
       </p>
-      {cs.location && (
-        <p className="mt-0.5 flex items-center gap-1 text-[11px] text-slate-400">
-          <MapPin size={10} className="shrink-0" />
-          <span className="truncate">{cs.location}</span>
-        </p>
-      )}
-      <div className="mt-1.5 flex items-center justify-between gap-1">
-        <span className="shrink-0 rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:text-slate-400">
-          {cs.level.replace("_", " ")}
-        </span>
-        <TrialRequestForm
-          clubSlug={slug}
-          classScheduleId={cs.id}
-          className={cs.name}
-        />
-      </div>
+      <span className="mt-1 inline-block rounded-full border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-1.5 py-px text-[9px] font-medium text-slate-500 dark:text-slate-400">
+        {LEVEL_SHORT[cs.level] ?? cs.level.replace("_", " ")}
+      </span>
     </div>
   );
 }

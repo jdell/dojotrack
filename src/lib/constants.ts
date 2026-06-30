@@ -345,6 +345,10 @@ export const DISCIPLINES: {
   { value: "capoeira", label: "Capoeira", emoji: "🥋" },
   { value: "kenpo", label: "Kempo / Kenpo", emoji: "🥋" },
   { value: "tang_soo_do", label: "Tang Soo Do", emoji: "🥋" },
+  { value: "boxing", label: "Boxing", emoji: "🥊" },
+  { value: "muay_thai", label: "Muay Thai", emoji: "🥊" },
+  { value: "mma", label: "MMA", emoji: "🥊" },
+  { value: "wrestling", label: "Wrestling", emoji: "🤼" },
   { value: "custom", label: "Custom", emoji: "⚙️" },
 ];
 
