@@ -315,6 +315,38 @@ export const BELT_SYSTEMS: Record<Discipline, BeltSystem> = {
   },
 
   // Custom — empty template a club fills in with its own ranks.
+  // Boxing — no belt system by default; clubs define their own levels.
+  boxing: {
+    id: "boxing",
+    name: "Boxing",
+    discipline: "boxing",
+    belts: [],
+  },
+
+  // Muay Thai — no universal belt system; some orgs use armband colours.
+  muay_thai: {
+    id: "muay_thai",
+    name: "Muay Thai",
+    discipline: "muay_thai",
+    belts: [],
+  },
+
+  // MMA — no standardised belt system.
+  mma: {
+    id: "mma",
+    name: "MMA",
+    discipline: "mma",
+    belts: [],
+  },
+
+  // Wrestling — no belt system; competitive weight classes instead.
+  wrestling: {
+    id: "wrestling",
+    name: "Wrestling",
+    discipline: "wrestling",
+    belts: [],
+  },
+
   custom: {
     id: "custom",
     name: "Custom",
