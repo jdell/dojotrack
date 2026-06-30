@@ -2,9 +2,10 @@ import type { ReactNode } from "react";
 import { Sidebar } from "@/components/sidebar";
 import { Logo } from "@/components/logo";
 import { LanguageSwitcher } from "@/components/language-switcher";
+import { ImpersonationBanner } from "@/components/impersonation-banner";
 import { createClient } from "@/lib/supabase/server";
 import { getCurrentClub, getCurrentUser } from "@/lib/queries";
-import { isPlatformAdmin } from "@/lib/auth-context";
+import { isPlatformAdmin, getImpersonatedClubId } from "@/lib/auth-context";
 import type { Role } from "@prisma/client";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -44,15 +45,24 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
     }
   }
 
+  // Show the impersonation banner when a platform admin is viewing as another club.
+  const impersonatedClubId = isAdmin ? await getImpersonatedClubId() : null;
+  const isImpersonating = Boolean(impersonatedClubId);
+
   return (
-    <div className="flex min-h-screen bg-muted/30">
-      <Sidebar clubName={club?.name} userName={userName} userRole={userRole} isAdmin={isAdmin} />
-      <div className="flex flex-1 flex-col min-w-0">
-        <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background px-4">
-          <Logo size={26} />
-          <LanguageSwitcher variant="light" />
-        </header>
-        <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+    <div className="flex min-h-screen flex-col bg-muted/30">
+      {isImpersonating && club && (
+        <ImpersonationBanner clubName={club.name} />
+      )}
+      <div className="flex flex-1">
+        <Sidebar clubName={club?.name} userName={userName} userRole={userRole} isAdmin={isAdmin} />
+        <div className="flex flex-1 flex-col min-w-0">
+          <header className="md:hidden sticky top-0 z-30 flex h-14 items-center justify-between gap-3 border-b border-border bg-background px-4">
+            <Logo size={26} />
+            <LanguageSwitcher variant="light" />
+          </header>
+          <main className="flex-1 p-4 md:p-6 lg:p-8">{children}</main>
+        </div>
       </div>
     </div>
   );

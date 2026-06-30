@@ -47,7 +47,20 @@ INSERT INTO "styles" ("club_id", "discipline", "name", "order")
 SELECT
   c."id" AS "club_id",
   d.value AS "discipline",
-  d.value AS "name",
+  CASE d.value
+    WHEN 'bjj' THEN 'Brazilian Jiu-Jitsu'
+    WHEN 'karate' THEN 'Karate'
+    WHEN 'judo' THEN 'Judo'
+    WHEN 'taekwondo' THEN 'Taekwondo'
+    WHEN 'aikido' THEN 'Aikido'
+    WHEN 'kung_fu' THEN 'Kung Fu'
+    WHEN 'krav_maga' THEN 'Krav Maga'
+    WHEN 'hapkido' THEN 'Hapkido'
+    WHEN 'capoeira' THEN 'Capoeira'
+    WHEN 'kenpo' THEN 'Kempo / Kenpo'
+    WHEN 'tang_soo_do' THEN 'Tang Soo Do'
+    ELSE d.value
+  END AS "name",
   d.ordinality - 1 AS "order"
 FROM "clubs" c,
      LATERAL unnest(c."disciplines") WITH ORDINALITY AS d(value, ordinality);

@@ -4,8 +4,9 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { prisma } from "@/lib/prisma";
 import { isDbConfigured } from "@/lib/db";
-import { ArrowLeft, Building2, ExternalLink } from "lucide-react";
+import { ArrowLeft, Building2 } from "lucide-react";
 import { TierSwitcher } from "./tier-switcher";
+import { ImpersonateButton } from "./impersonate-button";
 
 export async function generateMetadata({
   params,
@@ -147,14 +148,14 @@ export default async function AdminClubDetailPage({
         </div>
       </section>
 
-      {/* Impersonate link (future) */}
-      <section className="rounded-xl border border-dashed border-border bg-card p-5 shadow-sm">
-        <div className="flex items-center gap-3">
-          <ExternalLink size={18} className="text-muted-foreground" />
+      {/* Impersonate */}
+      <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
+        <div className="flex items-center justify-between">
           <div>
             <p className="text-sm font-medium text-brand-navy">{t("impersonate")}</p>
             <p className="text-xs text-muted-foreground">{t("impersonateHint")}</p>
           </div>
+          <ImpersonateButton clubId={club.id} clubName={club.name} />
         </div>
       </section>
     </div>

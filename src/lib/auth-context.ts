@@ -16,6 +16,7 @@
  * server actions) — never from a `"use client"` module.
  */
 import { cache } from "react";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import type { Club, User } from "@prisma/client";
@@ -57,6 +58,11 @@ export const getAuthUser = cache(async (): Promise<SupabaseUser | null> => {
  * there's no valid session or the user isn't linked to a club. Memoised per
  * request so repeated calls (e.g. `requireAuth()` then `getCurrentClub()`) hit
  * Supabase and Postgres only once.
+ *
+ * When the caller is a platform admin and the `impersonate_club_id` cookie is
+ * set, the returned `club` is the impersonated club rather than the admin's own
+ * club. This lets all downstream code (queries, layout, sidebar) automatically
+ * reflect the target club without any further changes.
  */
 export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
   if (!isDbConfigured() || !supabaseConfigured()) return null;
@@ -68,6 +74,19 @@ export const getAuthContext = cache(async (): Promise<AuthContext | null> => {
       include: { club: true },
     });
     if (!user?.club) return null;
+
+    // Check for impersonation: if the caller is a platform admin and the
+    // impersonate_club_id cookie is set, swap the club.
+    const impersonatedClubId = await getImpersonatedClubId();
+    if (impersonatedClubId && isPlatformAdmin(authUser.email, authUser.phone)) {
+      const impersonatedClub = await prisma.club.findUnique({
+        where: { id: impersonatedClubId },
+      });
+      if (impersonatedClub) {
+        return { user, club: impersonatedClub };
+      }
+    }
+
     return { user, club: user.club };
   } catch {
     return null;
@@ -118,4 +137,19 @@ export function isPlatformAdmin(
     if (phoneList.includes(normalised)) return true;
   }
   return false;
+}
+
+/**
+ * Read the `impersonate_club_id` cookie, or return `null` when not set.
+ * Safe to call from any server context (route handlers, server components,
+ * server actions). Used by the app layout to decide whether to render the
+ * impersonation banner.
+ */
+export async function getImpersonatedClubId(): Promise<string | null> {
+  try {
+    const cookieStore = await cookies();
+    return cookieStore.get("impersonate_club_id")?.value ?? null;
+  } catch {
+    return null;
+  }
 }
