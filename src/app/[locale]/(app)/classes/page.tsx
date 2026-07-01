@@ -6,6 +6,7 @@ import {
   getClassSchedules,
   getCurrentClub,
   getCurrentStudent,
+  getCurrentUser,
 } from "@/lib/queries";
 import { ClassesView } from "./classes-view";
 
@@ -25,6 +26,9 @@ export const dynamic = "force-dynamic";
 export default async function ClassesPage() {
   const t = await getTranslations("Classes");
   const club = await getCurrentClub();
+  const currentUser = await getCurrentUser();
+  const userRole = currentUser?.role ?? "OWNER";
+  const isAdminOrOwner = userRole === "OWNER" || userRole === "ADMIN";
   const student = club ? await getCurrentStudent(club.id) : null;
   const classes = club
     ? await getClassSchedules(club.id, student?.id ?? null)
@@ -40,16 +44,22 @@ export default async function ClassesPage() {
             {t("subtitle")}
           </p>
         </div>
-        <Link
-          href="/classes/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
-        >
-          <CalendarPlus size={16} />
-          {t("addClass")}
-        </Link>
+        {isAdminOrOwner && (
+          <Link
+            href="/classes/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-brand-teal px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-brand-teal/90"
+          >
+            <CalendarPlus size={16} />
+            {t("addClass")}
+          </Link>
+        )}
       </div>
 
-      <ClassesView classes={classes} student={student} />
+      <ClassesView
+        classes={classes}
+        student={student}
+        isAdminOrOwner={isAdminOrOwner}
+      />
     </div>
   );
 }
