@@ -307,7 +307,10 @@ export default async function ClubPublicPage({
           </section>
         )}
 
-        {/* Schedule — full-width weekly timetable */}
+      </div>
+
+      {/* Schedule — wider container so day columns aren't cramped */}
+      <div className="mx-auto max-w-6xl px-4 pb-10">
         <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6">
           <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy mb-4">
             <CalendarDays size={16} className="text-brand-teal" />{" "}
@@ -397,27 +400,29 @@ function WeeklyTimetable({
           {title}
         </h3>
       )}
-      {/* Desktop/tablet: column grid */}
-      <div
-        className="hidden sm:grid gap-3"
-        style={{
-          gridTemplateColumns: `repeat(${activeDays.length}, minmax(0, 1fr))`,
-        }}
-      >
-        {activeDays.map((day) => (
-          <div key={day} className="min-w-0">
-            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-              {t(`dayShort.${day}`)}
-            </p>
-            <div className="space-y-2">
-              {classes
-                .filter((cs) => cs.dayOfWeek === day)
-                .map((cs) => (
-                  <ScheduleCard key={cs.id} cs={cs} />
-                ))}
+      {/* Desktop/tablet: column grid with horizontal scroll fallback */}
+      <div className="hidden sm:block overflow-x-auto -mx-2 px-2">
+        <div
+          className="grid gap-3"
+          style={{
+            gridTemplateColumns: `repeat(${activeDays.length}, minmax(160px, 1fr))`,
+          }}
+        >
+          {activeDays.map((day) => (
+            <div key={day} className="min-w-0">
+              <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+                {t(`dayShort.${day}`)}
+              </p>
+              <div className="space-y-2">
+                {classes
+                  .filter((cs) => cs.dayOfWeek === day)
+                  .map((cs) => (
+                    <ScheduleCard key={cs.id} cs={cs} />
+                  ))}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
       {/* Mobile: stacked by day */}
       <div className="sm:hidden space-y-3">
