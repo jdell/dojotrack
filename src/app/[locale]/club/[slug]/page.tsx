@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import {
   CalendarDays,
-  Clock,
   Globe,
   ExternalLink,
   MapPin,
@@ -413,7 +412,7 @@ function WeeklyTimetable({
               <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
                 {t(`dayShort.${day}`)}
               </p>
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {classes
                   .filter((cs) => cs.dayOfWeek === day)
                   .map((cs) => (
@@ -423,6 +422,7 @@ function WeeklyTimetable({
             </div>
           ))}
         </div>
+        <LevelLegend />
       </div>
       {/* Mobile: stacked by day */}
       <div className="sm:hidden space-y-3">
@@ -431,7 +431,7 @@ function WeeklyTimetable({
             <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
               {t(`dayShort.${day}`)}
             </p>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {classes
                 .filter((cs) => cs.dayOfWeek === day)
                 .map((cs) => (
@@ -440,48 +440,60 @@ function WeeklyTimetable({
             </div>
           </div>
         ))}
+        <LevelLegend />
       </div>
     </div>
   );
 }
 
-/** A single class card within the timetable grid. */
-const LEVEL_SHORT: Record<string, string> = {
-  ALL_LEVELS: "All",
-  BEGINNER: "Beg",
-  INTERMEDIATE: "Int",
-  ADVANCED: "Adv",
+/** Left-border color per level — encodes level visually without a badge. */
+const LEVEL_BORDER: Record<string, string> = {
+  ALL_LEVELS: "border-l-green-500 dark:border-l-green-400",
+  BEGINNER: "border-l-green-500 dark:border-l-green-400",
+  INTERMEDIATE: "border-l-blue-500 dark:border-l-blue-400",
+  ADVANCED: "border-l-slate-400 dark:border-l-slate-500",
 };
 
-const LEVEL_COLOR: Record<string, string> = {
-  ALL_LEVELS: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  BEGINNER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
-  INTERMEDIATE: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
-  ADVANCED: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
-};
+/** Legend labels for the level color key. */
+const LEVEL_LEGEND: { key: string; label: string; dotClass: string }[] = [
+  { key: "all", label: "All / Beg", dotClass: "bg-green-500 dark:bg-green-400" },
+  { key: "int", label: "Int", dotClass: "bg-blue-500 dark:bg-blue-400" },
+  { key: "adv", label: "Adv", dotClass: "bg-slate-400 dark:bg-slate-500" },
+];
 
+/** A single class entry within the timetable grid. */
 function ScheduleCard({
   cs,
 }: {
   cs: PublicClub["classSchedules"][number];
 }) {
-  const levelLabel = LEVEL_SHORT[cs.level] ?? cs.level.replace("_", " ");
-  const levelColor = LEVEL_COLOR[cs.level] ?? "bg-slate-100 text-slate-600";
+  const borderColor =
+    LEVEL_BORDER[cs.level] ?? "border-l-slate-300 dark:border-l-slate-600";
 
   return (
-    <div className="rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 p-3 shadow-sm">
-      <span
-        className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold ${levelColor}`}
-      >
-        {levelLabel}
-      </span>
-      <p className="mt-1.5 text-sm font-medium text-brand-navy leading-snug">
-        {cs.name}
+    <div
+      className={`border-l-[3px] ${borderColor} rounded-r-lg bg-white dark:bg-slate-900 py-1.5 px-3`}
+    >
+      <p className="text-sm font-medium text-brand-navy leading-snug capitalize">
+        {cs.name.toLowerCase()}
       </p>
-      <p className="mt-1 flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-        <Clock size={12} className="text-brand-teal shrink-0" />
+      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
         {cs.startTime} – {cs.endTime}
       </p>
+    </div>
+  );
+}
+
+/** Color legend shown below the timetable grid. */
+function LevelLegend() {
+  return (
+    <div className="mt-3 flex items-center gap-4">
+      {LEVEL_LEGEND.map(({ key, label, dotClass }) => (
+        <div key={key} className="flex items-center gap-1.5">
+          <span className={`inline-block h-0.5 w-3 rounded ${dotClass}`} />
+          <span className="text-[11px] text-slate-400">{label}</span>
+        </div>
+      ))}
     </div>
   );
 }
