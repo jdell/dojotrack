@@ -1032,6 +1032,15 @@
       "SAT": "Sat",
       "SUN": "Sun"
     },
+    "day": {
+      "MON": "Monday",
+      "TUE": "Tuesday",
+      "WED": "Wednesday",
+      "THU": "Thursday",
+      "FRI": "Friday",
+      "SAT": "Saturday",
+      "SUN": "Sunday"
+    },
     "ogCta": "Book a free trial class on EntrenaDojo",
     "metaDescription": "{name} — class schedules, disciplines, and a free trial booking on EntrenaDojo.",
     "bookTrialClass": "Book trial",

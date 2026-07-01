@@ -9,6 +9,8 @@ import {
   Mail,
   Phone,
   Users,
+  Swords,
+  User,
 } from "lucide-react";
 import { DAY_ORDER } from "@/lib/schedule";
 import { Logo } from "@/components/logo";
@@ -308,57 +310,18 @@ export default async function ClubPublicPage({
 
       </div>
 
-      {/* Schedule — wider container so day columns aren't cramped */}
-      <div className="mx-auto max-w-6xl px-4 pb-10">
-        <section className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 sm:p-6">
-          <h2 className="flex items-center gap-2 text-base font-bold text-brand-navy mb-4">
-            <CalendarDays size={16} className="text-brand-teal" />{" "}
+      {/* Schedule — list view grouped by day */}
+      <div className="mx-auto max-w-4xl px-4 pb-10">
+        <section>
+          <h2 className="flex items-center gap-2 text-lg font-bold text-brand-navy mb-6">
+            <CalendarDays size={18} className="text-brand-teal" />{" "}
             {t("schedule")}
           </h2>
           {club.classSchedules.length > 0 ? (
-            club.styles.length > 0 ? (
-              /* Styles exist — one timetable per style */
-              <div className="space-y-8">
-                {club.styles.map((style) => {
-                  const styleClasses = club.classSchedules.filter(
-                    (cs) => cs.styleId === style.id,
-                  );
-                  if (styleClasses.length === 0) return null;
-                  return (
-                    <WeeklyTimetable
-                      key={style.id}
-                      title={style.name}
-                      classes={styleClasses}
-                      slug={slug}
-                      t={t}
-                    />
-                  );
-                })}
-                {/* Classes with no style assigned */}
-                {(() => {
-                  const styleIds = new Set(club.styles.map((s) => s.id));
-                  const unassigned = club.classSchedules.filter(
-                    (cs) => !cs.styleId || !styleIds.has(cs.styleId),
-                  );
-                  if (unassigned.length === 0) return null;
-                  return (
-                    <WeeklyTimetable
-                      title={t("otherClasses")}
-                      classes={unassigned}
-                      slug={slug}
-                      t={t}
-                    />
-                  );
-                })()}
-              </div>
-            ) : (
-              /* No styles — single flat timetable */
-              <WeeklyTimetable
-                classes={club.classSchedules}
-                slug={slug}
-                t={t}
-              />
-            )
+            <WeeklyScheduleList
+              classes={club.classSchedules}
+              t={t}
+            />
           ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {t("scheduleSoon")}
@@ -372,19 +335,31 @@ export default async function ClubPublicPage({
   );
 }
 
+/** Level badge styles for the inline pill in list view. */
+const LEVEL_BADGE: Record<string, string> = {
+  ALL_LEVELS: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  BEGINNER: "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400",
+  INTERMEDIATE: "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400",
+  ADVANCED: "bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300",
+};
+
+const LEVEL_LABEL: Record<string, string> = {
+  ALL_LEVELS: "All Levels",
+  BEGINNER: "Beginner",
+  INTERMEDIATE: "Intermediate",
+  ADVANCED: "Advanced",
+};
+
 /**
- * Weekly timetable grid — columns per day, stacked class cards.
- * On mobile (<sm), days stack vertically. On tablet+, a column grid.
+ * Weekly schedule in list/agenda format — classes grouped by day,
+ * each class as a horizontal row with time, name, level badge,
+ * style, and instructor.
  */
-function WeeklyTimetable({
-  title,
+function WeeklyScheduleList({
   classes,
-  slug,
   t,
 }: {
-  title?: string;
   classes: PublicClub["classSchedules"][number][];
-  slug: string;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   t: any;
 }) {
@@ -393,107 +368,82 @@ function WeeklyTimetable({
   );
 
   return (
-    <div>
-      {title && (
-        <h3 className="mb-3 text-sm font-bold uppercase tracking-wide text-brand-teal">
-          {title}
-        </h3>
-      )}
-      {/* Desktop/tablet: column grid with horizontal scroll fallback */}
-      <div className="hidden sm:block overflow-x-auto -mx-2 px-2">
-        <div
-          className="grid gap-3"
-          style={{
-            gridTemplateColumns: `repeat(${activeDays.length}, minmax(160px, 1fr))`,
-          }}
-        >
-          {activeDays.map((day) => (
-            <div key={day} className="min-w-0">
-              <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                {t(`dayShort.${day}`)}
-              </p>
-              <div className="space-y-1">
-                {classes
-                  .filter((cs) => cs.dayOfWeek === day)
-                  .map((cs) => (
-                    <ScheduleCard key={cs.id} cs={cs} />
-                  ))}
-              </div>
-            </div>
-          ))}
-        </div>
-        <LevelLegend />
-      </div>
-      {/* Mobile: stacked by day */}
-      <div className="sm:hidden space-y-3">
-        {activeDays.map((day) => (
+    <div className="space-y-8">
+      {activeDays.map((day) => {
+        const dayClasses = classes.filter((cs) => cs.dayOfWeek === day);
+        return (
           <div key={day}>
-            <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-400">
-              {t(`dayShort.${day}`)}
-            </p>
-            <div className="space-y-1">
-              {classes
-                .filter((cs) => cs.dayOfWeek === day)
-                .map((cs) => (
-                  <ScheduleCard key={cs.id} cs={cs} />
-                ))}
+            {/* Day header */}
+            <h3 className="text-lg font-bold text-brand-navy mb-3">
+              {t(`day.${day}`)}
+            </h3>
+
+            {/* Class rows */}
+            <div className="space-y-2">
+              {dayClasses.map((cs) => (
+                <ScheduleRow key={cs.id} cs={cs} />
+              ))}
             </div>
           </div>
-        ))}
-        <LevelLegend />
-      </div>
+        );
+      })}
     </div>
   );
 }
 
-/** Left-border color per level — encodes level visually without a badge. */
-const LEVEL_BORDER: Record<string, string> = {
-  ALL_LEVELS: "border-l-green-500 dark:border-l-green-400",
-  BEGINNER: "border-l-green-500 dark:border-l-green-400",
-  INTERMEDIATE: "border-l-blue-500 dark:border-l-blue-400",
-  ADVANCED: "border-l-slate-400 dark:border-l-slate-500",
-};
-
-/** Legend labels for the level color key. */
-const LEVEL_LEGEND: { key: string; label: string; dotClass: string }[] = [
-  { key: "all", label: "All / Beg", dotClass: "bg-green-500 dark:bg-green-400" },
-  { key: "int", label: "Int", dotClass: "bg-blue-500 dark:bg-blue-400" },
-  { key: "adv", label: "Adv", dotClass: "bg-slate-400 dark:bg-slate-500" },
-];
-
-/** A single class entry within the timetable grid. */
-function ScheduleCard({
+/** A single class row in the list view. */
+function ScheduleRow({
   cs,
 }: {
   cs: PublicClub["classSchedules"][number];
 }) {
-  const borderColor =
-    LEVEL_BORDER[cs.level] ?? "border-l-slate-300 dark:border-l-slate-600";
+  const badgeClass =
+    LEVEL_BADGE[cs.level] ?? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400";
+  const levelLabel =
+    LEVEL_LABEL[cs.level] ?? cs.level.replace("_", " ");
 
   return (
-    <div
-      className={`border-l-[3px] ${borderColor} rounded-r-lg bg-white dark:bg-slate-900 py-1.5 px-3`}
-    >
-      <p className="text-sm font-medium text-brand-navy leading-snug capitalize">
-        {cs.name.toLowerCase()}
-      </p>
-      <p className="mt-0.5 text-xs text-slate-500 dark:text-slate-400">
-        {cs.startTime} – {cs.endTime}
-      </p>
-    </div>
-  );
-}
+    <div className="flex items-center gap-4 rounded-xl border border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-3 sm:px-5">
+      {/* Time */}
+      <div className="shrink-0 w-24 sm:w-28">
+        <p className="text-sm font-semibold text-brand-navy">
+          {cs.startTime} - {cs.endTime}
+        </p>
+      </div>
 
-/** Color legend shown below the timetable grid. */
-function LevelLegend() {
-  return (
-    <div className="mt-3 flex items-center gap-4">
-      {LEVEL_LEGEND.map(({ key, label, dotClass }) => (
-        <div key={key} className="flex items-center gap-1.5">
-          <span className={`inline-block h-0.5 w-3 rounded ${dotClass}`} />
-          <span className="text-[11px] text-slate-400">{label}</span>
+      {/* Divider */}
+      <div className="hidden sm:block w-px h-10 bg-slate-200 dark:bg-slate-700 shrink-0" />
+
+      {/* Class info */}
+      <div className="flex-1 min-w-0">
+        {/* Name + level badge */}
+        <div className="flex flex-wrap items-center gap-2">
+          <p className="text-sm font-semibold text-brand-navy capitalize">
+            {cs.name.toLowerCase()}
+          </p>
+          <span
+            className={`inline-block rounded px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${badgeClass}`}
+          >
+            {levelLabel}
+          </span>
         </div>
-      ))}
+
+        {/* Style + instructor */}
+        <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
+          {cs.styleName && (
+            <span className="flex items-center gap-1">
+              <Swords size={12} className="shrink-0" />
+              {cs.styleName}
+            </span>
+          )}
+          {cs.instructorName && (
+            <span className="flex items-center gap-1">
+              <User size={12} className="shrink-0" />
+              {cs.instructorName}
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

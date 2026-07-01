@@ -1032,6 +1032,15 @@
       "SAT": "Sáb",
       "SUN": "Dom"
     },
+    "day": {
+      "MON": "Lunes",
+      "TUE": "Martes",
+      "WED": "Miércoles",
+      "THU": "Jueves",
+      "FRI": "Viernes",
+      "SAT": "Sábado",
+      "SUN": "Domingo"
+    },
     "ogCta": "Reserva una clase de prueba gratuita en EntrenaDojo",
     "metaDescription": "{name} — horarios de clases, disciplinas y reserva de una clase de prueba gratuita en EntrenaDojo.",
     "bookTrialClass": "Reservar prueba",
